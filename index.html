@@ -67,6 +67,7 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 #app.fx .facet { background: color-mix(in srgb, var(--panel) 72%, transparent); border-color: color-mix(in srgb, var(--sun) 28%, var(--line)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 #app.fx .facet.front { background: var(--sun); border-color: #FFF6D8; box-shadow: 0 0 0 3px color-mix(in srgb, var(--sun) 35%, transparent), 0 0 26px color-mix(in srgb, var(--sun) 70%, transparent); }
 /* Front app test options (Settings > Front app) */
+#app.ff-halo .facet.front, #app.fx.ff-halo .facet.front { box-shadow: 0 0 0 4px color-mix(in srgb, var(--sun) 55%, transparent), 0 0 34px 14px color-mix(in srgb, var(--sun) 75%, transparent), 0 0 70px 30px color-mix(in srgb, var(--sun) 35%, transparent); }
 #app.ff-lift .facet.front, #app.fx.ff-lift .facet.front { height: 56px; padding: 0 18px 0 8px; font-size: 16px; border-radius: 28px; box-shadow: 0 16px 22px rgba(0, 0, 0, 0.55), 0 0 26px color-mix(in srgb, var(--sun) 60%, transparent); }
 #app.ff-lift .facet.front .ini { width: 40px; height: 40px; font-size: 16px; }
 #app.ff-dim .facet:not(.front) { opacity: 0.38 !important; filter: saturate(0.4); }
@@ -159,6 +160,12 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label, .preset { flex: 1 1 auto; min-height: 44px; padding: 0 12px; display: grid; place-items: center; border-radius: 12px; background: var(--panel-2); color: var(--ink); font-size: 14px; font-weight: 500; cursor: pointer; border: none; }
 .seg input:checked + label { background: var(--sun); color: var(--sun-ink); font-weight: 600; }
+.seg.big label { min-height: 56px; font-size: 15px; }
+details.more > summary { list-style: none; min-height: 48px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #5B6B8C; display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 600; cursor: pointer; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::after { content: '\25BE'; }
+details.more[open] > summary::after { content: '\25B4'; }
+details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .preset small { display: block; font-size: 11px; color: var(--ink-2); font-weight: 500; }
 .presets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .preset { text-align: center; padding: 8px 10px; }
@@ -337,53 +344,71 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 
   <div id="settings" class="overlay" hidden>
     <form class="sheet" id="settingsForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-      <h2 id="setTitle">Playground</h2>
+      <h2 id="setTitle">Settings</h2>
+      <!-- Simpler menu (21 Oct): the looks you try most at the top, the rest under "More settings". -->
       <fieldset>
-        <legend>Theme</legend>
-        <div class="seg">
+        <legend>Looks</legend>
+        <div class="seg big">
           <input type="radio" name="theme" id="th-auto" value="auto"><label for="th-auto">Follow the time</label>
-          <input type="radio" name="theme" id="th-daylight" value="daylight"><label for="th-daylight">Daylight</label>
-          <input type="radio" name="theme" id="th-sunset" value="sunset"><label for="th-sunset">Sunset</label>
-          <input type="radio" name="theme" id="th-eclipse" value="eclipse"><label for="th-eclipse">Eclipse</label>
-          <input type="radio" name="theme" id="th-blackhole" value="blackhole"><label for="th-blackhole">Black hole</label>
-          <input type="radio" name="theme" id="th-neon" value="neon"><label for="th-neon">Neon night</label>
-          <input type="radio" name="theme" id="th-plasma" value="plasma"><label for="th-plasma">Plasma dawn</label>
-          <input type="radio" name="theme" id="th-custom" value="custom"><label for="th-custom">My own</label>
+          <input type="radio" name="theme" id="th-custom" value="custom"><label for="th-custom">Pick myself</label>
         </div>
-        <p id="themeLine" style="margin: 0; font-size: 13px; color: var(--ink-2)"></p>
+        <p id="themeLine" class="helpline"></p>
       </fieldset>
       <fieldset>
-        <legend>Menus</legend>
+        <legend>Sun</legend>
         <div class="seg">
-          <input type="radio" name="mode" id="mode-two" value="two"><label for="mode-two">Sun + moon</label>
-          <input type="radio" name="mode" id="mode-one" value="one"><label for="mode-one">One menu</label>
+          <input type="radio" name="sunPick" id="sp-glow" value="glow"><label for="sp-glow">Glow</label>
+          <input type="radio" name="sunPick" id="sp-corona" value="corona"><label for="sp-corona">Corona</label>
+          <input type="radio" name="sunPick" id="sp-flames" value="flames"><label for="sp-flames">Flames</label>
+          <input type="radio" name="sunPick" id="sp-eclipse" value="eclipse"><label for="sp-eclipse">Eclipse</label>
+          <input type="radio" name="sunPick" id="sp-blackhole" value="blackhole"><label for="sp-blackhole">Black hole</label>
+          <input type="radio" name="sunPick" id="sp-neon" value="neon"><label for="sp-neon">Neon</label>
+          <input type="radio" name="sunPick" id="sp-plasma" value="plasma"><label for="sp-plasma">Plasma</label>
         </div>
       </fieldset>
       <fieldset>
-        <legend>Sun look (My own theme)</legend>
+        <legend>Moon</legend>
         <div class="seg">
-          <input type="radio" name="sunLook" id="look-rays" value="rays"><label for="look-rays">Rays</label>
-          <input type="radio" name="sunLook" id="look-eclipse" value="eclipse"><label for="look-eclipse">Eclipse</label>
-          <input type="radio" name="sunLook" id="look-blackhole" value="blackhole"><label for="look-blackhole">Black hole</label>
-          <input type="radio" name="sunLook" id="look-neon" value="neon"><label for="look-neon">Neon</label>
-          <input type="radio" name="sunLook" id="look-plasma" value="plasma"><label for="look-plasma">Plasma</label>
+          <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
+          <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
+          <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
+          <input type="radio" name="moonLook" id="moon-rolodex" value="rolodex"><label for="moon-rolodex">Rolodex</label>
         </div>
       </fieldset>
       <fieldset>
-        <legend>Sun rays (when the sun look is Rays)</legend>
+        <legend>Sky</legend>
         <div class="seg">
-          <input type="radio" name="rayStyle" id="ray-glow" value="glow"><label for="ray-glow">Glow</label>
-          <input type="radio" name="rayStyle" id="ray-corona" value="corona"><label for="ray-corona">Corona</label>
-          <input type="radio" name="rayStyle" id="ray-flames" value="flames"><label for="ray-flames">Flames</label>
+          <input type="radio" name="skyPhoto" id="photo-off" value="off"><label for="photo-off">Drawn</label>
+          <input type="radio" name="skyPhoto" id="photo-sunset" value="sunset"><label for="photo-sunset">Sunset photo</label>
         </div>
       </fieldset>
       <fieldset>
-        <legend>Front app (tap each to turn on or off)</legend>
+        <legend>Layout</legend>
+        <div class="seg">
+          <input type="radio" name="swap" id="swap-off" value="off"><label for="swap-off">Sun dial</label>
+          <input type="radio" name="swap" id="swap-on" value="on"><label for="swap-on">Swap</label>
+        </div>
+        <p class="helpline">Swap: the moon items go around the moon, your apps go in a list next to a big sun.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Front app (on / off)</legend>
         <div class="seg">
           <input type="checkbox" name="frontFx" id="ff-beam" value="beam"><label for="ff-beam">Beam</label>
           <input type="checkbox" name="frontFx" id="ff-lift" value="lift"><label for="ff-lift">Bigger</label>
           <input type="checkbox" name="frontFx" id="ff-dim" value="dim"><label for="ff-dim">Dim others</label>
           <input type="checkbox" name="frontFx" id="ff-chips" value="chips"><label for="ff-chips">Shortcut buttons</label>
+          <input type="checkbox" name="frontFx" id="ff-halo" value="halo"><label for="ff-halo">Halo</label>
+          <input type="checkbox" name="frontFx" id="ff-glint" value="glint"><label for="ff-glint">Light spot</label>
+        </div>
+        <p class="helpline">Halo and Light spot look best with Black hole.</p>
+      </fieldset>
+      <details class="more" id="moreSettings">
+      <summary>More settings</summary>
+      <fieldset>
+        <legend>Menus</legend>
+        <div class="seg">
+          <input type="radio" name="mode" id="mode-two" value="two"><label for="mode-two">Sun + moon</label>
+          <input type="radio" name="mode" id="mode-one" value="one"><label for="mode-one">One menu</label>
         </div>
       </fieldset>
       <fieldset>
@@ -413,30 +438,6 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         </div>
       </fieldset>
       <fieldset>
-        <legend>Moon look (My own theme)</legend>
-        <div class="seg">
-          <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
-          <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
-          <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
-          <input type="radio" name="moonLook" id="moon-rolodex" value="rolodex"><label for="moon-rolodex">Rolodex</label>
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>Layout</legend>
-        <div class="seg">
-          <input type="radio" name="swap" id="swap-off" value="off"><label for="swap-off">Sun dial (today)</label>
-          <input type="radio" name="swap" id="swap-on" value="on"><label for="swap-on">Swap: moon dial, sun list</label>
-        </div>
-        <p class="helpline">Swap: the moon items go around the moon, your apps go in a list next to a big sun (Dots look).</p>
-      </fieldset>
-      <fieldset>
-        <legend>Sky picture</legend>
-        <div class="seg">
-          <input type="radio" name="skyPhoto" id="photo-off" value="off"><label for="photo-off">Drawn sky</label>
-          <input type="radio" name="skyPhoto" id="photo-sunset" value="sunset"><label for="photo-sunset">Sunset photo</label>
-        </div>
-      </fieldset>
-      <fieldset>
         <legend>Effects</legend>
         <div class="seg">
           <input type="radio" name="fx" id="fx-fancy" value="fancy"><label for="fx-fancy">Fancy</label>
@@ -459,7 +460,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         </div>
       </fieldset>
       <fieldset>
-        <legend>Sky and sun light</legend>
+        <legend>Time of day</legend>
         <div class="seg">
           <input type="radio" name="sky" id="sky-clock" value="clock"><label for="sky-clock">Follow the clock</label>
           <input type="radio" name="sky" id="sky-preview" value="preview"><label for="sky-preview">Pick a time</label>
@@ -473,7 +474,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         <button type="button" class="btn" id="playDay">Play a day in 20 seconds</button>
       </fieldset>
       <fieldset>
-        <legend>Sun colour (My own theme)</legend>
+        <legend>Sun colour</legend>
         <div class="seg swatches">
           <input type="radio" name="color" id="col-0" value="time"><label for="col-0" class="time"><span class="sr">Follow the time of day</span></label>
           <input type="radio" name="color" id="col-1" value="#FFC94D"><label for="col-1" style="--c: #FFC94D"><span class="sr">Gold</span></label>
@@ -486,6 +487,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         <p style="margin: 0; font-size: 13px; color: var(--ink-2)">The first colour follows the time of day.</p>
       </fieldset>
       <button type="button" class="btn" id="tipsAgain">Show the help lines again</button>
+      </details>
       <button type="button" class="btn primary" id="setDone" data-autofocus>Done</button>
     </form>
   </div>
@@ -533,9 +535,10 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   const TIMELINE = [[0, 'neon'], [4.8, 'neon'], [5.5, 'plasma'], [7.6, 'plasma'], [8.4, 'daylight'], [16.4, 'daylight'], [17.2, 'sunset'], [18.4, 'sunset'], [19.0, 'eclipse'], [19.8, 'eclipse'], [20.4, 'blackhole'], [21.6, 'blackhole'], [22.3, 'neon'], [24, 'neon']];
   const KEY = 'sun-launcher-playground-v4';
   // Test options (21 Oct): the user tries them on the phone and then says which to remove.
-  // 21 Oct (after phone test): user removed spikes, soft beams, through clouds, starburst, halo, light spot, open arrow.
+  // 21 Oct (after phone test): user removed spikes, soft beams, through clouds, starburst, open arrow.
+  // Halo and light spot stay: they look good with Black hole.
   const RAY_STYLES = ['glow', 'corona', 'flames'];
-  const FRONT_FX = ['beam', 'lift', 'dim', 'chips'];
+  const FRONT_FX = ['beam', 'lift', 'dim', 'chips', 'halo', 'glint'];
   const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -547,6 +550,13 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   } catch (e) {}
   if (['rays', 'eclipse', 'neon', 'plasma', 'blackhole'].indexOf(S.sunLook) === -1) S.sunLook = 'rays';
   if (S.theme !== 'auto' && S.theme !== 'custom' && !THEMES[S.theme]) S.theme = 'auto';
+  // The simpler menu has only "Follow the time" and "Pick myself": a saved fixed theme becomes Pick myself with its looks.
+  if (S.theme !== 'auto' && S.theme !== 'custom') {
+    const th = THEMES[S.theme];
+    S.sunLook = th.look; S.moonLook = th.moon;
+    if (th.color === 'time') S.sunTime = true; else { S.sunTime = false; S.color = th.color; }
+    S.theme = 'custom';
+  }
   if (['flat', 'diagonal', 'tall', 'rolodex', 'custom'].indexOf(S.dir) === -1) S.dir = 'flat';
   S.favs = (S.favs || []).filter((n) => typeof n === 'string').slice(0, 5);
   S.visits = (S.visits || 0) + 1;
@@ -577,6 +587,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join('');
   }
   /* ---------- Touch feel: vibration and sound ---------- */
+  // Vibrate only when an item changes (detent), on long-press, swipe and the tilt end: no fine ticks or snaps (user, 21 Oct).
   const HAPT = {
     soft: { fine: 3, detent: 8, detentSoft: 5, snap: 14, press: 22, swipe: [8, 30, 8] },
     strong: { fine: 6, detent: 15, detentSoft: 9, snap: 24, press: 36, swipe: [14, 40, 14] }
@@ -1083,7 +1094,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
       st.vel *= Math.exp(-dt / 325);
       let stop = Math.abs(st.vel) < (st.spin === 'rot' ? 0.03 : 0.0006);
       if (st.spin === 'pos' && (st.pos < -0.3 || st.pos > LIST.length - 0.7)) stop = true;
-      if (stop) { const key = st.spin; st.spin = null; hapt('snap'); if (key === 'rot') snapRot(); else snapPos(); }
+      if (stop) { const key = st.spin; st.spin = null; if (key === 'rot') snapRot(); else snapPos(); }
       active = true;
     }
     if (st.demo) {
@@ -1099,7 +1110,6 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     if (ripples.length) active = true;
     st.omega = (st.rot - st.prevRot) / Math.max(1, dtf);
     st.prevRot = st.rot;
-    if (Math.abs(st.rot - st.tickRot) >= 7.2) { hapt('fine'); st.tickRot = st.rot; }
     const lbNow = lookBlend(phaseNow());
     const ambient = fancy() || ((lbNow.a === 'plasma' || lbNow.b === 'plasma') && !reduce);
     if (dirty || active || ambient) { render(now, dtf); dirty = false; }
@@ -1382,46 +1392,43 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
       if (lk === 'moon') glowOnly(0.6);
       else if (lk === 'rays' && rs === 'glow') glowOnly(light);
       else if (lk === 'rays' && rs === 'corona') {
-        // eclipse corona: long thin pearly streamers, longest at the sides
-        c.fillStyle = radial(cx, cy, coreR * 0.95, coreR * 2.2, [[0, 'rgba(255, 252, 244, 0.7)'], [1, 'rgba(255, 252, 244, 0)']]);
-        c.fillRect(cx - coreR * 2.5, cy - coreR * 2.5, coreR * 5, coreR * 5);
-        for (let k = 0; k < 64; k++) {
-          const th = k / 64 * 2 * Math.PI + (rnd(k) - 0.5) * 0.12;
-          const len = coreR * (1.7 + 3.6 * Math.pow(rnd(k + 20), 1.5)) * (0.55 + 0.7 * Math.abs(Math.cos(th)));
-          const bend = (rnd(k + 40) - 0.5) * 0.35 + 0.03 * Math.sin(rt * 0.4 + k);
-          const x0 = cx + coreR * 0.98 * Math.cos(th), y0 = cy + coreR * 0.98 * Math.sin(th);
+        // eclipse corona: a soft pearly halo with many short, dense streamers close to the sun (rework 21 Oct: not too far out)
+        c.fillStyle = radial(cx, cy, coreR * 0.95, coreR * 1.9, [[0, 'rgba(255, 252, 244, 0.6)'], [0.5, 'rgba(255, 248, 235, 0.18)'], [1, 'rgba(255, 248, 235, 0)']]);
+        c.fillRect(cx - coreR * 2, cy - coreR * 2, coreR * 4, coreR * 4);
+        for (let k = 0; k < 90; k++) {
+          const th = k / 90 * 2 * Math.PI + (rnd(k) - 0.5) * 0.06;
+          const len = coreR * (1.22 + 0.55 * Math.pow(rnd(k + 20), 1.6) * (0.75 + 0.35 * Math.abs(Math.cos(th)))) * (0.94 + 0.06 * Math.sin(rt * 0.5 + k * 1.3));
+          const bend = (rnd(k + 40) - 0.5) * 0.12 + 0.02 * Math.sin(rt * 0.4 + k);
+          const x0 = cx + coreR * 0.97 * Math.cos(th), y0 = cy + coreR * 0.97 * Math.sin(th);
           const x1 = cx + len * Math.cos(th + bend), y1 = cy + len * Math.sin(th + bend);
-          const xm = cx + len * 0.55 * Math.cos(th + bend * 0.2), ym = cy + len * 0.55 * Math.sin(th + bend * 0.2);
+          const xm = cx + (coreR + (len - coreR) * 0.5) * Math.cos(th + bend * 0.3), ym = cy + (coreR + (len - coreR) * 0.5) * Math.sin(th + bend * 0.3);
           const g = c.createLinearGradient(x0, y0, x1, y1);
-          const al = (0.35 + 0.35 * rnd(k + 60)) * (0.85 + 0.15 * Math.sin(rt * 0.9 + k));
+          const al = (0.22 + 0.22 * rnd(k + 60)) * (0.85 + 0.15 * Math.sin(rt * 0.9 + k));
           g.addColorStop(0, 'rgba(255, 252, 244, ' + al.toFixed(3) + ')');
-          g.addColorStop(0.5, 'rgba(255, 252, 244, ' + (al * 0.4).toFixed(3) + ')');
-          g.addColorStop(1, 'rgba(255, 252, 244, 0)');
+          g.addColorStop(0.35, 'rgba(255, 250, 240, ' + (al * 0.35).toFixed(3) + ')');
+          g.addColorStop(1, 'rgba(255, 250, 240, 0)');
           c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(xm, ym, x1, y1);
-          c.strokeStyle = g; c.lineWidth = 1 + 3 * rnd(k + 80); c.lineCap = 'round'; c.stroke();
+          c.strokeStyle = g; c.lineWidth = 0.8 + 1.6 * rnd(k + 80); c.lineCap = 'round'; c.stroke();
         }
       } else if (lk === 'rays' && rs === 'flames') {
-        // short moving tongues of fire at the edge, plus three loops
+        // flames all around the sun: similar, never the same, always moving (rework 21 Oct: no arches)
         const pt = (r, an) => [cx + r * Math.cos(an), cy + r * Math.sin(an)];
-        for (let k = 0; k < 30; k++) {
-          const th = k / 30 * 2 * Math.PI + (rnd(k) - 0.5) * 0.15;
-          const h = coreR * (0.18 + 0.5 * rnd(k + 5)) * (0.75 + 0.25 * Math.sin(rt * 1.4 + k * 2.3));
-          const w = 0.07 + 0.08 * rnd(k + 11), sway = 0.12 * Math.sin(rt * 0.9 + k);
-          const b0 = pt(coreR * 0.97, th - w), b1 = pt(coreR * 0.97, th + w), tip = pt(coreR + h, th + sway * 0.6);
-          const m0 = pt(coreR + h * 0.6, th - w * 0.6 + sway * 0.3), m1 = pt(coreR + h * 0.6, th + w * 0.6 + sway * 0.3);
-          c.beginPath(); c.moveTo(b0[0], b0[1]);
-          c.quadraticCurveTo(m0[0], m0[1], tip[0], tip[1]);
-          c.quadraticCurveTo(m1[0], m1[1], b1[0], b1[1]);
-          c.closePath();
-          c.fillStyle = radial(cx, cy, coreR * 0.95, coreR + h, [[0, 'rgba(255, 220, 140, 0.95)'], [0.5, 'rgba(250, 120, 45, 0.7)'], [1, 'rgba(200, 45, 20, 0)']]);
-          c.fill();
-        }
-        [[-2.3, 0.75], [0.9, 0.55], [2.6, 0.45]].forEach((L, j) => {
-          const th = L[0] + 0.03 * Math.sin(rt * 0.3 + j), sp = 0.32, hgt = coreR * L[1];
-          const a0 = pt(coreR, th - sp / 2), a1 = pt(coreR, th + sp / 2), top = pt(coreR + hgt * 1.8, th);
-          c.beginPath(); c.moveTo(a0[0], a0[1]); c.quadraticCurveTo(top[0], top[1], a1[0], a1[1]);
-          c.strokeStyle = 'rgba(255, 120, 60, 0.55)'; c.lineWidth = 4; c.lineCap = 'round'; c.stroke();
-          c.strokeStyle = 'rgba(255, 210, 150, 0.5)'; c.lineWidth = 1.5; c.stroke();
+        [[44, 0.34, 'rgba(255, 110, 40, 0.6)', 'rgba(200, 40, 15, 0)', 0], [44, 0.22, 'rgba(255, 215, 130, 0.85)', 'rgba(255, 140, 50, 0)', 0.5]].forEach((L, li) => {
+          const nF = L[0];
+          for (let k = 0; k < nF; k++) {
+            const th = (k + L[4]) / nF * 2 * Math.PI + 0.05 * Math.sin(rt * 0.7 + k * 1.9 + li);
+            const flick = 0.7 + 0.3 * Math.sin(rt * (1.6 + 0.5 * rnd(k + li * 50)) + k * 2.3) * Math.sin(rt * 0.9 + k * 0.7 + li);
+            const h = coreR * L[1] * (0.85 + 0.3 * rnd(k + 5 + li * 50)) * flick;
+            const w = Math.PI / nF * (0.9 + 0.3 * rnd(k + 11 + li * 50)), sway = 0.1 * Math.sin(rt * 1.1 + k * 1.3 + li);
+            const b0 = pt(coreR * 0.96, th - w), b1 = pt(coreR * 0.96, th + w), tip = pt(coreR + h, th + sway);
+            const m0 = pt(coreR + h * 0.55, th - w * 0.55 + sway * 0.5), m1 = pt(coreR + h * 0.55, th + w * 0.55 + sway * 0.5);
+            c.beginPath(); c.moveTo(b0[0], b0[1]);
+            c.quadraticCurveTo(m0[0], m0[1], tip[0], tip[1]);
+            c.quadraticCurveTo(m1[0], m1[1], b1[0], b1[1]);
+            c.closePath();
+            c.fillStyle = radial(cx, cy, coreR * 0.95, coreR + h, [[0, L[2]], [1, L[3]]]);
+            c.fill();
+          }
         });
       }
       c.restore();
@@ -1434,6 +1441,15 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         const tip = G.polar(G.R * 0.98, fa), d = Math.hypot(tip[0] - cx, tip[1] - cy) || 1;
         poly([[cx, cy], G.polar(G.R * 0.98, fa - 0.22), G.polar(G.R * 0.98, fa + 0.22)],
           radial(cx, cy, coreR * 0.2, d, [[0, 'rgba(255, 250, 235, 0)'], [0.35, 'rgba(255, 250, 235, 0.55)'], [1, hexA(pale, 0.85)]]));
+      }
+      if (ffOn('glint')) {
+        // small bright glint with a thin flare line on the ring, under the front app
+        const gp0 = G.polar(G.R, fa), gp = [gp0[0], gp0[1] + 8];
+        c.fillStyle = radial(gp[0], gp[1], 0, 34, [[0, 'rgba(255, 252, 240, 1)'], [0.3, hexA(pale, 0.75)], [1, hexA(sun, 0)]]);
+        c.fillRect(gp[0] - 40, gp[1] - 40, 80, 80);
+        const lg = c.createLinearGradient(gp[0] - 120, 0, gp[0] + 120, 0);
+        lg.addColorStop(0, 'rgba(255, 252, 240, 0)'); lg.addColorStop(0.5, 'rgba(255, 252, 240, 1)'); lg.addColorStop(1, 'rgba(255, 252, 240, 0)');
+        c.fillStyle = lg; c.fillRect(gp[0] - 120, gp[1] - 1.5, 240, 3);
       }
       c.restore();
     }
@@ -2091,13 +2107,13 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     if (d.kind === 'dial' && d.moved) {
       const v = velocity(d.samples);
       if (Math.abs(v) > 0.25) { st.vel = clamp(v, -2.5, 2.5); st.spin = 'rot'; st.lastT = performance.now(); kick(); }
-      else { hapt('snap'); snapRot(); }
+      else snapRot();
     } else if (d.kind === 'view') {
       save();
     } else if (d.kind === 'list' && d.moved) {
       const vp = velocity(d.samples);
       if (Math.abs(vp) > 0.004) { st.vel = clamp(vp, -0.06, 0.06); st.spin = 'pos'; st.lastT = performance.now(); kick(); }
-      else { hapt('snap'); snapPos(); }
+      else snapPos();
       showBubble(false);
     } else if (d.kind === 'scrub') {
       if (!d.moved) {
@@ -2105,7 +2121,6 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         if (gi !== -1) tween('pos', groupStarts[gi] || 0, 420);
         else { scrubTo(e); snapPos(); }
       } else snapPos();
-      hapt('snap');
       showBubble(false);
     } else if (d.kind === 'toMoon') {
       if (d.moved ? dy < -st.H * 0.12 : d.handle) goMoon(); else goSun();
@@ -2469,7 +2484,9 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'sunLook', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'rayStyle', 'swap', 'skyPhoto'];
+  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto'];
+  // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
+  const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
     if (S.theme === 'custom') return { look: S.sunLook, moon: S.moonLook, color: S.sunTime ? 'time' : S.color };
     const key = S.theme === 'auto' ? lookBlend(phaseNow()).theme : S.theme, th = THEMES[key] || THEMES.daylight;
@@ -2483,10 +2500,11 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     });
     Array.prototype.forEach.call(form.elements.color, (r) => { r.checked = r.value === sh.color; });
     Array.prototype.forEach.call(form.elements.frontFx, (r) => { r.checked = S.frontFx.indexOf(r.value) !== -1; });
+    Array.prototype.forEach.call(form.elements.sunPick, (r) => { r.checked = r.value === sunPickOf(sh.look); });
     const now = lookBlend(phaseNow()).theme;
     $('themeLine').textContent = S.theme === 'auto'
-      ? 'Now: ' + (THEMES[now] ? THEMES[now].name : 'Daylight') + '. Through the day: Plasma dawn, Daylight, Sunset, Eclipse, Black hole, Neon night.'
-      : S.theme === 'custom' ? 'Your own mix of the options below.' : 'Fixed: ' + THEMES[S.theme].name + '. The sky still follows the time.';
+      ? 'Now: ' + (THEMES[now] ? THEMES[now].name : 'Daylight') + '. Sun and moon change through the day. Tap any look below to pick it yourself.'
+      : 'Your pick. Tap Follow the time to let the looks change through the day again.';
     $('tilt').value = S.tilt;
     $('size').value = S.size;
     $('tiltOut').textContent = Math.round(S.tilt) + '°';
@@ -2541,20 +2559,26 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     const changed = e && e.target ? e.target.name : '';
     RADIOS.forEach((name) => { Array.prototype.forEach.call(form.elements[name], (r) => { if (r.checked) S[name] = r.value; }); });
     S.frontFx = Array.prototype.filter.call(form.elements.frontFx, (r) => r.checked).map((r) => r.value);
-    // A ray style only shows on the Rays look, so picking one switches the sun to Rays (My own theme).
-    if (changed === 'rayStyle' && S.sunLook !== 'rays') { S.sunLook = 'rays'; S.theme = 'custom'; }
     Array.prototype.forEach.call(form.elements.color, (r) => {
       if (!r.checked) return;
       if (r.value === 'time') S.sunTime = true; else { S.sunTime = false; S.color = r.value; }
     });
-    if (changed === 'sunLook' || changed === 'moonLook' || changed === 'color') S.theme = 'custom';
-    if (changed === 'moonLook') peekScreen('moon');
-    else if (['sunLook', 'dir', 'tilt', 'size', 'color', 'rayStyle', 'frontFx', 'swap', 'skyPhoto'].indexOf(changed) !== -1) peekScreen('sun');
-    if (changed === 'theme' && S.theme === 'custom' && prevTheme !== 'custom') {
-      const key = prevTheme === 'auto' ? lookBlend(phaseNow()).theme : prevTheme, th = THEMES[key];
-      if (th) { S.sunLook = th.look; S.moonLook = th.moon; if (th.color === 'time') S.sunTime = true; else { S.sunTime = false; S.color = th.color; } }
+    const pick = Array.prototype.find.call(form.elements.sunPick, (r) => r.checked), tappedMoon = S.moonLook, tappedColor = [S.sunTime, S.color];
+    // Tapping a look while "Follow the time" is on: start from the looks shown now, then apply the tap.
+    const isLook = changed === 'sunPick' || changed === 'moonLook' || changed === 'color';
+    if (isLook || (changed === 'theme' && S.theme === 'custom')) {
+      if (prevTheme === 'auto') {
+        const th = THEMES[lookBlend(phaseNow()).theme];
+        if (th) { S.sunLook = th.look; S.moonLook = th.moon; if (th.color === 'time') S.sunTime = true; else { S.sunTime = false; S.color = th.color; } }
+      }
+      S.theme = 'custom';
     }
-    if (changed === 'theme' || changed === 'rayStyle' || S.theme !== prevTheme) fillForm();
+    if (changed === 'sunPick' && pick) { if (RAY_STYLES.indexOf(pick.value) !== -1) { S.sunLook = 'rays'; S.rayStyle = pick.value; } else S.sunLook = pick.value; }
+    if (changed === 'moonLook') S.moonLook = tappedMoon;
+    if (changed === 'color') { S.sunTime = tappedColor[0]; S.color = tappedColor[1]; }
+    if (changed === 'moonLook') peekScreen('moon');
+    else if (['sunPick', 'dir', 'tilt', 'size', 'color', 'frontFx', 'swap', 'skyPhoto'].indexOf(changed) !== -1) peekScreen('sun');
+    if (changed === 'theme' || isLook || S.theme !== prevTheme) fillForm();
     if (changed === 'dir' && DIR_TILT[S.dir]) $('tilt').value = DIR_TILT[S.dir];
     if (S.dir === 'custom' && !S.custom) { S.dir = prevDir; ensureCustom(); }
     setTilt(parseFloat($('tilt').value));
