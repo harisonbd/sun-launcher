@@ -6,7 +6,8 @@ Settings and favourites stay in this phone's browser storage. Photos from the ca
 
 Files: index.html (the app), manifest.webmanifest (name and icon for the home screen),
 sw.js (offline copy), icon-*.png (app icons), sky-sunset.jpg (sunset sky photo for Settings > Sky picture),
-stars-4k.jpg (NASA star map for Settings > Sky > Real stars, converted from starmap_2020_4k.exr).
+stars-4k.jpg (NASA star map for Settings > Sky > Real stars, converted from starmap_2020_4k.exr),
+saturn.jpg + saturn-ring.png (Saturn moon look).
 
 Live address after upload: https://harisonbd.github.io/sun-launcher/
 Update: replace index.html, and change the 'sun-launcher-vN' name in sw.js to the next number.
@@ -14,5 +15,6 @@ Update: replace index.html, and change the 'sun-launcher-vN' name in sw.js to th
 Picture credits: Moon map from NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain.
 Sun map from Solar System Scope (https://www.solarsystemscope.com/textures/), based on NASA images, CC BY 4.0.
 Sunset sky photo from Unsplash / Pexels, free licence.
+Saturn and ring maps from Solar System Scope (https://www.solarsystemscope.com/textures/), CC BY 4.0.
 Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio (Deep Star Maps 2020, https://svs.gsfc.nasa.gov/4851). Gaia DR2: ESA/Gaia/DPAC.
 Weather (only when switched on in Settings): Open-Meteo.com (CC BY 4.0), asked with Vienna's fixed position only, every 30 minutes.

@@ -169,6 +169,14 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 .seg label, .preset { flex: 1 1 auto; min-height: 44px; padding: 0 12px; display: grid; place-items: center; border-radius: 12px; background: var(--panel-2); color: var(--ink); font-size: 14px; font-weight: 500; cursor: pointer; border: none; }
 .seg input:checked + label { background: var(--sun); color: var(--sun-ink); font-weight: 600; }
 .seg.big label { min-height: 56px; font-size: 15px; }
+/* Moon looks from the early mockups: Clock dial (A) and Saturn ring (F) */
+#app.ml-dial .item .dot, #app.ml-dial .item .grp, #app.ml-saturn .item .dot, #app.ml-saturn .item .grp { display: none; }
+#app.ml-dial .item { font-size: 15.5px; color: rgba(232, 236, 245, 0.95); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7); }
+#app.ml-dial .item.sel { min-height: 48px; padding: 0 16px 0 0; gap: 0; border: 1.5px solid rgba(255, 255, 255, 0.85); border-radius: 24px; background: rgba(255, 255, 255, 0.07); font-size: 16px; font-weight: 600; color: #F5EFE3; }
+#app.ml-dial .item.sel::before { content: attr(data-n); width: 44px; text-align: center; font-size: 14px; font-weight: 600; color: rgba(235, 238, 246, 0.8); border-right: 1px solid rgba(255, 255, 255, 0.5); margin-right: 12px; line-height: 26px; }
+#app.ml-saturn .item { padding: 6px 12px; min-height: 0; border-radius: 14px; background: rgba(28, 43, 76, 0.6); border: 1px solid rgba(255, 255, 255, 0.12); font-size: 12.5px; color: rgba(240, 242, 248, 0.95); transform-origin: 50% 50%; }
+#app.ml-saturn .item.sel, #app.moon-real.ml-saturn .item.sel { text-shadow: none; }
+#app.ml-saturn .item.sel { height: 50px; padding: 0 22px; border-radius: 25px; background: #EEF0F5; color: #0A0F1F; font-size: 17px; font-weight: 600; box-shadow: 0 0 34px rgba(238, 228, 200, 0.45); }
 .swapopts { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--panel-2) 55%, transparent); }
 .swapopts[hidden] { display: none; }
 .sublg { font-size: 12px; font-weight: 600; color: var(--ink-2); }
@@ -394,6 +402,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
           <input type="radio" name="moonLook" id="moon-phase" value="phase"><label for="moon-phase">Real moon phase</label>
           <input type="radio" name="moonLook" id="moon-minimal" value="minimal"><label for="moon-minimal">Minimal moon</label>
+          <input type="radio" name="moonLook" id="moon-dial" value="dial"><label for="moon-dial">Clock dial</label>
+          <input type="radio" name="moonLook" id="moon-saturn" value="saturn"><label for="moon-saturn">Saturn rings</label>
         </div>
       </fieldset>
       <fieldset>
@@ -634,7 +644,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   S.visits = (S.visits || 0) + 1;
   let showTips = S.visits <= 3;
   // 23 Oct: Rolodex moon removed (user); Real moon phase and Minimal moon added from the early mockups.
-  if (['dots', 'arc', 'crescent', 'phase', 'minimal'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
+  if (['dots', 'arc', 'crescent', 'phase', 'minimal', 'dial', 'saturn'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
   if (RAY_STYLES.indexOf(S.rayStyle) === -1) S.rayStyle = 'glow';
   S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1);
   if (S.swap !== 'on') S.swap = 'off';
@@ -1253,6 +1263,135 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     return out;
   })();
   function kickLater() { setTimeout(() => { if (typeof kick === 'function') kick(); }, 0); }
+
+  /* ---------- Planet engine (23 Oct): planet, Earth (day/night/clouds) and Saturn rings, from the early mockups ---------- */
+  // A second small WebGL drawer, used only by the Saturn moon look and the planet start screen.
+  // Its maps are separate files (cached by sw.js), loaded only when a look needs them.
+  const PG = (function () {
+    const out = { ok: false };
+    let cv, gl, U = {};
+    const TEX = {}, WANT = {};
+    const FS = [
+      '#extension GL_OES_standard_derivatives : enable',
+      'precision highp float;',
+      'varying vec2 vP;',
+      'uniform sampler2D uTex, uTex2, uTex3;',
+      'uniform float uMode, uScale, uRot, uRot2, uRoll, uPitch, uAA, uGlow, uExpo, uEdge, uFront, uR1, uR2;',
+      'uniform vec3 uL, uTint;',
+      'const float PI = 3.14159265, TAU = 6.2831853;',
+      'vec3 toBody(vec3 n){ float cr = cos(uRoll), sr = sin(uRoll); vec3 b = vec3(n.x * cr + n.y * sr, -n.x * sr + n.y * cr, n.z);',
+      '  float cp = cos(uPitch), sp = sin(uPitch); return vec3(b.x, b.y * cp - b.z * sp, b.y * sp + b.z * cp); }',
+      'vec2 uvOf(vec3 b, float rot){ float lat = asin(clamp(b.y, -1.0, 1.0)), lon = atan(b.x, b.z) + rot;',
+      '  float u1 = fract(lon / TAU + 0.5), u2 = fract(lon / TAU) - 0.5; float u = fwidth(u1) <= fwidth(u2) + 0.00001 ? u1 : u2;',
+      '  return vec2(u, 0.5 - lat / PI); }',
+      'void main(){',
+      '  vec2 p = vP / uScale; float r = length(p);',
+      '  float inside = 1.0 - smoothstep(1.0 - uAA, 1.0 + uAA * 0.5, r), fade = 1.0 - smoothstep(uEdge * 0.7, uEdge * 0.97, r);',
+      '  float zz = sqrt(max(0.0, 1.0 - r * r)); vec3 n = vec3(p, zz), Ln = normalize(uL); float mu0 = dot(n, Ln);',
+      '  vec3 col = vec3(0.0); float a = 0.0;',
+      '  if (uMode < 5.5) {', // planet (gas giant): soft lit edge and a thin halo
+      '    vec3 t = texture2D(uTex, uvOf(toBody(n), uRot)).rgb;',
+      '    float lit = smoothstep(-0.06, 0.2, mu0) * pow(max(mu0, 0.0), 0.8);',
+      '    col = t * lit * (0.62 + 0.38 * pow(zz, 0.5)) * uExpo + uTint * pow(1.0 - zz, 3.0) * smoothstep(-0.2, 0.5, mu0) * 0.6;',
+      '    col *= inside; a = inside;',
+      '    float halo = exp(-max(r - 1.0, 0.0) * 30.0) * (1.0 - inside) * smoothstep(-0.3, 0.6, dot(normalize(vec3(p, 0.0)), Ln)) * uGlow;',
+      '    col += uTint * halo * 0.5; a += halo * 0.2;',
+      '  } else if (uMode < 6.5) {', // Earth: day, night lights, clouds, ocean glint, blue air
+      '    vec3 b = toBody(n); vec3 day = texture2D(uTex, uvOf(b, uRot)).rgb, night = texture2D(uTex2, uvOf(b, uRot)).rgb;',
+      '    float cl = texture2D(uTex3, uvOf(b, uRot + uRot2)).r, dayK = smoothstep(-0.08, 0.18, mu0), lit = pow(max(mu0, 0.0), 0.8);',
+      '    float ocean = smoothstep(0.08, 0.02, abs(day.b - day.r * 0.4 - 0.12)) * step(day.r, day.b);',
+      '    vec3 h = normalize(Ln + vec3(0.0, 0.0, 1.0)); float glint = pow(max(dot(n, h), 0.0), 60.0) * 0.6 * ocean;',
+      '    vec3 c = day * lit * 1.25 + vec3(1.0, 0.9, 0.75) * glint;',
+      '    c = mix(c, vec3(1.0) * (lit * 1.05 + 0.02), cl * 0.9);',
+      '    c += night * vec3(1.0, 0.75, 0.45) * 1.4 * (1.0 - dayK) * (1.0 - cl * 0.8);',
+      '    c += vec3(0.35, 0.6, 1.0) * pow(1.0 - zz, 2.6) * smoothstep(-0.25, 0.4, mu0) * 0.9;',
+      '    col = c * inside; a = inside;',
+      '    float halo = exp(-max(r - 1.0, 0.0) * 40.0) * (1.0 - inside) * smoothstep(-0.3, 0.5, dot(normalize(vec3(p, 0.0)), Ln));',
+      '    col += vec3(0.35, 0.6, 1.0) * halo * 0.7; a += halo * 0.3;',
+      '  } else {', // Saturn rings: front or back half, with the planet's shadow
+      '    float cr = cos(uRoll), sr = sin(uRoll), cp = cos(uPitch), sp = sin(uPitch);',
+      '    vec2 q = vec2(p.x * cr + p.y * sr, -p.x * sr + p.y * cr); float Z = q.y / sp, depth = q.y * cp / sp, rr = length(vec2(q.x, Z));',
+      '    if (abs(step(0.0, depth) - uFront) > 0.5 || rr < uR1 || rr > uR2) { gl_FragColor = vec4(0.0); return; }',
+      '    vec4 t = texture2D(uTex, vec2((rr - uR1) / (uR2 - uR1), 0.5)); vec3 Lb = toBody(Ln), P = vec3(q.x, 0.0, Z); float tt = dot(P, Lb);',
+      '    float sh = (tt < 0.0 && length(P - tt * Lb) < 1.0) ? 0.18 : 1.0;',
+      '    col = t.rgb * min(0.35 + 0.65 * abs(Lb.y) * 2.0, 1.1) * sh * uExpo; a = t.a; col *= a;',
+      '  }',
+      '  col *= max(fade, inside); a *= max(fade, inside);',
+      '  gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));',
+      '}'
+    ].join('\n');
+    const MODES = { planet: 5, earth: 6, ring: 7 };
+    function init() {
+      if (gl || out.failed) return !!gl;
+      try {
+        cv = document.createElement('canvas'); cv.width = cv.height = 1024;
+        gl = cv.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false, preserveDrawingBuffer: true });
+        if (!gl || !gl.getExtension('OES_standard_derivatives')) throw new Error('no webgl');
+        const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+        const prog = gl.createProgram();
+        gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 aP; varying vec2 vP; void main(){ vP = aP; gl_Position = vec4(aP, 0.0, 1.0); }'));
+        gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+        gl.useProgram(prog);
+        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+        const aP = gl.getAttribLocation(prog, 'aP'); gl.enableVertexAttribArray(aP); gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
+        ['uTex', 'uTex2', 'uTex3', 'uMode', 'uScale', 'uRot', 'uRot2', 'uRoll', 'uPitch', 'uAA', 'uGlow', 'uExpo', 'uEdge', 'uFront', 'uR1', 'uR2', 'uL', 'uTint'].forEach((k) => { U[k] = gl.getUniformLocation(prog, k); });
+        gl.clearColor(0, 0, 0, 0);
+        out.ok = true;
+      } catch (e) { out.failed = true; gl = null; }
+      return !!gl;
+    }
+    // ask for a map file once; returns true when it is ready
+    out.need = function (key, url) {
+      if (TEX[key]) return true;
+      if (!init() || WANT[key]) return false;
+      WANT[key] = true;
+      const im = new Image();
+      im.onload = () => {
+        const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        TEX[key] = t; kickLater();
+      };
+      im.onerror = () => { WANT[key] = false; };
+      im.src = url;
+      return false;
+    };
+    const rgb = (h) => { const n = parseInt(h.replace('#', ''), 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
+    function pass(c, x, y, R, o) {
+      const dpr = st.dpr || 1, k = o.margin || 1.3, want = Math.max(8, Math.round(2 * R * k * dpr));
+      if (want > cv.width && cv.width < 2048) cv.width = cv.height = 2048;
+      const s = Math.min(cv.width, want);
+      gl.viewport(0, 0, s, s); gl.clear(gl.COLOR_BUFFER_BIT);
+      const bind = (unit, key, loc) => { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, TEX[key] || null); gl.uniform1i(loc, unit); };
+      bind(0, o.tex, U.uTex); bind(1, o.tex2 || o.tex, U.uTex2); bind(2, o.tex3 || o.tex, U.uTex3);
+      gl.uniform1f(U.uMode, MODES[o.mode]); gl.uniform1f(U.uScale, 1 / k); gl.uniform1f(U.uEdge, k);
+      gl.uniform1f(U.uRot, o.rot || 0); gl.uniform1f(U.uRot2, o.rot2 || 0); gl.uniform1f(U.uRoll, o.roll || 0); gl.uniform1f(U.uPitch, o.pitch || 0);
+      gl.uniform1f(U.uAA, 1.6 / (R * dpr)); gl.uniform1f(U.uGlow, o.glow == null ? 1 : o.glow); gl.uniform1f(U.uExpo, o.expo == null ? 1.1 : o.expo);
+      gl.uniform1f(U.uFront, o.front ? 1 : 0); gl.uniform1f(U.uR1, o.r1 || 1.24); gl.uniform1f(U.uR2, o.r2 || 2.27);
+      gl.uniform3fv(U.uL, o.light || [-0.5, 0.3, 0.8]); gl.uniform3fv(U.uTint, rgb(o.tint || '#FFC94D'));
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      const half = R * k;
+      c.drawImage(cv, 0, cv.height - s, s, s, x - half, y - half, half * 2, half * 2);
+    }
+    // draw a planet (with rings: back half, planet, front half) or the Earth
+    out.draw = function (c, x, y, R, o) {
+      if (!gl) return;
+      if (o.rings) {
+        const ro = Object.assign({}, o, { mode: 'ring', tex: o.rings, margin: 2.4, front: false });
+        pass(c, x, y, R, ro); pass(c, x, y, R, o); ro.front = true; pass(c, x, y, R, ro);
+        return;
+      }
+      pass(c, x, y, R, o);
+    };
+    return out;
+  })();
   // Tilt the phone: stars and bodies move a little (3D depth). Smoothed in the frame loop.
   const par = { x: 0, y: 0, tx: 0, ty: 0, on: false };
   window.addEventListener('deviceorientation', (e) => {
@@ -2112,6 +2251,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // the mockup looks: the list area is the lower part; touching above it swipes to the sun
     if (look === 'phase') { g.top = H * 0.64; g.bottom = H * 0.99; }
     if (look === 'minimal') { g.top = H * 0.46; g.bottom = H * 0.99; }
+    if (look === 'dial') { g.top = H * 0.22; g.bottom = H * 0.86; }
+    if (look === 'saturn') { g.top = H * 0.2; g.bottom = H * 0.8; }
     g.at = (alpha, role) => {
       const dx = -Math.cos(alpha), dy = Math.sin(alpha);
       if (look === 'rolodex') {
@@ -2180,7 +2321,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
     const mx = par.x * 3, my = par.y * 3, mt = reduce ? 0 : now / 1000;
     const wob = Math.sin(mt * 0.21) * 0.05 + st.pos * 0.012;
-    if (look === 'phase' || look === 'minimal') { moonScene(c, W, H, look, now, live, cur, G, night); return; }
+    ['dial', 'saturn'].forEach((v) => app.classList.toggle('ml-' + v, look === v));
+    if (look === 'phase' || look === 'minimal' || look === 'dial' || look === 'saturn') { moonScene(c, W, H, look, now, live, cur, G, night); return; }
     if (GLB.ok && swapped()) {
       // Sun by the list (Settings > Layout > Swap): five variants. Edge and Setting use real 3D shading (lit),
       // with the night side on the left like the moon, so the list stays readable.
@@ -2387,6 +2529,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     return v;
   }
   const sameDay = (a, b) => !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  // a point on Saturn's ring plane (angle th) on screen: [x, y, depth -1 back ... 1 front]
+  function ringPlace(s, th) {
+    const X = s.rr * Math.cos(th), Z = s.rr * Math.sin(th), qy = Z * s.sp;
+    return [s.sx + X * s.cr - qy * s.sr, s.sy - (X * s.sr + qy * s.cr), Z / s.rr];
+  }
   function realMoonLight(p) { const th = p * 2 * Math.PI; return [Math.sin(th), 0.1, -Math.cos(th)]; }
   function moonScene(c, W, H, look, now, live, cur, G, night) {
     const mn = moonNow(), font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'system-ui, sans-serif';
@@ -2399,7 +2546,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       if (caps) { try { c.letterSpacing = '0px'; } catch (e) {} }
     };
     const glow = (x, y, r, a) => { const g = c.createRadialGradient(x, y, r * 0.9, x, y, r * 2.2); g.addColorStop(0, 'rgba(210, 222, 245, ' + a + ')'); g.addColorStop(1, 'rgba(210, 222, 245, 0)'); c.fillStyle = g; c.fillRect(x - r * 2.3, y - r * 2.3, r * 4.6, r * 4.6); };
-    let listY, rowGap, cards;
+    let listY = 0, rowGap = 0, cards = false, scene = null;
     if (look === 'phase') {
       // D: big real moon, phase name, the next 7 nights, menu as cards below
       const r = Math.min(W * 0.31, H * 0.145), mx = W / 2, my = H * 0.27;
@@ -2418,6 +2565,35 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         if (sameDay(d, ev.full) || sameDay(d, ev.nw)) txt(sameDay(d, ev.full) ? 'Full' : 'New', x, rowY + 44, 11, 700, '#FFC94D', 'center');
       }
       listY = H * 0.8; rowGap = 58; cards = true;
+    } else if (look === 'dial') {
+      // A: huge moon at the left edge, a ticked dial that turns with the list, items along the dial
+      const k = W / 390, C0 = -150 * k, C1 = H * 0.53, R = 262 * k;
+      if (GLB.ok) GLB.draw(c, C0, C1, R, { mode: 'moon', light: [0.86, 0.12, 0.5], rot: 0.2, shine: 0.05, expo: 1.3, glow: 0.3, margin: 1.05 });
+      c.save(); c.lineCap = 'round';
+      const turn = st.pos * 7.2, off = ((turn % 1.8) + 1.8) % 1.8;
+      for (let a = -54 + (1.8 - off); a <= 54; a += 1.8) {
+        const rad = a * Math.PI / 180, idx = Math.round((a + turn) / 1.8), major = ((idx % 4) + 4) % 4 === 0;
+        const r1 = (major ? 286 : 292) * k, r2 = 302 * k, fa2 = Math.max(0, 1 - Math.abs(a) / 56);
+        c.beginPath(); c.moveTo(C0 + r1 * Math.cos(rad), C1 + r1 * Math.sin(rad)); c.lineTo(C0 + r2 * Math.cos(rad), C1 + r2 * Math.sin(rad));
+        c.strokeStyle = 'rgba(225, 230, 242, ' + ((major ? 0.75 : 0.32) * fa2).toFixed(3) + ')'; c.lineWidth = major ? 1.6 : 1; c.stroke();
+      }
+      c.restore();
+      txt('Moon', 24, H * 0.115, 12, 600, 'rgba(195, 204, 221, 0.85)', 'left', true);
+      txt(DAYS[today.getDay()] + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()], 24, H * 0.155, 28, 300, '#F5EFE3');
+      if (cur) txt(cur.group + ' · ' + (live + 1) + ' of ' + LIST.length, 24, H * 0.195, 13, 400, 'rgba(195, 204, 221, 0.9)');
+      txt('Turn the dial · tap to open', W / 2, H * 0.9, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
+      scene = { kind: 'dial', C0: C0, C1: C1, r: 318 * k };
+    } else if (look === 'saturn') {
+      // F: Saturn with real rings; the menu items sit on the ring and turn with a sideways swipe
+      const k = W / 390, sx = W / 2, sy = H * 0.49, R = 76 * k, roll = -0.3, pitch = -0.42;
+      const ok1 = PG.need('saturn', 'saturn.jpg'), ok2 = PG.need('ring', 'saturn-ring.png');
+      if (ok1 && ok2) PG.draw(c, sx, sy, R, { mode: 'planet', tex: 'saturn', rings: 'ring', roll: roll, pitch: pitch, light: [-0.75, 0.4, 0.55], tint: '#EADBB8', expo: 1.25, margin: 1.3, rot: 0.4 });
+      txt('Moon menu', W / 2, H * 0.125, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      if (cur) txt(cur.group, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Swipe sideways to turn the rings · tap to open', W / 2, H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
+      scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R * 2.36, sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll) };
+      const s0 = ringPlace(scene, Math.PI / 2);
+      c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
     } else {
       // B: big date on the left, moon at the right edge, phase and sunset lines, a day curve, a plain list
       const r = H * 0.19, mx = W * 0.9, my = H * 0.25;
@@ -2446,8 +2622,29 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const cw = Math.min(280, W - 100);
     $('items').style.setProperty('--cardw', Math.round(cw) + 'px');
     itemEls.forEach((el, i) => {
-      const dd = i - st.pos, ad = Math.abs(dd), vis = cards ? ad < 2.6 : ad < 4.6;
+      const dd = i - st.pos, ad = Math.abs(dd);
       el.classList.toggle('card', cards);
+      if (scene && scene.kind === 'dial') {
+        // along the dial: the chosen one is a pill with its number, the others smaller and fainter
+        const rad = dd * 7.2 * Math.PI / 180, x = scene.C0 + scene.r * Math.cos(rad), y = scene.C1 + scene.r * Math.sin(rad), sel = i === live;
+        el.dataset.n = String(i + 1).padStart(2, '0');
+        el.style.transform = 'translate(' + (x + (sel ? 0 : 6)).toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(0,-50%) scale(' + (sel ? 1 : Math.max(0.7, 1 - ad * 0.058)).toFixed(3) + ')';
+        el.style.opacity = ad < 7.5 ? (sel ? '1' : Math.max(0.12, 1 - ad * 0.17).toFixed(2)) : '0';
+        el.style.visibility = ad < 7.5 ? 'visible' : 'hidden';
+        el.style.zIndex = String(200 - Math.round(ad * 10));
+        return;
+      }
+      if (scene && scene.kind === 'ring') {
+        // on Saturn's ring: 12 places around, the chosen one in front as a white pill under its dot
+        const q = ringPlace(scene, Math.PI / 2 + dd * (Math.PI * 2 / 12)), f = (q[2] + 1) / 2, sel = i === live;
+        const behind = q[2] < 0 && Math.hypot(q[0] - scene.sx, q[1] - scene.sy) < scene.R * 1.15, vis = ad < 6 && !behind;
+        el.style.transform = 'translate(' + q[0].toFixed(1) + 'px,' + (q[1] + (sel ? 34 : 0)).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (sel ? 1 : 0.78 + 0.3 * f).toFixed(3) + ')';
+        el.style.opacity = vis ? (sel ? '1' : (0.3 + 0.6 * f).toFixed(2)) : '0';
+        el.style.visibility = vis ? 'visible' : 'hidden';
+        el.style.zIndex = String(sel ? 300 : Math.round(100 + f * 100));
+        return;
+      }
+      const vis = cards ? ad < 2.6 : ad < 4.6;
       el.style.zIndex = String(200 - Math.round(ad * 10));
       if (cards) el.style.transform = 'translate(' + (W / 2).toFixed(1) + 'px,' + (listY + dd * rowGap).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (1 - Math.min(ad, 2) * 0.06).toFixed(3) + ')';
       else el.style.transform = 'translate(18px,' + (listY + dd * rowGap).toFixed(1) + 'px) translate(0,-50%)';
@@ -2512,8 +2709,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       S.custom.roll = drag.start.roll + dx * 0.4;
       kick();
     } else if (drag.kind === 'list') {
-      const ml = currentMoon(), np = drag.start - dy / (ml === 'rolodex' ? 62 : ml === 'phase' ? 58 : ml === 'minimal' ? 44 : 39);
-      if (S.mode === 'two' && drag.start <= 0.3 && np < -0.7) {
+      // Saturn rings turn with a sideways swipe; the other looks scroll up and down
+      const ml = currentMoon(), np = ml === 'saturn' ? drag.start - dx / 55 : drag.start - dy / (ml === 'rolodex' ? 62 : ml === 'phase' ? 58 : ml === 'minimal' ? 44 : ml === 'dial' ? 40 : 39);
+      if (S.mode === 'two' && ml !== 'saturn' && drag.start <= 0.3 && np < -0.7) {
         drag.kind = 'toSun';
         drag.y0 = e.clientY;
         st.pos = 0;
@@ -2779,7 +2977,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   function openItem(it) {
     if (it.app) { openApp(BY[it.name]); return; }
-    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0.', '', false); return; }
+    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0.', '', false); return; }
     openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
   }
   $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
