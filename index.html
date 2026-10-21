@@ -1,0 +1,2039 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#0B1430">
+<title>Sun Launcher</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{box-sizing:border-box;height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{margin:0}body{font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: one phone-sized stage; two stacked worlds (sun above, moon below) slide up and down. Sky, sun colour and brightness follow the clock. */
+:root {
+  color-scheme: dark;
+  --sky-top: #0B1430;
+  --sky-bot: #13203B;
+  --msky-top: #070B18;
+  --msky-bot: #0A0F1F;
+  --night-deep: #0A0F1F;
+  --panel: #1C2B4C;
+  --panel-2: #26375C;
+  --line: #34497A;
+  --ink: #F5EFE3;
+  --ink-2: #C3CCDD;
+  --ink-3: #DCE3F0;
+  --muted: #8C97B0;
+  --sun: #FFC94D;
+  --sun-deep: #E8902A;
+  --sun-ink: #1B1608;
+  --moon: #DCE2EE;
+  --moon-ink: #0A0F1F;
+  --moon-label: #3A4560;
+  --scrim: rgba(5, 8, 18, 0.62);
+  --font: 'Outfit', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+html, body { height: 100%; }
+body { background: var(--night-deep); color: var(--ink); font-family: var(--font); overflow: hidden; -webkit-tap-highlight-color: transparent; }
+#app { position: relative; height: 100%; max-width: 440px; margin: 0 auto; overflow: hidden; background: var(--sky-bot); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#worlds { position: absolute; left: 0; right: 0; top: 0; height: 200%; transition: transform .45s cubic-bezier(.2, .8, .2, 1); will-change: transform; }
+#worlds.dragging { transition: none; }
+.screen { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; }
+#sunScreen { top: 0; background: linear-gradient(180deg, var(--sky-top), var(--sky-bot)); }
+#moonScreen { top: 50%; background: linear-gradient(180deg, var(--msky-top), var(--msky-bot)); }
+canvas.paint { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+button, a, label, input { font-family: var(--font); }
+button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+.facet { position: absolute; left: 0; top: 0; pointer-events: auto; display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 13px 0 6px; box-sizing: border-box; border-radius: 22px; border: 1.5px solid var(--line); background: var(--panel); color: var(--ink); font-size: 13px; font-weight: 600; white-space: nowrap; transform-origin: 50% 100%; cursor: pointer; }
+.facet .ini { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: var(--line); color: var(--ink); font-size: 13px; font-weight: 700; flex: none; }
+.facet .ini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.facet.mini { padding: 0 5px; }
+.facet.mini .nm { display: none; }
+.facet.front { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); }
+.facet.front .ini { background: var(--sun-ink); color: var(--sun); }
+#app.fx .facet { background: color-mix(in srgb, var(--panel) 72%, transparent); border-color: color-mix(in srgb, var(--sun) 28%, var(--line)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+#app.fx .facet.front { background: var(--sun); border-color: #FFF6D8; box-shadow: 0 0 0 3px color-mix(in srgb, var(--sun) 35%, transparent), 0 0 26px color-mix(in srgb, var(--sun) 70%, transparent); }
+
+.core { position: absolute; left: 0; top: 0; width: 84px; height: 84px; border-radius: 50%; border: none; background: transparent; color: var(--sun-ink); display: grid; place-items: center; cursor: pointer; z-index: 500; }
+.core.light { color: var(--sun); }
+
+.info { position: absolute; left: 24px; right: 24px; text-align: center; pointer-events: none; }
+.info .clock { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; margin-bottom: 6px; }
+.info .name { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+.info .hint { font-size: 15px; color: var(--ink-2); margin-top: 6px; }
+.info .tip { font-size: 13px; color: var(--ink-2); margin-top: 12px; text-wrap: balance; }
+
+.corner { position: absolute; width: 72px; height: 72px; border: none; background: color-mix(in srgb, var(--panel) 85%, transparent); color: var(--ink-3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 500; cursor: pointer; z-index: 600; }
+.corner.tl { left: max(16px, env(safe-area-inset-left, 0px)); top: 16px; border-radius: 8px 8px 32px 8px; }
+.corner.tr { right: max(16px, env(safe-area-inset-right, 0px)); top: 16px; border-radius: 8px 8px 8px 32px; }
+.corner.bl { left: max(16px, env(safe-area-inset-left, 0px)); bottom: 16px; border-radius: 8px 32px 8px 8px; }
+.corner.br { right: max(16px, env(safe-area-inset-right, 0px)); bottom: 16px; border-radius: 32px 8px 8px 8px; }
+#app.fx .corner { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sun) 22%, transparent); }
+.viewbtn { position: absolute; left: 50%; top: 30px; width: 120px; margin-left: -60px; min-height: 44px; border-radius: 22px; border: 1.5px solid var(--line); background: transparent; color: var(--ink-3); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 500; cursor: pointer; z-index: 600; }
+.viewbtn[aria-pressed="true"] { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); font-weight: 600; }
+.clockchip { position: absolute; left: 50%; top: 84px; transform: translateX(-50%); padding: 6px 14px; border-radius: 16px; background: color-mix(in srgb, var(--panel) 85%, transparent); color: var(--ink); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; z-index: 600; pointer-events: none; }
+
+.handle { position: absolute; left: 50%; width: 170px; margin-left: -85px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; border: none; background: transparent; color: var(--ink-3); font-size: 13px; font-weight: 500; cursor: grab; z-index: 600; touch-action: none; }
+.handle.bottom { bottom: 14px; }
+.handle.top { top: 10px; }
+.handle span { display: flex; align-items: center; gap: 6px; }
+
+.item { position: absolute; left: 0; top: 0; pointer-events: auto; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px 0 6px; box-sizing: border-box; border: none; background: transparent; color: #C3CADB; font-size: 16px; font-weight: 500; white-space: nowrap; transform-origin: 14px 50%; cursor: pointer; }
+.item .grp { display: none; }
+.item.card { width: var(--cardw, 240px); height: 58px; min-height: 58px; padding: 0 16px; gap: 12px; border-radius: 14px; background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid color-mix(in srgb, var(--moon) 20%, var(--line)); color: var(--ink); font-size: 17px; transform-origin: 50% 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+.item.card .grp { display: block; margin-left: auto; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.item.card.sel { background: var(--moon); border-color: var(--moon); color: var(--moon-ink); }
+.item.card.sel .grp { color: #3A4560; }
+.item.card.sel .dot { background: var(--moon-ink); border-color: var(--moon-ink); }
+.item.card.app.sel .dot { background: var(--sun); border-color: var(--sun-deep); }
+#app.fx .item.card.sel { text-shadow: none; box-shadow: 0 0 26px color-mix(in srgb, var(--moon) 45%, transparent); }
+.facet.flip { transform-origin: 50% 50%; }
+.item .dot { width: 12px; height: 12px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--muted); flex: none; }
+.item.sel { color: var(--ink); font-weight: 600; }
+.item.sel .dot { width: 16px; height: 16px; background: var(--moon); border-color: var(--moon); }
+.item.app .dot { border-radius: 4px; border-color: var(--sun-deep); }
+.item.app.sel .dot { background: var(--sun); border-color: var(--sun); }
+#app.fx .item.sel { text-shadow: 0 0 18px color-mix(in srgb, var(--moon) 55%, transparent); }
+#app.fx .item.sel .dot { box-shadow: 0 0 14px var(--moon); }
+#app.fx .item.app.sel .dot { box-shadow: 0 0 14px var(--sun); }
+
+.glabel { position: absolute; left: 0; top: 0; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--moon-label); white-space: nowrap; }
+.glabel.cur { color: var(--moon-ink); }
+.glabel.dark { color: var(--muted); }
+.glabel.dark.cur { color: var(--ink); }
+.marker { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; box-sizing: border-box; border-radius: 50%; background: var(--night-deep); border: 3px solid var(--sun); pointer-events: none; }
+#app.fx .marker { box-shadow: 0 0 16px var(--sun); }
+.bubble { position: absolute; left: 0; top: 0; padding: 10px 16px; border-radius: 16px; background: var(--panel-2); color: var(--ink); font-size: 20px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4); pointer-events: none; z-index: 700; }
+.bubble small { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 2px; }
+.scrub { position: absolute; left: 0; touch-action: none; cursor: ns-resize; }
+
+.roundbtn { position: absolute; top: 16px; width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--panel); color: var(--ink-3); display: grid; place-items: center; cursor: pointer; z-index: 600; }
+.gear { right: max(16px, env(safe-area-inset-right, 0px)); }
+.msearch { left: max(16px, env(safe-area-inset-left, 0px)); }
+#app.one-mode .msearch { left: auto; right: calc(max(16px, env(safe-area-inset-right, 0px)) + 58px); }
+.mini-sun { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: 16px; width: 64px; height: 64px; border-radius: 50%; border: none; background: var(--sun); color: var(--sun-ink); display: grid; place-items: center; cursor: pointer; z-index: 600; box-shadow: 0 0 0 8px color-mix(in srgb, var(--sun) 18%, transparent), 0 0 30px color-mix(in srgb, var(--sun) 40%, transparent); }
+
+.overlay { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: var(--scrim); display: flex; align-items: flex-end; z-index: 900; }
+.sheet { width: 100%; box-sizing: border-box; max-height: 88%; overflow-y: auto; background: var(--panel); border-radius: 28px 28px 0 0; padding-top: 22px; padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px)); padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 14px; touch-action: pan-y; }
+.sheet h2 { margin: 0; font-size: 24px; font-weight: 600; }
+.sheet p { margin: 0; font-size: 15px; color: var(--ink-2); line-height: 1.4; }
+.row { display: flex; gap: 12px; }
+.btn { flex: 1; min-height: 48px; border-radius: 24px; border: 1.5px solid #5B6B8C; background: transparent; color: var(--ink); font-size: 16px; font-weight: 500; display: flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; padding: 0 16px; }
+.btn.primary { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); font-weight: 600; }
+.btn.small { flex: none; }
+.acts { display: flex; flex-direction: column; gap: 8px; }
+.act { min-height: 52px; padding: 0 16px; border: none; border-radius: 16px; background: var(--panel-2); color: var(--ink); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; }
+
+fieldset { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label, .preset { flex: 1 1 auto; min-height: 44px; padding: 0 12px; display: grid; place-items: center; border-radius: 12px; background: var(--panel-2); color: var(--ink); font-size: 14px; font-weight: 500; cursor: pointer; border: none; }
+.seg input:checked + label { background: var(--sun); color: var(--sun-ink); font-weight: 600; }
+.preset small { display: block; font-size: 11px; color: var(--ink-2); font-weight: 500; }
+.presets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.preset { text-align: center; padding: 8px 10px; }
+.swatches label { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%; background: var(--c); }
+.swatches label.time { background: conic-gradient(#FF8A65, #FFE08A, #FFF0B3, #FF8A3D, #E0607E, #9AA6C4, #FF8A65); }
+.swatches input:checked + label { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--ink); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.range-row { display: flex; align-items: center; gap: 12px; }
+.range-row input { flex: 1; accent-color: var(--sun); min-height: 44px; }
+.range-row output { min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+
+.erows { display: flex; flex-direction: column; gap: 8px; }
+.erow { display: flex; align-items: center; gap: 4px; min-height: 52px; padding: 0 6px 0 14px; background: var(--panel-2); border-radius: 14px; }
+.ename { flex: 1; min-width: 0; font-size: 16px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ibtn { width: 44px; height: 44px; border-radius: 12px; border: none; background: transparent; color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.ibtn:disabled { color: var(--muted); cursor: default; }
+.where { min-width: 76px; height: 40px; border-radius: 20px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
+.where.on-sun { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); }
+
+.search-panel { width: 100%; height: 100%; box-sizing: border-box; background: var(--panel); padding-top: 16px; padding-bottom: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 12px; }
+.search-bar { display: flex; gap: 10px; }
+.search-bar input { flex: 1; min-width: 0; min-height: 48px; padding: 0 18px; border-radius: 24px; border: 1.5px solid var(--line); background: var(--panel-2); color: var(--ink); font-size: 16px; user-select: text; -webkit-user-select: text; }
+.search-bar input::placeholder { color: var(--muted); }
+.results { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; touch-action: pan-y; }
+.res { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 0 16px; border: none; border-radius: 14px; background: var(--panel-2); color: var(--ink); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; }
+.res small { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+.empty { color: var(--ink-2); font-size: 15px; padding: 8px 4px; }
+
+.camera { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: var(--sky-bot); z-index: 800; }
+.cam-bar { position: absolute; left: 0; right: 0; top: 14px; height: 48px; display: flex; align-items: center; justify-content: center; }
+.cam-bar .back { position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); min-width: 44px; min-height: 44px; padding: 0 10px; border: none; background: transparent; color: var(--ink-3); font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 2px; cursor: pointer; }
+.cam-bar .title { font-size: 17px; font-weight: 600; }
+.viewfinder { position: absolute; left: 16px; right: 16px; top: 76px; bottom: 210px; border-radius: 24px; background: var(--night-deep); overflow: hidden; display: grid; place-items: center; }
+.viewfinder img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+.viewfinder .g { position: absolute; width: 36px; height: 36px; border: 0 solid var(--sun); z-index: 1; }
+.viewfinder .g.tl { left: 20px; top: 20px; border-left-width: 3px; border-top-width: 3px; border-radius: 10px 0 0 0; }
+.viewfinder .g.tr { right: 20px; top: 20px; border-right-width: 3px; border-top-width: 3px; border-radius: 0 10px 0 0; }
+.viewfinder .g.bl { left: 20px; bottom: 20px; border-left-width: 3px; border-bottom-width: 3px; border-radius: 0 0 0 10px; }
+.viewfinder .g.br { right: 20px; bottom: 20px; border-right-width: 3px; border-bottom-width: 3px; border-radius: 0 0 10px 0; }
+.cam-empty { color: var(--muted); font-size: 15px; padding: 0 40px; text-align: center; }
+.shutter { position: absolute; left: 50%; bottom: 104px; width: 80px; height: 80px; margin-left: -40px; box-sizing: border-box; border-radius: 50%; border: 4px solid var(--sun); background: var(--sky-bot); padding: 6px; cursor: pointer; }
+.shutter span { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--ink); }
+.cam-hint { position: absolute; left: 24px; right: 24px; bottom: 62px; text-align: center; font-size: 14px; color: var(--ink-2); }
+.send { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 0 16px; border: none; border-radius: 18px; background: var(--panel-2); color: var(--ink); text-align: left; cursor: pointer; }
+.send .ic { width: 40px; height: 40px; border-radius: 50%; background: var(--sun); color: var(--sun-ink); display: grid; place-items: center; flex: none; overflow: hidden; }
+.send .ic img { width: 100%; height: 100%; object-fit: cover; }
+.send b { display: block; font-size: 17px; font-weight: 600; }
+.send small { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
+
+.toast { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); max-width: 80%; background: var(--panel-2); color: var(--ink); padding: 10px 16px; border-radius: 14px; font-size: 14px; font-weight: 500; z-index: 950; text-align: center; }
+@media (prefers-reduced-motion: reduce) { #worlds { transition-duration: .01s; } }
+</style>
+
+<div id="app">
+  <div id="worlds">
+    <section id="sunScreen" class="screen" aria-label="Sun menu: your apps">
+      <canvas id="sunCanvas" class="paint" aria-hidden="true"></canvas>
+      <div id="facets" class="layer"></div>
+      <button type="button" id="core" class="core" aria-label="Camera: take a photo and send it to an app">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+      </button>
+      <div id="sunInfo" class="info">
+        <div id="sunClock" class="clock"></div>
+        <div id="sunName" class="name"></div>
+        <div id="sunHint" class="hint"></div>
+        <div id="sunTip" class="tip"></div>
+      </div>
+      <div class="clockchip" id="clockChip" aria-live="polite" hidden></div>
+      <button type="button" class="corner tl" id="sunSettings" aria-label="Playground settings">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+        <span>Settings</span>
+      </button>
+      <button type="button" class="corner tr" id="sunSearch" aria-label="Search apps and functions">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
+        <span>Search</span>
+      </button>
+      <button type="button" class="corner bl" id="sunRecent" aria-label="Recent apps">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
+        <span>Recent</span>
+      </button>
+      <button type="button" class="corner br" id="sunEdit" aria-label="Edit dial: order and place your apps">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13 7l4 4"></path></svg>
+        <span>Edit dial</span>
+      </button>
+      <button type="button" class="handle bottom" id="toMoon" aria-label="Open the moon menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M15 4a8 8 0 1 0 5 13A7 7 0 0 1 15 4z"></path></svg>Swipe up · Moon</span>
+      </button>
+    </section>
+
+    <section id="moonScreen" class="screen" aria-label="Moon menu: functions">
+      <canvas id="moonCanvas" class="paint" aria-hidden="true"></canvas>
+      <div id="glabels" class="layer" aria-hidden="true"></div>
+      <div id="marker" class="marker" aria-hidden="true"></div>
+      <div id="items" class="layer"></div>
+      <div id="scrub" class="scrub" aria-hidden="true"></div>
+      <div id="bubble" class="bubble" aria-hidden="true" hidden><small id="bubbleGroup"></small><span id="bubbleName"></span></div>
+      <button type="button" class="handle top" id="toSun" aria-label="Back to the sun menu">
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></svg>Swipe down · Sun</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>
+      </button>
+      <button type="button" class="mini-sun" id="miniSun" aria-label="Camera: take a photo and send it to an app" hidden>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+      </button>
+      <button type="button" class="roundbtn msearch" id="moonSearch" aria-label="Search apps and functions">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
+      </button>
+      <button type="button" class="roundbtn gear" id="moonSettings" aria-label="Playground settings">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+      </button>
+      <div id="moonInfo" class="info">
+        <div id="moonName" class="name"></div>
+        <div id="moonHint" class="hint"></div>
+        <div id="moonTip" class="tip"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="camera" class="camera" hidden>
+    <div class="cam-bar">
+      <button type="button" class="back" id="camBack" aria-label="Back" data-autofocus>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 6l-6 6 6 6"></path></svg>Back
+      </button>
+      <div class="title">Camera</div>
+    </div>
+    <div class="viewfinder">
+      <span class="g tl"></span><span class="g tr"></span><span class="g bl"></span><span class="g br"></span>
+      <img id="camImg" alt="Your photo" hidden>
+      <div id="camEmpty" class="cam-empty">Tap the button below. Your phone camera opens.</div>
+    </div>
+    <button type="button" class="shutter" id="shutter" aria-label="Take a photo"><span></span></button>
+    <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+    <div class="cam-hint">Take a photo, then pick an app</div>
+  </div>
+
+  <div id="sheet" class="overlay" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <h2 id="sheetTitle"></h2>
+      <p id="sheetText"></p>
+      <div id="sheetSend" hidden>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <button type="button" class="send" data-to="Scanner"><span class="ic"><img src="data:image/png;base64,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" alt=""></span><span><b>Scanner</b><small>Check the label</small></span></button>
+          <button type="button" class="send" data-to="Docs Reader"><span class="ic"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAEfElEQVR42u2cTWhcVRTH/+fe95L5yExC0ySTNqRpi19NoSKF4KIIlSx0oagUpigtLvyk2HYhVZcuLC7EjYIKuhVUuhMKfi1EitCNuBUUTKyNTetMmtCZ9+49Lt6bUaQNnb5738wN98Kbt5qZy2/OPf/zP/fdoQNP/8zw45ZDeAQekAfkAXlAHpAH5AF5QH7cbAQmPkQKAiiH2TKgNLsFiAhorivEyv7EhQBGihJCAMwOACICWm3GiSNT2L1zGMwMIvOhxJx816UrET44t4JYaYSSkEcwZQYUxYzFhSr27S5an2xjncEQ+PDcJUSKc4EkTCyxtXUFpRjtSEMpNn7FcXJfuRZh/94yXqnvgBSESDEEDTigJDcQpLR/BZKwtqEwvyc/SM7JvBRJxM7vKeUCyck6SEqkkWQfkrOFohSUSyQ5XUnLbk6yB8l5qyGFXUhOAaK0rPj/FUjC9Q2F/XvLOHl0BwKZQDJRszoFSGmgHTHaMSf3/1yagdVGhLtnS3jxqWlIQdA6u0UMXAJULQvsqoUIJOFWBXSsGI88OIrCEPDWJ8solwRYb3FAnaUyMSYxMSZv6z3331WECRfiVARx92WzZciQgnCjbcakOQWIui+bRxsRjKmYVUBa5xFVDEEEsmQ1rAISIre4Gsx+0KaRQ8BnX6/iyx8aKBcFtOHGDREhihlT20K8dmwa1bK0wso4IM1J5Px+uY0z7y1BpVWtjb5WGBAur8aYrQ3hpScnERsqDq0CEpREUG08xOmjNZy/8DfKRWkhgoA4Zjz0QIDHDo2BObEd2nCzOrCVe4QgnKpP4VR9qg+1gCNJWmtYU5dOfmb+16M5p2KdmsT2d9jcArIOqLmurOxjUSoIpYJAIMkdQAyANdCKNN78+A98d7GJUsGOzCvNqJQk3jk5i3t2FawopXlAqcyvNhQ+/+YqbrQ0pLAj84EkXLkW4/uf1nDvXAHKJZmfmQzx0etzOH+hgVJRGLcdgpLe0PT2EMcf3Q7mBJjpvXtrMg8Ahw9WcfhgFS4Pq0k6ijnJPRaljNKK2kmZDwNCPs/FOGhWhQC+vdjMJQe98MSktSiyZlaXViI8f/a3XFSsMCzw3OMTbphVSlVsfFTiyMPbrNdB980VcehAJS0vCDzoZpUAkACKwwJnX57JtZImAMols8qMpJFl28Czo2b1jqOGEs+iOek3386ydrIOytSTJkBS/0sEazKvNOP9L1Z67ihSGj1KA288O42F+ZFu2bAlAHVkfvmvCO9++ucd9aQDSbjajDFakViYH9laEdQxqzsnh/D2iZmedzXSAAJAePWZmvUc01ezWl8cR31x3EhttSXNahZ7wUgeShd9ztMDvLM6GCbXn/bxgAZgiWmdHhvQbMe29zA6czBljjMDYgYqZdk9LtDv0ZlDpSyNGOQgK5wwIHz1YxO/LLWsHYfqbU7JHH5dbiEMKDMkyvrfHUTA9Q2dy4G6nn55SRgpicyAjCwxW8/mZJuYmeObRpJ03udIvcx7QB6QB+QB+eEBeUAekAfU9/EP0WMaBkyCxHUAAAAASUVORK5CYII=" alt=""></span><span><b>Docs Reader</b><small>Save as a document</small></span></button>
+        </div>
+      </div>
+      <div id="sheetActions" class="acts" hidden></div>
+      <div class="row">
+        <a id="sheetOpen" class="btn primary" target="_blank" rel="noopener" hidden>Open</a>
+        <button type="button" class="btn" id="sheetClose" data-autofocus>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="edit" class="overlay" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <h2 id="editTitle">Edit dial</h2>
+      <p>Change the order. Choose if an app lives on the sun or on the moon. The sun keeps at least 3 apps.</p>
+      <div id="editRows" class="erows"></div>
+      <div class="row">
+        <button type="button" class="btn" id="editReset">Reset</button>
+        <button type="button" class="btn primary" id="editDone" data-autofocus>Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="search" class="overlay" hidden>
+    <div class="search-panel" role="dialog" aria-modal="true" aria-label="Search">
+      <div class="search-bar">
+        <input id="searchInput" type="search" placeholder="Search apps and functions" aria-label="Search apps and functions" autocomplete="off" data-autofocus>
+        <button type="button" class="btn small" id="searchClose">Close</button>
+      </div>
+      <div id="results" class="results"></div>
+    </div>
+  </div>
+
+  <div id="settings" class="overlay" hidden>
+    <form class="sheet" id="settingsForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+      <h2 id="setTitle">Playground</h2>
+      <fieldset>
+        <legend>Theme</legend>
+        <div class="seg">
+          <input type="radio" name="theme" id="th-auto" value="auto"><label for="th-auto">Follow the time</label>
+          <input type="radio" name="theme" id="th-daylight" value="daylight"><label for="th-daylight">Daylight</label>
+          <input type="radio" name="theme" id="th-sunset" value="sunset"><label for="th-sunset">Sunset</label>
+          <input type="radio" name="theme" id="th-eclipse" value="eclipse"><label for="th-eclipse">Eclipse</label>
+          <input type="radio" name="theme" id="th-blackhole" value="blackhole"><label for="th-blackhole">Black hole</label>
+          <input type="radio" name="theme" id="th-neon" value="neon"><label for="th-neon">Neon night</label>
+          <input type="radio" name="theme" id="th-plasma" value="plasma"><label for="th-plasma">Plasma dawn</label>
+          <input type="radio" name="theme" id="th-custom" value="custom"><label for="th-custom">My own</label>
+        </div>
+        <p id="themeLine" style="margin: 0; font-size: 13px; color: var(--ink-2)"></p>
+      </fieldset>
+      <fieldset>
+        <legend>Menus</legend>
+        <div class="seg">
+          <input type="radio" name="mode" id="mode-two" value="two"><label for="mode-two">Sun + moon</label>
+          <input type="radio" name="mode" id="mode-one" value="one"><label for="mode-one">One menu</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Sun look (My own theme)</legend>
+        <div class="seg">
+          <input type="radio" name="sunLook" id="look-rays" value="rays"><label for="look-rays">Rays</label>
+          <input type="radio" name="sunLook" id="look-eclipse" value="eclipse"><label for="look-eclipse">Eclipse</label>
+          <input type="radio" name="sunLook" id="look-blackhole" value="blackhole"><label for="look-blackhole">Black hole</label>
+          <input type="radio" name="sunLook" id="look-neon" value="neon"><label for="look-neon">Neon</label>
+          <input type="radio" name="sunLook" id="look-plasma" value="plasma"><label for="look-plasma">Plasma</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Sun direction</legend>
+        <div class="seg">
+          <input type="radio" name="dir" id="dir-flat" value="flat"><label for="dir-flat">Flat</label>
+          <input type="radio" name="dir" id="dir-diagonal" value="diagonal"><label for="dir-diagonal">45° turn</label>
+          <input type="radio" name="dir" id="dir-tall" value="tall"><label for="dir-tall">Sideways</label>
+          <input type="radio" name="dir" id="dir-rolodex" value="rolodex"><label for="dir-rolodex">Rolodex</label>
+          <input type="radio" name="dir" id="dir-custom" value="custom"><label for="dir-custom">My view</label>
+        </div>
+        <button type="button" class="btn" id="viewToggle" aria-pressed="false">Turn the view with one finger: off</button>
+      </fieldset>
+      <fieldset>
+        <legend>Sun tilt</legend>
+        <div class="range-row">
+          <input type="range" id="tilt" name="tilt" min="-85" max="85" step="1" aria-label="Sun tilt in degrees. Negative is from below">
+          <output id="tiltOut" for="tilt"></output>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Moon look (My own theme)</legend>
+        <div class="seg">
+          <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
+          <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
+          <input type="radio" name="moonLook" id="moon-ring" value="ring"><label for="moon-ring">Half ring</label>
+          <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
+          <input type="radio" name="moonLook" id="moon-rolodex" value="rolodex"><label for="moon-rolodex">Rolodex</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Effects</legend>
+        <div class="seg">
+          <input type="radio" name="fx" id="fx-fancy" value="fancy"><label for="fx-fancy">Fancy</label>
+          <input type="radio" name="fx" id="fx-calm" value="calm"><label for="fx-calm">Calm (saves battery)</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Vibration</legend>
+        <div class="seg">
+          <input type="radio" name="haptics" id="hap-soft" value="soft"><label for="hap-soft">Soft</label>
+          <input type="radio" name="haptics" id="hap-strong" value="strong"><label for="hap-strong">Strong</label>
+          <input type="radio" name="haptics" id="hap-off" value="off"><label for="hap-off">Off</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Sound</legend>
+        <div class="seg">
+          <input type="radio" name="sound" id="snd-off" value="off"><label for="snd-off">Off</label>
+          <input type="radio" name="sound" id="snd-on" value="on"><label for="snd-on">Soft ticks</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Sky and sun light</legend>
+        <div class="seg">
+          <input type="radio" name="sky" id="sky-clock" value="clock"><label for="sky-clock">Follow the clock</label>
+          <input type="radio" name="sky" id="sky-preview" value="preview"><label for="sky-preview">Pick a time</label>
+          <input type="radio" name="sky" id="sky-night" value="night"><label for="sky-night">Always night</label>
+        </div>
+        <div class="range-row" id="hourRow">
+          <input type="range" id="hour" name="hour" min="0" max="24" step="0.25" aria-label="Time of day for the sky">
+          <output id="hourOut" for="hour"></output>
+        </div>
+        <p id="sunLine" style="margin: 0; font-size: 13px; color: var(--ink-2)"></p>
+        <button type="button" class="btn" id="playDay">Play a day in 20 seconds</button>
+      </fieldset>
+      <fieldset>
+        <legend>Sun colour (My own theme)</legend>
+        <div class="seg swatches">
+          <input type="radio" name="color" id="col-0" value="time"><label for="col-0" class="time"><span class="sr">Follow the time of day</span></label>
+          <input type="radio" name="color" id="col-1" value="#FFC94D"><label for="col-1" style="--c: #FFC94D"><span class="sr">Gold</span></label>
+          <input type="radio" name="color" id="col-2" value="#FF9F43"><label for="col-2" style="--c: #FF9F43"><span class="sr">Orange</span></label>
+          <input type="radio" name="color" id="col-3" value="#F7D774"><label for="col-3" style="--c: #F7D774"><span class="sr">Pale yellow</span></label>
+          <input type="radio" name="color" id="col-4" value="#FFB3A1"><label for="col-4" style="--c: #FFB3A1"><span class="sr">Sunset pink</span></label>
+          <input type="radio" name="color" id="col-5" value="#7FD3FF"><label for="col-5" style="--c: #7FD3FF"><span class="sr">Ice blue</span></label>
+          <input type="radio" name="color" id="col-6" value="#FF6B3D"><label for="col-6" style="--c: #FF6B3D"><span class="sr">Ember red</span></label>
+        </div>
+        <p style="margin: 0; font-size: 13px; color: var(--ink-2)">The first colour follows the time of day.</p>
+      </fieldset>
+      <button type="button" class="btn" id="tipsAgain">Show the help lines again</button>
+      <button type="button" class="btn primary" id="setDone" data-autofocus>Done</button>
+    </form>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  let reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  const ICONS = { 'Scanner': 'data:image/png;base64,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', 'Docs Reader': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAEfElEQVR42u2cTWhcVRTH/+fe95L5yExC0ySTNqRpi19NoSKF4KIIlSx0oagUpigtLvyk2HYhVZcuLC7EjYIKuhVUuhMKfi1EitCNuBUUTKyNTetMmtCZ9+49Lt6bUaQNnb5738wN98Kbt5qZy2/OPf/zP/fdoQNP/8zw45ZDeAQekAfkAXlAHpAH5AF5QH7cbAQmPkQKAiiH2TKgNLsFiAhorivEyv7EhQBGihJCAMwOACICWm3GiSNT2L1zGMwMIvOhxJx816UrET44t4JYaYSSkEcwZQYUxYzFhSr27S5an2xjncEQ+PDcJUSKc4EkTCyxtXUFpRjtSEMpNn7FcXJfuRZh/94yXqnvgBSESDEEDTigJDcQpLR/BZKwtqEwvyc/SM7JvBRJxM7vKeUCyck6SEqkkWQfkrOFohSUSyQ5XUnLbk6yB8l5qyGFXUhOAaK0rPj/FUjC9Q2F/XvLOHl0BwKZQDJRszoFSGmgHTHaMSf3/1yagdVGhLtnS3jxqWlIQdA6u0UMXAJULQvsqoUIJOFWBXSsGI88OIrCEPDWJ8solwRYb3FAnaUyMSYxMSZv6z3331WECRfiVARx92WzZciQgnCjbcakOQWIui+bRxsRjKmYVUBa5xFVDEEEsmQ1rAISIre4Gsx+0KaRQ8BnX6/iyx8aKBcFtOHGDREhihlT20K8dmwa1bK0wso4IM1J5Px+uY0z7y1BpVWtjb5WGBAur8aYrQ3hpScnERsqDq0CEpREUG08xOmjNZy/8DfKRWkhgoA4Zjz0QIDHDo2BObEd2nCzOrCVe4QgnKpP4VR9qg+1gCNJWmtYU5dOfmb+16M5p2KdmsT2d9jcArIOqLmurOxjUSoIpYJAIMkdQAyANdCKNN78+A98d7GJUsGOzCvNqJQk3jk5i3t2FawopXlAqcyvNhQ+/+YqbrQ0pLAj84EkXLkW4/uf1nDvXAHKJZmfmQzx0etzOH+hgVJRGLcdgpLe0PT2EMcf3Q7mBJjpvXtrMg8Ahw9WcfhgFS4Pq0k6ijnJPRaljNKK2kmZDwNCPs/FOGhWhQC+vdjMJQe98MSktSiyZlaXViI8f/a3XFSsMCzw3OMTbphVSlVsfFTiyMPbrNdB980VcehAJS0vCDzoZpUAkACKwwJnX57JtZImAMols8qMpJFl28Czo2b1jqOGEs+iOek3386ydrIOytSTJkBS/0sEazKvNOP9L1Z67ihSGj1KA288O42F+ZFu2bAlAHVkfvmvCO9++ucd9aQDSbjajDFakViYH9laEdQxqzsnh/D2iZmedzXSAAJAePWZmvUc01ezWl8cR31x3EhttSXNahZ7wUgeShd9ztMDvLM6GCbXn/bxgAZgiWmdHhvQbMe29zA6czBljjMDYgYqZdk9LtDv0ZlDpSyNGOQgK5wwIHz1YxO/LLWsHYfqbU7JHH5dbiEMKDMkyvrfHUTA9Q2dy4G6nn55SRgpicyAjCwxW8/mZJuYmeObRpJ03udIvcx7QB6QB+QB+eEBeUAekAfU9/EP0WMaBkyCxHUAAAAASUVORK5CYII=' };
+  const BASE_APPS = [
+    { name: 'City Trips', hint: 'Plan a city tour', href: '', short: ['New trip', 'Next trip', 'Saved cities'] },
+    { name: 'Scanner', hint: 'Check food and cosmetics labels', href: 'https://harisonbd.github.io/label-check/', short: ['Scan a label', 'Last result', 'Search a product'] },
+    { name: 'Docs Reader', hint: 'Your documents, offline', href: 'https://harisonbd.github.io/docs/', short: ['Last document', 'New document from a photo', 'Search my documents'] },
+    { name: 'Link Library', hint: 'Your saved sites and apps', href: '', short: ['Add a link', 'Last category'] },
+    { name: 'One Remote', hint: '[One line on what One Remote does]', href: '', short: ['[Quick action 1]', '[Quick action 2]'] },
+    { name: 'Weather', hint: 'Example app: today and the next days', href: '', short: ['Today', 'Next 7 days'] },
+    { name: 'Notes', hint: 'Example app: quick notes', href: '', short: ['New note', 'Last note'] },
+    { name: 'Music', hint: 'Example app: your playlists', href: '', short: ['Play last playlist', 'Shuffle all'] },
+    { name: 'Timer', hint: 'Example app: countdown and stopwatch', href: '', short: ['5-minute timer', 'Stopwatch'] },
+    { name: 'Translator', hint: 'Example app: text and camera translation', href: '', short: ['Translate text', 'Translate with the camera'] }
+  ];
+  const BY = {};
+  BASE_APPS.forEach((a) => { BY[a.name] = a; });
+  const FUNCS = [
+    { name: 'Data', items: ['Backup & restore', 'Export all', 'Import', 'Sync', 'Storage', 'Clear cache'] },
+    { name: 'Look', items: ['Theme', 'Accent colour', 'Text size', 'Icons', 'Wallpaper', 'Sounds'] },
+    { name: 'Phone', items: ['Notifications', 'Language', 'Location', 'Camera access', 'Battery saver', 'Shortcuts'] },
+    { name: 'Safety', items: ['Privacy', 'Permissions', 'App lock', 'Clear history', 'Offline status', 'Updates'] },
+    { name: 'Info', items: ['Help', 'Tutorial', 'Feedback', 'What is new', 'Licences', 'About'] }
+  ];
+  const THEMES = {
+    daylight: { name: 'Daylight', look: 'rays', color: 'time', moon: 'rolodex' },
+    sunset: { name: 'Sunset', look: 'rays', color: '#FF9F43', moon: 'crescent' },
+    eclipse: { name: 'Eclipse', look: 'eclipse', color: 'time', moon: 'dots' },
+    blackhole: { name: 'Black hole', look: 'blackhole', color: '#FF6B3D', moon: 'crescent' },
+    neon: { name: 'Neon night', look: 'neon', color: '#7FD3FF', moon: 'arc' },
+    plasma: { name: 'Plasma dawn', look: 'plasma', color: 'time', moon: 'ring' }
+  };
+  const TIMELINE = [[0, 'neon'], [4.8, 'neon'], [5.5, 'plasma'], [7.6, 'plasma'], [8.4, 'daylight'], [16.4, 'daylight'], [17.2, 'sunset'], [18.4, 'sunset'], [19.0, 'eclipse'], [19.8, 'eclipse'], [20.4, 'blackhole'], [21.6, 'blackhole'], [22.3, 'neon'], [24, 'neon']];
+  const KEY = 'sun-launcher-playground-v4';
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 62, sky: 'clock', hour: 12, order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  try {
+    let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (!saved) {
+      saved = JSON.parse(localStorage.getItem('sun-launcher-playground-v3') || 'null');
+      if (saved) { saved.theme = saved.sunLook === 'auto' ? 'auto' : 'custom'; if (saved.sunLook === 'auto') saved.sunLook = 'rays'; }
+    }
+    if (saved) Object.keys(S).forEach((k) => { if (k in saved) S[k] = saved[k]; });
+  } catch (e) {}
+  if (['rays', 'eclipse', 'neon', 'plasma', 'blackhole'].indexOf(S.sunLook) === -1) S.sunLook = 'rays';
+  if (S.theme !== 'auto' && S.theme !== 'custom' && !THEMES[S.theme]) S.theme = 'auto';
+  if (['flat', 'diagonal', 'tall', 'rolodex', 'custom'].indexOf(S.dir) === -1) S.dir = 'flat';
+  S.favs = (S.favs || []).filter((n) => typeof n === 'string').slice(0, 5);
+  S.visits = (S.visits || 0) + 1;
+  let showTips = S.visits <= 3;
+  if (['dots', 'arc', 'ring', 'crescent'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
+  S.order = S.order.filter((n) => BY[n]).concat(BASE_APPS.map((a) => a.name).filter((n) => S.order.indexOf(n) === -1));
+  S.onMoon = (S.onMoon || []).filter((n) => BY[n]);
+  S.recent = (S.recent || []).filter((n) => BY[n]);
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  function hexToRgb(hex) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map((x) => x + x).join('');
+    const n = parseInt(h, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function hexA(hex, a) { const c = hexToRgb(hex); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+  function mix(h1, h2, t) {
+    const a = hexToRgb(h1), b = hexToRgb(h2);
+    return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join('');
+  }
+  /* ---------- Touch feel: vibration and sound ---------- */
+  const HAPT = {
+    soft: { fine: 3, detent: 8, detentSoft: 5, snap: 14, press: 22, swipe: [8, 30, 8] },
+    strong: { fine: 6, detent: 15, detentSoft: 9, snap: 24, press: 36, swipe: [14, 40, 14] }
+  };
+  let lastHapt = 0, lastDetent = 0;
+  function hapt(kind) {
+    if (S.haptics === 'off') return;
+    const now = performance.now();
+    if (now - lastHapt < (kind === 'fine' ? 32 : 18)) return;
+    if (kind === 'fine' && now - lastDetent < 50) return;
+    lastHapt = now;
+    if (kind !== 'fine') lastDetent = now;
+    try { if (navigator.vibrate) navigator.vibrate((HAPT[S.haptics] || HAPT.soft)[kind]); } catch (e) {}
+  }
+  let actx = null, noiseBuf = null, lastSound = 0;
+  function audio() {
+    if (S.sound !== 'on') return null;
+    try {
+      if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; actx = new AC(); }
+      if (actx.state === 'suspended') actx.resume();
+      return actx;
+    } catch (e) { return null; }
+  }
+  function sound(kind) {
+    const a = audio();
+    if (!a) return;
+    const nowMs = performance.now();
+    if (kind !== 'whoosh' && nowMs - lastSound < 28) return;
+    lastSound = nowMs;
+    const t = a.currentTime;
+    if (kind === 'whoosh') {
+      if (!noiseBuf) {
+        noiseBuf = a.createBuffer(1, Math.floor(a.sampleRate * 0.3), a.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+      }
+      const src = a.createBufferSource(); src.buffer = noiseBuf;
+      const f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.2;
+      f.frequency.setValueAtTime(500, t); f.frequency.exponentialRampToValueAtTime(2200, t + 0.25);
+      const g = a.createGain();
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+      src.connect(f); f.connect(g); g.connect(a.destination);
+      src.start(t); src.stop(t + 0.3);
+      return;
+    }
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'triangle';
+    o.frequency.value = kind === 'soft' ? 1800 : 2600;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(kind === 'soft' ? 0.04 : 0.07, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+    o.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t + 0.04);
+  }
+
+  /* ---------- Real sunrise and sunset (Vienna, works offline) ---------- */
+  const LAT = 48.2082, LON = 16.3738;
+  function sunTimes(date) {
+    const rad = Math.PI / 180, dayMs = 86400000, J1970 = 2440588, J2000 = 2451545, e = rad * 23.4397, J0 = 0.0009;
+    const toDays = (d) => d.valueOf() / dayMs - 0.5 + J1970 - J2000;
+    const fromJulian = (j) => new Date((j + 0.5 - J1970) * dayMs);
+    const lw = rad * -LON, phi = rad * LAT, d = toDays(date);
+    const n = Math.round(d - J0 - lw / (2 * Math.PI));
+    const ds = J0 + lw / (2 * Math.PI) + n;
+    const M = rad * (357.5291 + 0.98560028 * ds);
+    const C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    const L = M + C + rad * 102.9372 + Math.PI;
+    const dec = Math.asin(Math.sin(e) * Math.sin(L));
+    const Jnoon = J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+    const w = Math.acos((Math.sin(rad * -0.833) - Math.sin(phi) * Math.sin(dec)) / (Math.cos(phi) * Math.cos(dec)));
+    const a = J0 + (w + lw) / (2 * Math.PI) + n;
+    const Jset = J2000 + a + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+    const Jrise = Jnoon - (Jset - Jnoon);
+    return { rise: fromJulian(Jrise), set: fromJulian(Jset), noon: fromJulian(Jnoon) };
+  }
+  let sunCache = { key: '', rise: 6.5, set: 18.8, noon: 12.5 };
+  function sunToday() {
+    const d = new Date(), key = d.toDateString();
+    if (sunCache.key !== key) {
+      sunCache.key = key;
+      try {
+        const t = sunTimes(d), hh = (x) => x.getHours() + x.getMinutes() / 60;
+        const r = hh(t.rise), s = hh(t.set), nn = hh(t.noon);
+        if (r > 2 && s < 23 && r < nn && nn < s) sunCache = { key: key, rise: r, set: s, noon: nn };
+      } catch (err) {}
+    }
+    return sunCache;
+  }
+  function canon(h) {
+    const s = sunToday();
+    const R = [0, s.rise - 1.6, s.rise, s.rise + 1.5, s.noon, s.set - 1.5, s.set, s.set + 1.6, 24];
+    const C = [0, 5, 6.5, 8, 12.5, 17, 18.8, 20.5, 24];
+    for (let i = 0; i < R.length - 1; i++) if (R[i + 1] <= R[i]) return h;
+    for (let i = 0; i < R.length - 1; i++) if (h <= R[i + 1]) return C[i] + (C[i + 1] - C[i]) * (h - R[i]) / (R[i + 1] - R[i]);
+    return h;
+  }
+  function phaseNow() { return S.sky === 'night' ? 23 : canon(hourNow()); }
+  function themeBlend(ph) {
+    if (S.theme !== 'auto') return { a: S.theme, b: S.theme, t: 0 };
+    for (let i = 0; i < TIMELINE.length - 1; i++) {
+      const p = TIMELINE[i], q = TIMELINE[i + 1];
+      if (ph >= p[0] && ph <= q[0]) {
+        if (p[1] === q[1]) return { a: p[1], b: p[1], t: 0 };
+        const x = (ph - p[0]) / (q[0] - p[0]);
+        return { a: p[1], b: q[1], t: x * x * (3 - 2 * x) };
+      }
+    }
+    return { a: 'daylight', b: 'daylight', t: 0 };
+  }
+  function resolveTheme(key, ph) {
+    const tint = stopAt(SUNT, ph, 1);
+    if (key === 'custom' || !THEMES[key]) return { look: S.sunLook, color: S.sunTime ? tint : S.color, moon: S.moonLook };
+    const th = THEMES[key];
+    return { look: th.look, color: th.color === 'time' ? tint : th.color, moon: th.moon };
+  }
+  function lookBlend(ph) {
+    const tb = themeBlend(ph), ra = resolveTheme(tb.a, ph), rb = resolveTheme(tb.b, ph);
+    return { a: ra.look, b: rb.look, t: ra.look === rb.look ? 0 : tb.t, color: mix(ra.color, rb.color, tb.t), moon: tb.t < 0.5 ? ra.moon : rb.moon, theme: tb.t < 0.5 ? tb.a : tb.b };
+  }
+  function currentMoon() { return lookBlend(phaseNow()).moon; }
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function clockText() {
+    const d = new Date();
+    const h = st.demo ? st.demoH : S.sky === 'preview' ? S.hour : d.getHours() + d.getMinutes() / 60;
+    return fmtHour(h) + ' · ' + DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
+  }
+
+  /* ---------- Time of day: sky, sun colour, brightness ---------- */
+  const SKY = [[0, '#0B1430', '#13203B'], [5, '#0E1736', '#1A2247'], [6.5, '#2B2050', '#6B3A5E'], [8, '#245296', '#2A4F8A'], [12, '#2C64A6', '#1B4479'], [16, '#2A5C9C', '#1E467E'], [18.5, '#3A2A5E', '#7A3A4A'], [20.5, '#151A3C', '#2A2448'], [22, '#0B1430', '#13203B'], [24, '#0B1430', '#13203B']];
+  const SUNT = [[0, '#9AA6C4'], [5, '#B49AC8'], [6.5, '#FF8A65'], [8, '#FFB347'], [11, '#FFE08A'], [13, '#FFF0B3'], [16, '#FFC94D'], [18.5, '#FF8A3D'], [20, '#E0607E'], [21.5, '#9AA6C4'], [24, '#9AA6C4']];
+  const st = { rot: 180, pos: 0, screen: 'sun', W: 390, H: 844, vel: 0, spin: null, lastT: 0, view: false, demo: false, demoH: 0, sun: '#FFC94D', deep: '#E8902A', omega: 0, prevRot: 180, lastFrame: 0, tickRot: 180 };
+  function stopAt(stops, h, idx) {
+    for (let i = 0; i < stops.length - 1; i++) {
+      const a = stops[i], b = stops[i + 1];
+      if (h >= a[0] && h <= b[0]) return mix(a[idx], b[idx], (h - a[0]) / (b[0] - a[0] || 1));
+    }
+    return stops[0][idx];
+  }
+  function hourNow() {
+    if (st.demo) return st.demoH;
+    if (S.sky === 'night') return 23;
+    if (S.sky === 'preview') return S.hour;
+    const d = new Date();
+    return d.getHours() + d.getMinutes() / 60;
+  }
+  function nightness(h) {
+    if (h < 5 || h >= 21.5) return 1;
+    if (h < 7.5) return 1 - (h - 5) / 2.5;
+    if (h >= 19) return (h - 19) / 2.5;
+    return 0;
+  }
+  function daylight(h) { const n = 1 - nightness(h); return n * (0.75 + 0.25 * Math.max(0, 1 - Math.abs(h - 12.5) / 5)); }
+  function twilight(h) { return Math.max(0, 1 - Math.abs(h - 6.8) / 1.5) + Math.max(0, 1 - Math.abs(h - 19.1) / 1.5); }
+  function applyLight() {
+    const h = phaseNow(), r = document.documentElement.style;
+    const top = stopAt(SKY, h, 1), bot = stopAt(SKY, h, 2);
+    r.setProperty('--sky-top', top);
+    r.setProperty('--sky-bot', bot);
+    r.setProperty('--msky-top', mix(top, '#05070F', 0.55));
+    r.setProperty('--msky-bot', mix(bot, '#05070F', 0.55));
+    const sun = lookBlend(h).color;
+    st.sun = sun;
+    st.deep = mix(sun, '#7A2E10', 0.38);
+    r.setProperty('--sun', sun);
+    r.setProperty('--sun-deep', st.deep);
+    app.classList.toggle('fx', S.fx === 'fancy');
+    const ct = clockText();
+    $('sunClock').textContent = ct;
+    const chip = $('clockChip');
+    chip.hidden = !(st.demo || $('sunInfo').hidden);
+    chip.textContent = ct;
+  }
+  function fmtHour(h) { const hh = Math.floor(h) % 24, mm = Math.floor((h - Math.floor(h)) * 60); return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); }
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const STARS = Array.from({ length: 80 }, () => [rnd(), rnd(), 0.5 + rnd() * 1.2, 0.4 + rnd() * 0.6, rnd() * 6.28]);
+  function drawStars(c, W, H, alpha, now, twinkle) {
+    if (alpha <= 0.01) return;
+    STARS.forEach((s) => {
+      const tw = twinkle ? 0.65 + 0.35 * Math.sin(now / 700 + s[4]) : 1;
+      c.beginPath();
+      c.arc(s[0] * W, s[1] * H, s[2], 0, 2 * Math.PI);
+      c.fillStyle = 'rgba(245, 239, 227,' + (alpha * s[3] * tw).toFixed(3) + ')';
+      c.fill();
+    });
+  }
+
+  /* ---------- State and loop ---------- */
+  const app = $('app'), worlds = $('worlds');
+  const sunCv = $('sunCanvas'), moonCv = $('moonCanvas');
+  let APPS = [];
+  let tweens = [], raf = 0, dirty = true, suppressClick = false;
+  const fancy = () => S.fx === 'fancy' && !reduce;
+
+  function kick() { dirty = true; if (!raf) raf = requestAnimationFrame(frame); }
+  function tween(key, to, dur) {
+    tweens = tweens.filter((w) => w.key !== key);
+    tweens.push({ key: key, from: st[key], to: to, t0: performance.now(), dur: reduce ? 1 : dur });
+    kick();
+  }
+  function stopTween(key) { tweens = tweens.filter((w) => w.key !== key); }
+  function frame(now) {
+    raf = 0;
+    const dtf = st.lastFrame ? Math.min(64, now - st.lastFrame) : 16;
+    st.lastFrame = now;
+    let active = false;
+    tweens = tweens.filter((w) => {
+      const k = Math.min(1, (now - w.t0) / w.dur), e = 1 - Math.pow(1 - k, 3);
+      st[w.key] = w.from + (w.to - w.from) * e;
+      if (k < 1) { active = true; return true; }
+      return false;
+    });
+    if (st.spin) {
+      const dt = Math.min(48, now - st.lastT);
+      st.lastT = now;
+      st[st.spin] += st.vel * dt;
+      st.vel *= Math.exp(-dt / 325);
+      let stop = Math.abs(st.vel) < (st.spin === 'rot' ? 0.03 : 0.0006);
+      if (st.spin === 'pos' && (st.pos < -0.3 || st.pos > LIST.length - 0.7)) stop = true;
+      if (stop) { const key = st.spin; st.spin = null; hapt('snap'); if (key === 'rot') snapRot(); else snapPos(); }
+      active = true;
+    }
+    if (st.demo) {
+      st.demoH = (st.demoH + dtf * 24 / 20000) % 24;
+      applyLight();
+      active = true;
+    }
+    st.omega = (st.rot - st.prevRot) / Math.max(1, dtf);
+    st.prevRot = st.rot;
+    if (Math.abs(st.rot - st.tickRot) >= 7.2) { hapt('fine'); st.tickRot = st.rot; }
+    const lbNow = lookBlend(phaseNow());
+    const ambient = fancy() || ((lbNow.a === 'plasma' || lbNow.b === 'plasma') && !reduce);
+    if (dirty || active || ambient) { render(now, dtf); dirty = false; }
+    if ((active || ambient || tweens.length) && !raf && !document.hidden) raf = requestAnimationFrame(frame);
+  }
+  function velocity(samples) {
+    if (!samples || samples.length < 2) return 0;
+    const last = samples[samples.length - 1];
+    if (performance.now() - last.t > 70) return 0;
+    let first = samples[0];
+    for (let i = samples.length - 1; i >= 0; i--) { if (last.t - samples[i].t > 90) break; first = samples[i]; }
+    const dt = last.t - first.t;
+    return dt > 0 ? (last.v - first.v) / dt : 0;
+  }
+  function resize() {
+    const r = app.getBoundingClientRect();
+    st.W = r.width; st.H = r.height;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    [sunCv, moonCv].forEach((c) => {
+      c.width = Math.round(st.W * dpr); c.height = Math.round(st.H * dpr);
+      c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+    if (st.screen === 'moon') worlds.style.transform = 'translateY(-50%)';
+    kick();
+  }
+
+  /* ---------- Apps ---------- */
+  const sunApps = () => S.order.filter((n) => S.onMoon.indexOf(n) === -1).map((n) => BY[n]);
+  const moonApps = () => S.mode === 'one' ? S.order.map((n) => BY[n]) : S.order.filter((n) => S.onMoon.indexOf(n) !== -1).map((n) => BY[n]);
+  function moonGroups() {
+    const g = [];
+    const favs = S.favs.filter(Boolean);
+    if (favs.length) g.push({ name: 'Favourites', items: favs.map((n) => BY[n] ? { name: n, app: true, hint: BY[n].hint, href: BY[n].href, fav: true } : { name: n, fav: true }) });
+    const ma = moonApps();
+    if (ma.length) g.push({ name: 'Apps', items: ma.map((a) => ({ name: a.name, app: true, hint: a.hint, href: a.href })) });
+    FUNCS.forEach((f) => g.push({ name: f.name, items: f.items.map((n) => ({ name: n })) }));
+    return g;
+  }
+
+  /* ---------- Sun ---------- */
+  function currentTilt() { return S.dir === 'edge' ? Math.min(85, S.tilt + 10) : S.tilt; }
+  function frontDeg() { return currentTilt() >= 0 ? 180 : 0; }
+  function presetGeo(dir) {
+    const W = st.W, H = st.H, base = Math.min(W * 0.36, 150, H * 0.17);
+    if (dir === 'upright') return { cxf: 0.45, cyf: 0.43, R: base, roll: -90 };
+    if (dir === 'diagonal') return { cxf: 0.5, cyf: 0.4, R: base * 0.93, roll: -45 };
+    if (dir === 'tall') return { cxf: 0.33, cyf: 0.5, R: Math.min(H * 0.34, 290), roll: -90 };
+    if (dir === 'rolodex') return { cxf: 0.3, cyf: 0.47, R: Math.min(H * 0.3, 250), roll: -90 };
+    if (dir === 'edge') return { cxf: 0.5, cyf: 0.72, R: W * 0.62, roll: 0 };
+    return { cxf: 0.5, cyf: 0.41, R: base, roll: 0 };
+  }
+  function sunGeo() {
+    const p = S.dir === 'custom' && S.custom ? S.custom : presetGeo(S.dir);
+    const g = { cx: st.W * p.cxf, cy: st.H * p.cyf, R: p.R, roll: p.roll, tilt: currentTilt() };
+    const T = g.tilt * Math.PI / 180, rho = g.roll * Math.PI / 180;
+    const cosT = Math.cos(T), sinT = Math.sin(T), cr = Math.cos(rho), sr = Math.sin(rho), P = Math.max(700, p.R * 4);
+    g.cr = cr; g.sr = sr; g.sinT = sinT;
+    g.proj = (x, y) => {
+      const z = Math.min(y * sinT, P * 0.6), s = P / (P - z), sx = x * s, sy = y * cosT * s;
+      return [g.cx + sx * cr - sy * sr, g.cy + sx * sr + sy * cr, s, z];
+    };
+    g.polar = (r, a) => g.proj(r * Math.sin(a), -r * Math.cos(a));
+    return g;
+  }
+  function ensureCustom() {
+    if (S.dir === 'custom' && S.custom) return;
+    const p = presetGeo(S.dir);
+    S.tilt = currentTilt();
+    S.custom = { cxf: p.cxf, cyf: p.cyf, R: p.R, roll: p.roll };
+    S.dir = 'custom';
+  }
+  function frontIndex() {
+    const n = APPS.length, step = 360 / n;
+    return ((Math.round((frontDeg() - st.rot) / step) % n) + n) % n;
+  }
+  function snapRot() {
+    const step = 360 / APPS.length, fd = frontDeg(), k = Math.round((fd - st.rot) / step);
+    tween('rot', fd - k * step, 320);
+  }
+  function rotateTo(i) {
+    const step = 360 / APPS.length, base = frontDeg() - i * step;
+    const d = ((((base - st.rot) % 360) + 540) % 360) - 180;
+    tween('rot', st.rot + d, 480);
+  }
+
+  let facetEls = [];
+  function buildFacets() {
+    APPS = sunApps();
+    const box = $('facets');
+    box.textContent = '';
+    facetEls = APPS.map((a, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'facet';
+      const ini = document.createElement('span');
+      ini.className = 'ini';
+      ini.setAttribute('aria-hidden', 'true');
+      if (ICONS[a.name]) { const im = document.createElement('img'); im.src = ICONS[a.name]; im.alt = ''; ini.appendChild(im); }
+      else ini.textContent = a.name.charAt(0);
+      const nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = a.name;
+      b.appendChild(ini);
+      b.appendChild(nm);
+      b.addEventListener('click', () => { if (suppressClick) return; pickApp(i); });
+      b.addEventListener('pointerdown', () => {
+        cancelLP();
+        lp = setTimeout(() => {
+          lp = 0;
+          if (drag && !drag.moved && !pinch) {
+            endDrag();
+            suppressClick = true;
+            setTimeout(() => { suppressClick = false; }, 450);
+            hapt('press');
+            openShortcuts(a);
+          }
+        }, 450);
+      });
+      box.appendChild(b);
+      return b;
+    });
+    lastFront = -1;
+  }
+  let lp = 0;
+  function cancelLP() { if (lp) { clearTimeout(lp); lp = 0; } }
+
+  const parts = [];
+  let emitAcc = 0;
+  let lastFront = -1;
+  function renderSun(now, hour, dtf) {
+    const c = sunCv.getContext('2d'), W = st.W, H = st.H;
+    c.clearRect(0, 0, W, H);
+    const fx = fancy(), bl = lookBlend(hour), look = bl.t < 0.5 ? bl.a : bl.b, day = daylight(hour), tw = twilight(hour);
+    const looks = bl.t <= 0.001 || bl.a === bl.b ? [[bl.a, 1]] : bl.t >= 0.999 ? [[bl.b, 1]] : [[bl.a, 1 - bl.t], [bl.b, bl.t]];
+    drawStars(c, W, H, nightness(hour) * 0.8, now, fx);
+    const G = sunGeo();
+    const sun = st.sun, deep = st.deep;
+    const n = APPS.length, step = 2 * Math.PI / n, rot = st.rot * Math.PI / 180;
+    const front = frontIndex(), fa = frontDeg() * Math.PI / 180;
+    const coreR = 50, cx = G.cx, cy = G.cy;
+    const af = Math.abs(G.sinT), sg = G.sinT >= 0 ? 1 : -1;
+    const depthF = (a) => ((1 - sg * Math.cos(a)) / 2) * af + (1 - af);
+    const isBack = (a) => sg * Math.cos(a) > 0;
+    const light = 0.45 + 0.55 * day;
+
+    if (tw > 0.02) {
+      const hg = c.createLinearGradient(0, H, 0, H * 0.45);
+      hg.addColorStop(0, hexA(sun, 0.38 * Math.min(1, tw)));
+      hg.addColorStop(1, hexA(sun, 0));
+      c.fillStyle = hg;
+      c.fillRect(0, 0, W, H);
+    }
+    const glowR = Math.max(80, G.R * (1.05 + 0.45 * day));
+    const glow = c.createRadialGradient(cx, cy, coreR * 0.6, cx, cy, glowR);
+    glow.addColorStop(0, hexA(sun, (look === 'eclipse' ? 0.2 : look === 'blackhole' ? 0.14 : 0.36) * light));
+    glow.addColorStop(1, hexA(sun, 0));
+    c.fillStyle = glow;
+    c.fillRect(0, 0, W, H);
+
+    function poly(pts, fill, stroke, lw) {
+      c.beginPath();
+      pts.forEach((p, j) => { if (j) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); });
+      c.closePath();
+      if (fill) { c.fillStyle = fill; c.fill(); }
+      if (stroke) { c.strokeStyle = stroke; c.lineWidth = lw || 1; c.stroke(); }
+    }
+    function line(p1, p2, color, w) {
+      c.beginPath(); c.moveTo(p1[0], p1[1]); c.lineTo(p2[0], p2[1]);
+      c.strokeStyle = color; c.lineWidth = w; c.lineCap = 'round'; c.stroke();
+    }
+    function ring(r, color, w, dash, off) {
+      c.beginPath();
+      for (let k = 0; k <= 96; k++) {
+        const pr = G.polar(r, k / 96 * 2 * Math.PI + (off || 0));
+        if (k) c.lineTo(pr[0], pr[1]); else c.moveTo(pr[0], pr[1]);
+      }
+      c.setLineDash(dash || []);
+      c.strokeStyle = color; c.lineWidth = w; c.stroke();
+      c.setLineDash([]);
+    }
+    function arcSeg(r, a0, a1, color, w) {
+      c.beginPath();
+      const k = 18;
+      for (let q = 0; q <= k; q++) { const pq = G.polar(r, a0 + (a1 - a0) * q / k); if (q) c.lineTo(pq[0], pq[1]); else c.moveTo(pq[0], pq[1]); }
+      c.strokeStyle = color; c.lineWidth = w; c.lineCap = 'round'; c.stroke();
+    }
+
+    ring(G.R + 20, hexA(sun, 0.2), 1.5);
+    if (fx) {
+      const t = now / 1000;
+      for (let q = 0; q < 4; q++) arcSeg(G.R + 38, t * 0.25 + q * Math.PI / 2, t * 0.25 + q * Math.PI / 2 + 0.85, hexA(sun, 0.4), 1.2);
+      ring(G.R + 46, hexA(sun, 0.16), 1, [2, 7], -t * 0.12);
+      if (Math.abs(st.omega) > 0.02) {
+        const trail = clamp(st.omega * Math.PI / 180 * 140, -0.7, 0.7);
+        for (let i = 0; i < n; i++) {
+          const a = i * step + rot;
+          arcSeg(G.R, a - trail, a, hexA(sun, 0.22 * depthF(a)), 7 * G.polar(G.R, a)[2]);
+        }
+      }
+    }
+
+    function drawRay(i, look) {
+      const a = i * step + rot, f = depthF(a), isF = i === front;
+      if (look === 'rays') {
+        const a2 = a + step / 2;
+        poly([G.polar(coreR * 0.9, a2 - 0.07), G.polar(coreR + (G.R - coreR) * 0.5, a2), G.polar(coreR * 0.9, a2 + 0.07)], hexA(deep, 0.35 + 0.35 * depthF(a2)));
+        poly([G.polar(coreR * 0.9, a - 0.14), G.polar(G.R - 14, a), G.polar(coreR * 0.9, a + 0.14)], isF ? sun : hexA(deep, 0.5 + 0.45 * f));
+      } else if (look === 'neon') {
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        c.shadowColor = sun; c.shadowBlur = isF ? 18 : 10;
+        poly([G.polar(coreR + 6, a - 0.12), G.polar(G.R - 14, a), G.polar(coreR + 6, a + 0.12)], isF ? hexA(sun, 0.35) : null, hexA(sun, isF ? 1 : 0.35 + 0.5 * f), isF ? 2.2 : 1.3);
+        c.restore();
+      } else if (look === 'eclipse') {
+        line(G.polar(coreR + 4, a), G.polar(G.R - 12, a), isF ? sun : hexA(sun, 0.18 + 0.5 * f), isF ? 4 : 2);
+        line(G.polar(coreR + 4, a + step / 3), G.polar(coreR + (G.R - coreR) * 0.55, a + step / 3), hexA(sun, 0.12 + 0.25 * f), 1.2);
+        line(G.polar(coreR + 4, a - step / 3), G.polar(coreR + (G.R - coreR) * 0.4, a - step / 3), hexA(sun, 0.12 + 0.25 * f), 1.2);
+      } else if (look === 'plasma' && isF) {
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        poly([G.polar(coreR * 0.9, a - 0.1), G.polar(G.R - 10, a), G.polar(coreR * 0.9, a + 0.1)], hexA(sun, 0.7));
+        c.restore();
+      } else if (look === 'blackhole' && isF) {
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        line(G.polar(coreR * 1.25, a), G.polar(G.R - 12, a), hexA(sun, 0.75), 2);
+        c.restore();
+      }
+    }
+
+    function diskHalf(frontHalf) {
+      const t = reduce ? 0 : now / 1000;
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      const rings = 24;
+      for (let k = 0; k < rings; k++) {
+        const u = k / (rings - 1), r = coreR * 1.18 + (G.R * 0.9 - coreR * 1.18) * u;
+        const col = u < 0.25 ? mix('#FFF4D6', sun, u / 0.25) : mix(sun, '#6E1A0E', (u - 0.25) / 0.75);
+        const al = (0.5 * (1 - u) + 0.07) * (0.6 + 0.4 * light);
+        const spin = t * (1.5 / (0.35 + u * 2)) + rot;
+        for (let s = 0; s < 3; s++) {
+          const a0 = spin + s * 2.1 + k * 0.7, a1 = a0 + 1.1 + 0.4 * Math.sin(k * 1.7);
+          c.beginPath();
+          let on = false;
+          for (let q = 0; q <= 18; q++) {
+            const aq = a0 + (a1 - a0) * q / 18, want = frontHalf ? !isBack(aq) : isBack(aq), pq = G.polar(r, aq);
+            if (want) { if (on) c.lineTo(pq[0], pq[1]); else { c.moveTo(pq[0], pq[1]); on = true; } } else on = false;
+          }
+          c.strokeStyle = hexA(col, al.toFixed(3));
+          c.lineWidth = 1.4 + (1 - u) * 2.4;
+          c.lineCap = 'round';
+          c.stroke();
+        }
+      }
+      c.restore();
+    }
+
+    function plasmaLayers() {
+      const ph = reduce ? 0 : now / 520;
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      [[0.7, 0.16, 0.38, 1], [0.5, 0.13, 0.5, -1.3], [0.32, 0.09, 0.7, 0.8]].forEach((L) => {
+        const rb = coreR + (G.R - coreR) * L[0], amp = (G.R - coreR) * L[1];
+        c.beginPath();
+        for (let q = 0; q <= 160; q++) {
+          const phi = q / 160 * 2 * Math.PI;
+          const wob = 0.5 * Math.sin(n * phi + ph * L[3]) + 0.3 * Math.sin(2 * n * phi - ph * 1.7 + 1) + 0.2 * Math.sin(5 * phi + ph * 0.6);
+          const pp = G.polar(rb + amp * wob, phi + rot);
+          if (q) c.lineTo(pp[0], pp[1]); else c.moveTo(pp[0], pp[1]);
+        }
+        c.closePath();
+        const gr = c.createRadialGradient(cx, cy, coreR * 0.5, cx, cy, G.R * 1.05);
+        gr.addColorStop(0, hexA(sun, L[2] * light));
+        gr.addColorStop(0.65, hexA(deep, L[2] * 0.55 * light));
+        gr.addColorStop(1, hexA(deep, 0));
+        c.fillStyle = gr;
+        c.fill();
+      });
+      c.restore();
+    }
+
+    const idx = [];
+    for (let i = 0; i < n; i++) idx.push(i);
+    idx.sort((p, q) => sg * Math.cos(q * step + rot) - sg * Math.cos(p * step + rot));
+
+    if (fx) {
+      const rate = 14 + Math.min(60, Math.abs(st.omega) * 40) + (look === 'eclipse' || look === 'plasma' ? 10 : 0);
+      emitAcc += rate * dtf / 1000;
+      while (emitAcc >= 1) {
+        emitAcc -= 1;
+        if (parts.length < 140) {
+          if (look === 'blackhole') parts.push({ r: G.R + 20 + Math.random() * 40, a: Math.random() * 2 * Math.PI, v: -(0.02 + Math.random() * 0.04), life: 1, size: 0.6 + Math.random() * 1.4, inward: true });
+          else parts.push({ r: coreR + 2 + Math.random() * 6, a: Math.random() * 2 * Math.PI, v: 0.025 + Math.random() * 0.055, life: 1, size: 0.7 + Math.random() * 1.6 });
+        }
+      }
+      const spinDrift = st.omega * Math.PI / 180 * 0.35;
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      for (let k = parts.length - 1; k >= 0; k--) {
+        const p = parts[k];
+        p.r += p.v * dtf * (p.inward ? 1 + G.R / Math.max(20, p.r) * 0.6 : 1);
+        p.a += spinDrift * dtf + (p.inward ? 0.0016 * dtf * G.R / Math.max(20, p.r) : 0);
+        p.life -= dtf / (p.inward ? 4200 : 2600);
+        if (p.life <= 0 || p.r > G.R + 70 || (p.inward && p.r < coreR * 0.95)) { parts.splice(k, 1); continue; }
+        const pp = G.polar(p.r, p.a), al = (p.inward ? p.life * 0.8 * Math.min(1, (G.R + 60 - p.r) / 60) : p.life * 0.75 * (1 - p.r / (G.R + 70))) * light;
+        c.beginPath();
+        c.arc(pp[0], pp[1], p.size * pp[2], 0, 2 * Math.PI);
+        c.fillStyle = hexA(sun, al.toFixed(3));
+        c.fill();
+      }
+      c.restore();
+    } else parts.length = 0;
+
+    function body(look) {
+    if (look === 'blackhole') {
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      for (let j = 0; j < 6; j++) {
+        const rr = coreR * (1.06 + j * 0.06);
+        c.beginPath();
+        c.ellipse(cx, cy, rr, rr * 0.94, 0, Math.PI * 1.04, Math.PI * 1.96);
+        c.strokeStyle = hexA(j < 2 ? '#FFF4D6' : sun, Math.max(0.05, (0.55 - j * 0.08) * (0.6 + 0.4 * light)).toFixed(3));
+        c.lineWidth = 2.4 - j * 0.28;
+        c.stroke();
+      }
+      c.restore();
+      c.save();
+      c.shadowColor = sun; c.shadowBlur = 26;
+      c.beginPath(); c.arc(cx, cy, coreR * 0.95, 0, 2 * Math.PI);
+      c.fillStyle = '#020308'; c.fill();
+      c.lineWidth = 1.8; c.strokeStyle = 'rgba(255, 244, 214, 0.9)'; c.stroke();
+      c.restore();
+    } else if (look === 'eclipse') {
+      c.save();
+      c.shadowColor = sun; c.shadowBlur = 30;
+      c.beginPath(); c.arc(cx, cy, coreR, 0, 2 * Math.PI);
+      c.fillStyle = '#070B18'; c.fill();
+      c.lineWidth = 3; c.strokeStyle = sun; c.stroke();
+      c.restore();
+      if (fx) {
+        const da = now / 1400, dx = cx + coreR * Math.cos(da), dy = cy + coreR * Math.sin(da);
+        const dg = c.createRadialGradient(dx, dy, 0, dx, dy, 22);
+        dg.addColorStop(0, 'rgba(255, 252, 240, 0.95)');
+        dg.addColorStop(1, hexA(sun, 0));
+        c.save(); c.globalCompositeOperation = 'lighter';
+        c.fillStyle = dg; c.beginPath(); c.arc(dx, dy, 22, 0, 2 * Math.PI); c.fill();
+        line([dx - 34, dy], [dx + 34, dy], 'rgba(255, 252, 240, 0.5)', 1);
+        c.restore();
+      }
+    } else if (look === 'neon') {
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      c.shadowColor = sun; c.shadowBlur = 22;
+      c.beginPath(); c.arc(cx, cy, coreR, 0, 2 * Math.PI);
+      c.fillStyle = hexA(sun, 0.12); c.fill();
+      c.strokeStyle = sun; c.lineWidth = 2.5; c.stroke();
+      c.beginPath(); c.arc(cx, cy, coreR - 9, 0, 2 * Math.PI);
+      c.strokeStyle = hexA(sun, 0.5); c.lineWidth = 1; c.stroke();
+      c.restore();
+      const t2 = now / 1000;
+      c.save();
+      c.setLineDash([3, 9]);
+      c.beginPath(); c.arc(cx, cy, coreR + 10, t2 * 0.6, t2 * 0.6 + 2 * Math.PI);
+      c.strokeStyle = hexA(sun, 0.55); c.lineWidth = 1.2; c.stroke();
+      c.restore();
+    } else {
+      const body = c.createRadialGradient(cx - coreR * 0.35, cy - coreR * 0.35, coreR * 0.1, cx, cy, coreR);
+      body.addColorStop(0, '#FFF8E6');
+      body.addColorStop(0.55, sun);
+      body.addColorStop(1, deep);
+      c.beginPath(); c.arc(cx, cy, coreR, 0, 2 * Math.PI);
+      c.fillStyle = body; c.fill();
+      c.strokeStyle = 'rgba(255, 248, 230, 0.45)'; c.lineWidth = 1.5; c.stroke();
+    }
+    }
+
+    looks.forEach((lk) => {
+      c.save();
+      c.globalAlpha = lk[1];
+      if (lk[0] === 'plasma') plasmaLayers();
+      if (lk[0] === 'blackhole') diskHalf(false);
+      idx.filter((i) => isBack(i * step + rot)).forEach((i) => drawRay(i, lk[0]));
+      body(lk[0]);
+      if (lk[0] === 'blackhole') diskHalf(true);
+      idx.filter((i) => !isBack(i * step + rot)).forEach((i) => drawRay(i, lk[0]));
+      c.restore();
+    });
+
+    if (fx && look !== 'neon' && look !== 'blackhole') {
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      const fl = 0.3 * light;
+      const lg = c.createLinearGradient(cx - W * 0.48, cy, cx + W * 0.48, cy);
+      lg.addColorStop(0, 'rgba(255, 248, 230, 0)');
+      lg.addColorStop(0.5, 'rgba(255, 248, 230,' + fl.toFixed(3) + ')');
+      lg.addColorStop(1, 'rgba(255, 248, 230, 0)');
+      c.fillStyle = lg;
+      c.fillRect(cx - W * 0.48, cy - 1.2, W * 0.96, 2.4);
+      [[0.9, 7, 0.08], [1.6, 15, 0.05], [2.3, 9, 0.07]].forEach((gk) => {
+        const gx = cx + (W / 2 - cx) * gk[0] + 40 * gk[0], gy = cy + 70 * gk[0];
+        c.beginPath(); c.arc(gx, gy, gk[1], 0, 2 * Math.PI);
+        c.fillStyle = hexA(sun, (gk[2] * light).toFixed(3)); c.fill();
+      });
+      c.restore();
+    }
+
+    facetEls.forEach((el, i) => {
+      const a = i * step + rot, p = G.polar(G.R, a), f = depthF(a);
+      const dd = Math.abs((((a - fa) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+      const flip = S.dir === 'rolodex';
+      if (flip) {
+        const tl = clamp(-Math.asin(clamp((p[1] - G.cy) / (G.R * 1.02), -1, 1)) * 180 / Math.PI, -78, 78);
+        el.style.transform = 'translate(' + p[0].toFixed(1) + 'px,' + p[1].toFixed(1) + 'px) translate(-50%,-50%) scale(' + p[2].toFixed(3) + ') perspective(520px) rotateX(' + tl.toFixed(1) + 'deg)';
+      } else {
+        el.style.transform = 'translate(' + p[0].toFixed(1) + 'px,' + p[1].toFixed(1) + 'px) translate(-50%,-100%) scale(' + p[2].toFixed(3) + ')';
+      }
+      el.classList.toggle('flip', flip);
+      el.style.zIndex = String(500 + Math.round(p[3]));
+      el.style.opacity = (0.3 + 0.7 * f).toFixed(2);
+      el.classList.toggle('mini', dd > (flip ? 1.25 : 0.8));
+    });
+    const core = $('core');
+    core.style.transform = 'translate(' + (cx - 42).toFixed(1) + 'px,' + (cy - 42).toFixed(1) + 'px)';
+    core.classList.toggle('light', look === 'eclipse' || look === 'neon' || look === 'blackhole');
+
+    if (front !== lastFront) {
+      if (lastFront !== -1) { hapt('detent'); sound('tick'); }
+      facetEls.forEach((el, i) => {
+        el.classList.toggle('front', i === front);
+        el.setAttribute('aria-label', APPS[i].name + (i === front ? ', in front. Tap to open, hold for shortcuts' : ''));
+      });
+      $('sunName').textContent = APPS[front].name;
+      $('sunHint').textContent = APPS[front].hint;
+      lastFront = front;
+    }
+    let maxY = 0, minY = H;
+    for (let m = 0; m < 24; m++) { const pm = G.polar(G.R, m / 24 * 2 * Math.PI); if (pm[1] > maxY) maxY = pm[1]; if (pm[1] < minY) minY = pm[1]; }
+    let top = maxY + 26, showInfo = true;
+    if (top + 130 > H - 110) { top = 100; showInfo = minY - 70 > 240; }
+    $('sunInfo').style.top = Math.round(top) + 'px';
+    if ($('sunInfo').hidden !== !showInfo) { $('sunInfo').hidden = !showInfo; $('clockChip').hidden = !(st.demo || !showInfo); $('clockChip').textContent = clockText(); }
+    $('sunTip').hidden = !showTips;
+    $('sunTip').textContent = st.view
+      ? 'Drag to turn the view · switch this off in Settings to spin again'
+      : 'Flick to spin · hold an app for shortcuts · two fingers turn the view';
+  }
+
+  function pickApp(i) {
+    if (i === frontIndex()) { openApp(APPS[i]); return; }
+    rotateTo(i);
+  }
+
+  /* ---------- Moon ---------- */
+  let LIST = [], GROUPS = [], itemEls = [], labelEls = [], lastLive = -1, labelPos = [], groupStarts = [];
+  function openFav(it) {
+    const isFav = S.favs.indexOf(it.name) !== -1;
+    const a = BY[it.name];
+    openSheet(it.name, isFav ? 'This is one of your favourites at the top of the moon.' : 'Favourites stay at the top of the moon. You can keep up to 5.', a ? a.href : '', false, [{
+      label: isFav ? 'Remove from favourites' : 'Add to favourites',
+      run: () => {
+        if (isFav) S.favs = S.favs.filter((n) => n !== it.name);
+        else { if (S.favs.length >= 5) { toast('You already have 5 favourites. Remove one first.'); return; } S.favs.push(it.name); }
+        const keep = it.name;
+        save();
+        buildItems();
+        const k = LIST.findIndex((x) => x.name === keep);
+        st.pos = k === -1 ? 0 : k;
+        kick();
+        toast(isFav ? 'Removed from favourites.' : 'Added to favourites.');
+      }
+    }]);
+  }
+  function labelAt(e) {
+    const r = $('moonScreen').getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    let best = -1, bd = 40;
+    labelPos.forEach((p, gi) => { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; best = gi; } });
+    return best;
+  }
+  let shoot = null, nextShoot = 0;
+  function buildItems() {
+    GROUPS = moonGroups();
+    LIST = [];
+    GROUPS.forEach((g, gi) => g.items.forEach((it) => LIST.push(Object.assign({ group: g.name, gi: gi }, it))));
+    const box = $('items');
+    box.textContent = '';
+    itemEls = LIST.map((it, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'item' + (it.app ? ' app' : '');
+      const d = document.createElement('span'); d.className = 'dot'; d.setAttribute('aria-hidden', 'true');
+      const t = document.createElement('span'); t.textContent = it.name;
+      const gr = document.createElement('small'); gr.className = 'grp'; gr.setAttribute('aria-hidden', 'true'); gr.textContent = it.group;
+      b.appendChild(d); b.appendChild(t); b.appendChild(gr);
+      b.addEventListener('click', () => { if (suppressClick) return; pickItem(i); });
+      b.addEventListener('pointerdown', () => {
+        cancelLP();
+        lp = setTimeout(() => {
+          lp = 0;
+          if (drag && !drag.moved) {
+            endDrag();
+            suppressClick = true;
+            setTimeout(() => { suppressClick = false; }, 450);
+            hapt('press');
+            openFav(it);
+          }
+        }, 450);
+      });
+      box.appendChild(b);
+      return b;
+    });
+    const lb = $('glabels');
+    lb.textContent = '';
+    labelEls = GROUPS.map((g) => {
+      const el = document.createElement('div');
+      el.className = 'glabel';
+      el.textContent = g.name;
+      lb.appendChild(el);
+      return el;
+    });
+    st.pos = clamp(st.pos, 0, LIST.length - 1);
+    lastLive = -1;
+  }
+  function moonGeo() {
+    const W = st.W, H = st.H, look = currentMoon();
+    const Ri = Math.min(W * 0.385, 150, H * 0.178), k = Ri / 150, cy = H * 0.5;
+    const g = { Ri: Ri, k: k, cy: cy, Ix: W * 0.77, Ox: W * 0.615, rO: 230 * k, rI: 215 * k, Cm: W * 0.692 };
+    g.rA = Ri * 1.2;
+    g.rIn = Ri * 1.22; g.rOut = Ri * 1.58;
+    g.amax = ({ crescent: 80, arc: 78, ring: 76, dots: 78, rolodex: 78 }[look] || 78) * Math.PI / 180;
+    g.span = Math.min(H * 0.3, 250);
+    g.cardW = Math.min(250, W - 128);
+    g.cardX = 96 + g.cardW / 2;
+    g.Rr = Math.min(170, H * 0.2);
+    g.top = look === 'rolodex' ? cy - g.span : cy - g.rO;
+    g.bottom = look === 'rolodex' ? cy + g.span : cy + g.rO;
+    g.at = (alpha, role) => {
+      const dx = -Math.cos(alpha), dy = Math.sin(alpha);
+      if (look === 'rolodex') {
+        const t = (alpha / g.amax + 1) / 2, y = cy - g.span + 2 * g.span * t;
+        return [role === 'label' ? 54 : 22, y];
+      }
+      if (look === 'crescent') {
+        const dO = g.Cm - g.Ox, dI = g.Cm - g.Ix;
+        const sOut = -dO * dx + Math.sqrt(dO * dO * dx * dx - dO * dO + g.rO * g.rO);
+        const sIn = -dI * dx + Math.sqrt(dI * dI * dx * dx - dI * dI + g.rI * g.rI);
+        const s = role === 'tick' ? sOut - 6 : (sIn + sOut) / 2;
+        return [g.Cm + s * dx, cy + s * dy];
+      }
+      let r;
+      if (look === 'arc' || look === 'dots') r = role === 'tick' ? g.rA + (look === 'dots' ? 0 : 9) : role === 'label' ? g.rA + 34 : g.rA;
+      else r = role === 'tick' ? g.rOut - 7 : (g.rIn + g.rOut) / 2;
+      return [g.Ix + r * dx, cy + r * dy];
+    };
+    g.markerR = look === 'crescent' ? 222 * k : (look === 'arc' || look === 'dots') ? g.rA : (g.rIn + g.rOut) / 2;
+    return g;
+  }
+  const liveIndex = () => clamp(Math.round(st.pos), 0, LIST.length - 1);
+
+  function renderMoon(now, hour) {
+    const c = moonCv.getContext('2d'), W = st.W, H = st.H, look = currentMoon(), fx = fancy();
+    c.clearRect(0, 0, W, H);
+    const night = nightness(hour);
+    drawStars(c, W, H, 0.3 + 0.6 * night, now, fx);
+    if (fx && night > 0.2) {
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      [['#3DE0C0', 0.0, 22], ['#7A6CFF', 1.7, 16]].forEach((au) => {
+        const base = H * 0.13, t = now / 2600;
+        c.beginPath();
+        for (let x = 0; x <= W; x += 8) { const y = base + Math.sin(x * 0.011 + t + au[1]) * au[2] + Math.sin(x * 0.027 - t * 1.4) * 8; if (x) c.lineTo(x, y); else c.moveTo(x, y); }
+        for (let x = W; x >= 0; x -= 8) { const y = base + 70 + Math.sin(x * 0.011 + t + au[1]) * au[2] * 0.6; c.lineTo(x, y); }
+        c.closePath();
+        const ag = c.createLinearGradient(0, base - 20, 0, base + 80);
+        ag.addColorStop(0, hexA(au[0], 0));
+        ag.addColorStop(0.35, hexA(au[0], (0.16 * night).toFixed(3)));
+        ag.addColorStop(1, hexA(au[0], 0));
+        c.fillStyle = ag;
+        c.fill();
+      });
+      c.restore();
+      if (!shoot && now > nextShoot) { shoot = { t0: now, x: W * (0.2 + Math.random() * 0.6), y: H * (0.05 + Math.random() * 0.15) }; nextShoot = now + 6000 + Math.random() * 7000; }
+      if (shoot) {
+        const k = (now - shoot.t0) / 800;
+        if (k >= 1) shoot = null;
+        else {
+          const x1 = shoot.x + 160 * k, y1 = shoot.y + 70 * k;
+          const sg2 = c.createLinearGradient(x1 - 70, y1 - 30, x1, y1);
+          sg2.addColorStop(0, 'rgba(245, 239, 227, 0)');
+          sg2.addColorStop(1, 'rgba(245, 239, 227,' + (0.8 * (1 - k)).toFixed(3) + ')');
+          c.beginPath(); c.moveTo(x1 - 70, y1 - 30); c.lineTo(x1, y1);
+          c.strokeStyle = sg2; c.lineWidth = 1.6; c.stroke();
+        }
+      }
+    }
+    const G = moonGeo(), cy = G.cy, moon = '#DCE2EE';
+    const N = LIST.length, live = liveIndex(), cur = LIST[live];
+    const tA = (t) => -G.amax + 2 * G.amax * t;
+    const tNow = clamp(st.pos / Math.max(1, N - 1), 0, 1);
+
+    c.save();
+    if (look === 'crescent') {
+      c.beginPath(); c.arc(G.Ox, cy, G.rO, 0, 2 * Math.PI); c.fillStyle = moon; c.fill();
+      c.globalCompositeOperation = 'destination-out';
+      c.beginPath(); c.arc(G.Ix, cy, G.rI, 0, 2 * Math.PI); c.fill();
+    } else if (look === 'arc') {
+      c.beginPath(); c.arc(G.Ix, cy, G.rA, Math.PI - G.amax, Math.PI + G.amax);
+      c.strokeStyle = hexA(moon, 0.55); c.lineWidth = 2; c.lineCap = 'round';
+      c.shadowColor = 'rgba(220, 226, 238, 0.55)'; c.shadowBlur = 10;
+      c.stroke();
+      const aEnd = Math.PI + G.amax, aMark = Math.PI + G.amax - 2 * G.amax * tNow;
+      c.beginPath(); c.arc(G.Ix, cy, G.rA, aMark, aEnd);
+      c.strokeStyle = st.sun; c.lineWidth = 3.5; c.shadowColor = st.sun; c.shadowBlur = fx ? 16 : 0;
+      c.stroke();
+    } else if (look === 'dots') {
+      c.beginPath(); c.arc(G.Ix, cy, G.rA, Math.PI - G.amax, Math.PI + G.amax);
+      c.strokeStyle = 'rgba(220, 226, 238, 0.14)'; c.lineWidth = 1; c.stroke();
+    } else if (look === 'rolodex') {
+      const xl = G.cardX - G.cardW / 2 - 12, xr = G.cardX + G.cardW / 2 + 12, ry = G.Rr * 1.06;
+      c.beginPath(); c.moveTo(22, cy - G.span); c.lineTo(22, cy + G.span);
+      c.strokeStyle = 'rgba(220, 226, 238, 0.16)'; c.lineWidth = 1; c.stroke();
+      c.beginPath(); c.moveTo(xl, cy); c.lineTo(xr, cy);
+      c.strokeStyle = 'rgba(220, 226, 238, 0.18)'; c.lineWidth = 2; c.stroke();
+      [xl, xr].forEach((x) => {
+        c.beginPath(); c.ellipse(x, cy, 9, ry, 0, 0, 2 * Math.PI);
+        c.strokeStyle = hexA(moon, 0.42); c.lineWidth = 2;
+        if (fx) { c.shadowColor = 'rgba(220, 226, 238, 0.5)'; c.shadowBlur = 12; }
+        c.stroke();
+        c.shadowBlur = 0;
+        c.beginPath(); c.arc(x, cy, 6, 0, 2 * Math.PI); c.fillStyle = moon; c.fill();
+      });
+      const crescent = c.createLinearGradient(xr - 4, cy - ry, xr + 8, cy + ry);
+      crescent.addColorStop(0, hexA(moon, 0.0)); crescent.addColorStop(0.5, hexA(moon, 0.35)); crescent.addColorStop(1, hexA(moon, 0.0));
+      c.beginPath(); c.ellipse(xr + 2, cy, 5, ry * 0.96, 0, -Math.PI / 2, Math.PI / 2); c.strokeStyle = crescent; c.lineWidth = 3; c.stroke();
+    } else {
+      c.beginPath();
+      c.arc(G.Ix, cy, G.rOut, Math.PI - G.amax, Math.PI + G.amax);
+      c.arc(G.Ix, cy, G.rIn, Math.PI + G.amax, Math.PI - G.amax, true);
+      c.closePath();
+      c.fillStyle = moon;
+      if (fx) { c.shadowColor = 'rgba(220, 226, 238, 0.45)'; c.shadowBlur = 24; }
+      c.fill();
+    }
+    c.restore();
+
+    const starts = [];
+    let acc = 0;
+    GROUPS.forEach((g) => { starts.push(acc); acc += g.items.length; });
+    for (let i = 0; i < N; i++) {
+      const first = starts.indexOf(i) !== -1;
+      const a = tA(N > 1 ? i / (N - 1) : 0.5), dxl = -Math.cos(a), dyl = Math.sin(a);
+      if (look === 'arc') {
+        const p1 = G.at(a, 'line'), len = first ? 14 : 7;
+        c.beginPath(); c.moveTo(p1[0] + dxl * 5, p1[1] + dyl * 5); c.lineTo(p1[0] + dxl * (5 + len), p1[1] + dyl * (5 + len));
+        c.strokeStyle = first ? '#C3CADB' : '#6B7590'; c.lineWidth = first ? 2 : 1.5; c.stroke();
+      } else if (look === 'dots' || look === 'rolodex') {
+        const pd = G.at(a, 'tick'), near = Math.abs(i - st.pos);
+        const glowK = fx ? Math.max(0, 1 - near / 3) : 0;
+        c.save();
+        if (glowK > 0) { c.shadowColor = st.sun; c.shadowBlur = 12 * glowK; }
+        c.beginPath(); c.arc(pd[0], pd[1], i === live ? 0 : (first ? 4 : 2.4) + glowK * 1.4, 0, 2 * Math.PI);
+        c.fillStyle = glowK > 0 ? mix('#DCE2EE', st.sun, glowK) : first ? moon : 'rgba(220, 226, 238, 0.55)';
+        c.fill();
+        c.restore();
+      } else {
+        const pt = G.at(a, 'tick');
+        c.beginPath(); c.arc(pt[0], pt[1], first ? 2.8 : 1.6, 0, 2 * Math.PI);
+        c.fillStyle = first ? '#3A4560' : '#6B7590'; c.fill();
+      }
+    }
+    const darkLabels = look === 'arc' || look === 'dots' || look === 'rolodex';
+    labelPos = [];
+    groupStarts = starts;
+    labelEls.forEach((el, gi) => {
+      const mid = (starts[gi] + (GROUPS[gi].items.length - 1) / 2) / Math.max(1, N - 1);
+      const p = G.at(tA(mid), 'label');
+      labelPos.push(p);
+      el.style.transform = 'translate(' + p[0].toFixed(1) + 'px,' + p[1].toFixed(1) + 'px) translate(-50%,-50%)';
+      el.classList.toggle('dark', darkLabels);
+      el.classList.toggle('cur', !!cur && cur.gi === gi);
+    });
+    const mp = G.at(tA(tNow), 'marker');
+    $('marker').style.transform = 'translate(' + mp[0].toFixed(1) + 'px,' + mp[1].toFixed(1) + 'px)';
+    const bub = $('bubble');
+    if (!bub.hidden && cur) {
+      $('bubbleGroup').textContent = cur.group;
+      $('bubbleName').textContent = cur.name;
+      bub.style.transform = 'translate(' + (mp[0] + 24).toFixed(1) + 'px,' + mp[1].toFixed(1) + 'px) translateY(-50%)';
+    }
+
+    const rolo = look === 'rolodex';
+    $('items').style.setProperty('--cardw', Math.round(G.cardW) + 'px');
+    itemEls.forEach((el, i) => {
+      const isSel = i === live;
+      el.classList.toggle('card', rolo);
+      if (rolo) {
+        const th = (i - st.pos) * 24, at = Math.abs(th);
+        const vis = at < 88;
+        el.style.transform = 'translate(' + G.cardX.toFixed(1) + 'px,' + cy.toFixed(1) + 'px) translate(-50%,-50%) perspective(900px) translateZ(' + (-G.Rr).toFixed(1) + 'px) rotateX(' + (-th).toFixed(2) + 'deg) translateZ(' + G.Rr.toFixed(1) + 'px)';
+        el.style.zIndex = String(100 + Math.round(100 * Math.cos(th * Math.PI / 180)));
+        el.style.opacity = vis ? Math.max(0.2, Math.cos(th * Math.PI / 180) * 1.05).toFixed(2) : '0';
+        el.style.visibility = vis ? 'visible' : 'hidden';
+        return;
+      }
+      el.style.zIndex = '';
+      const deg = (i - st.pos) * 15, ad = Math.abs(deg), rad = deg * Math.PI / 180;
+      const fade = ad <= 40 ? 1 : Math.max(0, 1 - (ad - 40) / 44);
+      const x = G.Ix - G.Ri * Math.cos(rad), y = cy + G.Ri * Math.sin(rad);
+      const sc = isSel ? 1.3 : 1 - Math.min(ad, 60) / 60 * 0.16;
+      el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-14px,-50%) scale(' + sc.toFixed(3) + ')';
+      el.style.opacity = isSel ? '1' : fade.toFixed(2);
+      el.style.visibility = fade > 0.02 || isSel ? 'visible' : 'hidden';
+    });
+    $('moonTip').hidden = !showTips;
+    if (live !== lastLive && cur) {
+      if (lastLive !== -1) { hapt('detentSoft'); sound('soft'); }
+      itemEls.forEach((el, i) => {
+        el.classList.toggle('sel', i === live);
+        el.setAttribute('aria-label', LIST[i].name + (i === live ? ', selected. Tap to open' : ''));
+      });
+      $('moonName').textContent = cur.name;
+      $('moonHint').textContent = cur.app ? cur.hint : cur.group + ' · ' + (live + 1) + ' of ' + N;
+      lastLive = live;
+    }
+    $('moonInfo').style.top = Math.round(G.bottom + 18) + 'px';
+    $('moonTip').textContent = rolo ? 'Flick the cards like a Rolodex, or slide along the left edge to jump' : 'Flick the list, or slide along the ' + ({ crescent: 'moon', arc: 'arc', ring: 'ring', dots: 'dots' }[look]) + ' to jump';
+    const sc = $('scrub');
+    sc.style.top = Math.round(G.top) + 'px';
+    sc.style.height = Math.round(G.bottom - G.top) + 'px';
+    sc.style.width = Math.round(rolo ? 84 : G.Ix - G.Ri - 20) + 'px';
+  }
+  function pickItem(i) {
+    if (i === liveIndex()) { openItem(LIST[i]); return; }
+    tween('pos', i, 420);
+  }
+  function snapPos() { tween('pos', clamp(Math.round(st.pos), 0, LIST.length - 1), 320); }
+
+  function render(now, dtf) {
+    const h = phaseNow();
+    if (st.screen === 'sun' || worlds.classList.contains('dragging') || S.mode === 'two') renderSun(now, h, dtf || 16);
+    renderMoon(now, h);
+  }
+
+  /* ---------- Gestures ---------- */
+  let drag = null, pinch = null, bubbleTimer = 0;
+  const pts = new Map();
+  function showBubble(on) {
+    clearTimeout(bubbleTimer);
+    if (on) { $('bubble').hidden = false; kick(); }
+    else bubbleTimer = setTimeout(() => { $('bubble').hidden = true; }, 500);
+  }
+  function onMove(e) {
+    if (!drag || pinch) return;
+    const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0, dist = Math.sqrt(dx * dx + dy * dy);
+    if (!drag.moved && dist > 6) { drag.moved = true; cancelLP(); }
+    if (!drag.moved) return;
+    if (drag.kind === 'dial') {
+      const G = sunGeo(), along = dx * G.cr + dy * G.sr;
+      if (!drag.decided) {
+        if (dist < 12) return;
+        drag.decided = true;
+        if (S.mode === 'two' && dy < 0 && Math.abs(dy) > 1.6 * Math.abs(dx) && Math.abs(along) < 0.45 * dist) {
+          drag.kind = 'toMoon';
+          worlds.classList.add('dragging');
+          onMove(e);
+          return;
+        }
+      }
+      st.rot = drag.start - along * 0.5 * (G.sinT < 0 ? -1 : 1);
+      drag.samples.push({ t: performance.now(), v: st.rot });
+      if (drag.samples.length > 8) drag.samples.shift();
+      kick();
+    } else if (drag.kind === 'view') {
+      S.tilt = clamp(drag.start.tilt + dy * 0.35, -85, 85);
+      S.custom.roll = drag.start.roll + dx * 0.4;
+      kick();
+    } else if (drag.kind === 'list') {
+      const np = drag.start - dy / (currentMoon() === 'rolodex' ? 62 : 39);
+      if (S.mode === 'two' && drag.start <= 0.3 && np < -0.7) {
+        drag.kind = 'toSun';
+        drag.y0 = e.clientY;
+        st.pos = 0;
+        showBubble(false);
+        worlds.classList.add('dragging');
+        kick();
+        return;
+      }
+      st.pos = clamp(np, -0.4, LIST.length - 0.6);
+      drag.samples.push({ t: performance.now(), v: st.pos });
+      if (drag.samples.length > 8) drag.samples.shift();
+      showBubble(true);
+      kick();
+    } else if (drag.kind === 'scrub') {
+      scrubTo(e);
+    } else if (drag.kind === 'toMoon') {
+      worlds.style.transform = 'translateY(' + clamp(dy, -st.H, 0) + 'px)';
+      kick();
+    } else if (drag.kind === 'toSun') {
+      worlds.style.transform = 'translateY(' + (-st.H + clamp(dy, 0, st.H)) + 'px)';
+      kick();
+    }
+  }
+  function endDrag() {
+    drag = null;
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
+    worlds.classList.remove('dragging');
+  }
+  function onUp(e) {
+    const d = drag;
+    cancelLP();
+    endDrag();
+    if (!d) return;
+    const dy = (e && e.clientY != null ? e.clientY : d.y0) - d.y0;
+    if (d.kind === 'dial' && d.moved) {
+      const v = velocity(d.samples);
+      if (Math.abs(v) > 0.25) { st.vel = clamp(v, -2.5, 2.5); st.spin = 'rot'; st.lastT = performance.now(); kick(); }
+      else { hapt('snap'); snapRot(); }
+    } else if (d.kind === 'view') {
+      save();
+    } else if (d.kind === 'list' && d.moved) {
+      const vp = velocity(d.samples);
+      if (Math.abs(vp) > 0.004) { st.vel = clamp(vp, -0.06, 0.06); st.spin = 'pos'; st.lastT = performance.now(); kick(); }
+      else { hapt('snap'); snapPos(); }
+      showBubble(false);
+    } else if (d.kind === 'scrub') {
+      if (!d.moved) {
+        const gi = labelAt(e);
+        if (gi !== -1) tween('pos', groupStarts[gi] || 0, 420);
+        else { scrubTo(e); snapPos(); }
+      } else snapPos();
+      hapt('snap');
+      showBubble(false);
+    } else if (d.kind === 'toMoon') {
+      if (d.moved ? dy < -st.H * 0.12 : d.handle) goMoon(); else goSun();
+    } else if (d.kind === 'toSun') {
+      if (d.moved ? dy > st.H * 0.12 : d.handle) goSun(); else goMoon();
+      if (st.pos < 0) snapPos();
+    }
+    if (d.moved) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 80); }
+  }
+  function startDrag(kind, e, start, handle) {
+    drag = { kind: kind, x0: e.clientX, y0: e.clientY, start: start, moved: false, decided: false, samples: [], handle: !!handle };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  }
+  function scrubTo(e) {
+    const G = moonGeo(), top = $('moonScreen').getBoundingClientRect().top;
+    const y = e.clientY - top, sMax = Math.sin(G.amax);
+    if (currentMoon() === 'rolodex') {
+      st.pos = clamp((y - G.top) / (G.bottom - G.top), 0, 1) * (LIST.length - 1);
+      kick();
+      return;
+    }
+    const alpha = Math.asin(clamp((y - G.cy) / G.markerR, -sMax, sMax));
+    st.pos = ((alpha / G.amax + 1) / 2) * (LIST.length - 1);
+    kick();
+  }
+
+  // Two fingers on the sun: move up or down = tilt, twist = turn, pinch = size.
+  function pinchState() {
+    const p = Array.from(pts.values());
+    const a = p[0], b = p[1];
+    return { cy: (a.y + b.y) / 2, ang: Math.atan2(b.y - a.y, b.x - a.x), d: Math.max(20, Math.hypot(b.x - a.x, b.y - a.y)) };
+  }
+  function startPinch() {
+    if (drag) endDrag();
+    cancelLP();
+    st.spin = null;
+    ensureCustom();
+    const s = pinchState();
+    pinch = { s0: s, tilt0: S.tilt, roll0: S.custom.roll, R0: S.custom.R };
+  }
+  function updatePinch() {
+    const s = pinchState(), p = pinch;
+    S.tilt = clamp(p.tilt0 + (s.cy - p.s0.cy) * 0.35, -85, 85);
+    S.custom.roll = p.roll0 + (s.ang - p.s0.ang) * 180 / Math.PI;
+    S.custom.R = clamp(p.R0 * s.d / p.s0.d, 50, Math.max(st.W, st.H) * 0.55);
+    kick();
+  }
+  function endPinch() {
+    pinch = null;
+    save();
+    snapRot();
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 400);
+  }
+  $('sunScreen').addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.corner, .handle, .viewbtn')) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2) { startPinch(); return; }
+    if (pts.size > 2 || pinch) return;
+    st.spin = null;
+    stopTween('rot');
+    if (st.view) { ensureCustom(); startDrag('view', e, { tilt: S.tilt, roll: S.custom.roll }); return; }
+    startDrag('dial', e, st.rot);
+  }, true);
+  window.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pts.size >= 2) updatePinch();
+  });
+  const dropPointer = (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    if (pinch && pts.size < 2) endPinch();
+  };
+  window.addEventListener('pointerup', dropPointer);
+  window.addEventListener('pointercancel', dropPointer);
+
+  $('moonScreen').addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.handle, .roundbtn, .mini-sun, .scrub')) return;
+    st.spin = null;
+    stopTween('pos');
+    const G = moonGeo(), y = e.clientY - $('moonScreen').getBoundingClientRect().top;
+    if (S.mode === 'two' && !e.target.closest('.item') && (y < G.top + 10 || y > G.bottom)) {
+      worlds.classList.add('dragging');
+      startDrag('toSun', e, 0, false);
+      return;
+    }
+    startDrag('list', e, st.pos);
+  });
+  $('scrub').addEventListener('pointerdown', (e) => {
+    st.spin = null;
+    stopTween('pos');
+    startDrag('scrub', e, st.pos);
+    showBubble(true);
+  });
+  app.addEventListener('pointerdown', () => { if (S.sound === 'on') audio(); }, true);
+  app.addEventListener('contextmenu', (e) => e.preventDefault());
+  $('toMoon').addEventListener('pointerdown', (e) => { worlds.classList.add('dragging'); startDrag('toMoon', e, 0, true); });
+  $('toSun').addEventListener('pointerdown', (e) => { worlds.classList.add('dragging'); startDrag('toSun', e, 0, true); });
+  $('toMoon').addEventListener('click', (e) => { if (e.detail === 0) goMoon(); });
+  $('toSun').addEventListener('click', (e) => { if (e.detail === 0) goSun(); });
+  $('viewToggle').addEventListener('click', () => {
+    st.view = !st.view;
+    $('viewToggle').setAttribute('aria-pressed', String(st.view));
+    $('viewToggle').textContent = 'Turn the view with one finger: ' + (st.view ? 'on' : 'off');
+    if (!st.view) snapRot();
+    kick();
+  });
+
+  /* ---------- Back button: each open panel (and the moon) is one step back ---------- */
+  const layers = [];
+  let ignorePops = 0;
+  function pushLayer(name) {
+    let h = false;
+    try { history.pushState({ sunLayer: layers.length + 1 }, ''); h = true; } catch (e) {}
+    layers.push({ name: name, h: h });
+  }
+  function dropLayer(name) {
+    for (let i = layers.length - 1; i >= 0; i--) {
+      if (layers[i].name !== name) continue;
+      const l = layers.splice(i, 1)[0];
+      if (l.h) { ignorePops++; try { history.back(); } catch (e) { ignorePops--; } }
+      return;
+    }
+  }
+  function closeTop(top) {
+    if (top.name === 'moon') goSun(true);
+    else if (top.name === 'camera') closeCamera(true);
+    else { const el = $(top.name); if (el) hideOverlay(el, true); }
+  }
+  window.addEventListener('popstate', () => {
+    if (ignorePops > 0) { ignorePops--; return; }
+    const top = layers.pop();
+    if (top) closeTop(top);
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !layers.length) return;
+    const top = layers[layers.length - 1];
+    if (top.h) { try { history.back(); return; } catch (err) {} }
+    layers.pop();
+    closeTop(top);
+  });
+
+  function goMoon() {
+    if (st.screen !== 'moon') { hapt('swipe'); sound('whoosh'); if (S.mode === 'two') pushLayer('moon'); }
+    st.screen = 'moon'; worlds.style.transform = 'translateY(-50%)'; kick();
+  }
+  function goSun(fromBack) {
+    if (S.mode === 'one') { goMoon(); return; }
+    if (st.screen !== 'sun') { hapt('swipe'); sound('whoosh'); if (!fromBack) dropLayer('moon'); }
+    st.screen = 'sun'; worlds.style.transform = 'translateY(0)'; kick();
+  }
+
+  /* ---------- Sheets ---------- */
+  let lastFocus = null;
+  function showOverlay(el) {
+    if (!el.hidden) return;
+    lastFocus = document.activeElement;
+    el.hidden = false;
+    pushLayer(el.id);
+    const f = el.querySelector('[data-autofocus]');
+    if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  function hideOverlay(el, fromBack) {
+    if (el.hidden) return;
+    el.hidden = true;
+    if (!fromBack) dropLayer(el.id);
+    if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  function openSheet(title, text, href, send, actions) {
+    $('sheetTitle').textContent = title;
+    $('sheetText').textContent = text;
+    const o = $('sheetOpen');
+    if (href) { o.href = href; o.hidden = false; } else { o.hidden = true; o.removeAttribute('href'); }
+    $('sheetSend').hidden = !send;
+    const box = $('sheetActions');
+    box.textContent = '';
+    (actions || []).forEach((a) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'act';
+      b.textContent = a.label;
+      b.addEventListener('click', () => { hideOverlay($('sheet')); setTimeout(a.run, 90); });
+      box.appendChild(b);
+    });
+    box.hidden = !(actions && actions.length);
+    showOverlay($('sheet'));
+  }
+  function pushRecent(name) {
+    S.recent = [name].concat(S.recent.filter((n) => n !== name)).slice(0, 3);
+    save();
+  }
+  function openApp(a) {
+    pushRecent(a.name);
+    const host = a.href ? a.href.replace('https://', '').replace(/\/$/, '') : '';
+    openSheet(a.name, a.href ? 'Opens ' + host + '. In the real launcher one tap opens it at once.' : 'Link not set yet: [' + a.name + ' address].', a.href, false);
+  }
+  function openShortcuts(a) {
+    openSheet(a.name, 'Quick actions (examples).', a.href, false, (a.short || []).map((t) => ({
+      label: t,
+      run: () => { pushRecent(a.name); toast(a.name + ': ' + t + ' (example)'); }
+    })));
+  }
+  function openItem(it) {
+    if (it.app) { openApp(BY[it.name]); return; }
+    openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
+  }
+  $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
+  $('sheet').addEventListener('click', (e) => { if (e.target === $('sheet')) hideOverlay($('sheet')); });
+  function openRecent() {
+    openSheet('Recent', S.recent.length ? 'Your last apps.' : 'No apps opened yet. Open an app from the sun first.', '', false,
+      S.recent.map((n) => ({ label: n, run: () => openApp(BY[n]) })));
+  }
+  $('sunRecent').addEventListener('click', openRecent);
+
+  /* ---------- Camera ---------- */
+  let photoUrl = '';
+  function openCamera() { showOverlay($('camera')); }
+  function closeCamera(fromBack) {
+    hideOverlay($('camera'), fromBack);
+    if (photoUrl) { try { URL.revokeObjectURL(photoUrl); } catch (e) {} photoUrl = ''; }
+    $('camImg').hidden = true;
+    $('camEmpty').hidden = false;
+  }
+  $('core').addEventListener('click', () => { if (suppressClick) return; openCamera(); });
+  $('miniSun').addEventListener('click', openCamera);
+  $('camBack').addEventListener('click', closeCamera);
+  $('shutter').addEventListener('click', () => $('camInput').click());
+  $('camInput').addEventListener('change', function () {
+    const f = this.files && this.files[0];
+    if (!f) return;
+    if (photoUrl) { try { URL.revokeObjectURL(photoUrl); } catch (e) {} }
+    photoUrl = URL.createObjectURL(f);
+    const img = $('camImg');
+    img.src = photoUrl; img.hidden = false;
+    $('camEmpty').hidden = true;
+    this.value = '';
+    openSheet('Send to', 'Pick the app for this photo.', '', true);
+  });
+  document.querySelectorAll('.send').forEach((b) => {
+    b.addEventListener('click', () => {
+      const to = b.getAttribute('data-to');
+      hideOverlay($('sheet'));
+      closeCamera();
+      pushRecent(to);
+      toast('Sent to ' + to + '. In the real launcher, ' + to + ' opens with the photo.');
+    });
+  });
+
+  let toastTimer = 0;
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+  }
+
+  /* ---------- Search ---------- */
+  function searchIndex() {
+    const out = [];
+    S.order.forEach((n) => {
+      const onSun = S.mode === 'two' && S.onMoon.indexOf(n) === -1;
+      out.push({ name: n, where: onSun ? 'Sun' : 'Moon · Apps' });
+    });
+    FUNCS.forEach((g) => g.items.forEach((n) => out.push({ name: n, where: 'Moon · ' + g.name })));
+    return out;
+  }
+  function renderResults() {
+    const q = $('searchInput').value.trim().toLowerCase();
+    const box = $('results');
+    box.textContent = '';
+    const hits = searchIndex().filter((r) => !q || r.name.toLowerCase().indexOf(q) !== -1 || r.where.toLowerCase().indexOf(q) !== -1).slice(0, 14);
+    if (!hits.length) {
+      const p = document.createElement('div');
+      p.className = 'empty';
+      p.textContent = 'Nothing found for "' + $('searchInput').value + '".';
+      box.appendChild(p);
+      return;
+    }
+    hits.forEach((r) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'res';
+      const s1 = document.createElement('span'); s1.textContent = r.name;
+      const s2 = document.createElement('small'); s2.textContent = r.where;
+      b.appendChild(s1); b.appendChild(s2);
+      b.addEventListener('click', () => { hideOverlay($('search')); setTimeout(() => goTo(r.name), 90); });
+      box.appendChild(b);
+    });
+  }
+  function goTo(name) {
+    const si = APPS.findIndex((a) => a.name === name);
+    if (S.mode === 'two' && si !== -1) { goSun(); rotateTo(si); return; }
+    const mi = LIST.findIndex((it) => it.name === name);
+    if (mi !== -1) { goMoon(); tween('pos', mi, 520); }
+  }
+  function openSearch() { $('searchInput').value = ''; renderResults(); showOverlay($('search')); }
+  $('sunSearch').addEventListener('click', openSearch);
+  $('moonSearch').addEventListener('click', openSearch);
+  $('searchClose').addEventListener('click', () => hideOverlay($('search')));
+  $('searchInput').addEventListener('input', renderResults);
+
+  /* ---------- Edit dial ---------- */
+  const ICON_UP = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>';
+  const ICON_DOWN = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>';
+  function renderEdit() {
+    const box = $('editRows');
+    box.textContent = '';
+    S.order.forEach((n, i) => {
+      const onSun = S.onMoon.indexOf(n) === -1;
+      const row = document.createElement('div');
+      row.className = 'erow';
+      const nm = document.createElement('span'); nm.className = 'ename'; nm.textContent = n;
+      const up = document.createElement('button'); up.type = 'button'; up.className = 'ibtn'; up.innerHTML = ICON_UP; up.setAttribute('aria-label', 'Move ' + n + ' up'); up.disabled = i === 0;
+      const dn = document.createElement('button'); dn.type = 'button'; dn.className = 'ibtn'; dn.innerHTML = ICON_DOWN; dn.setAttribute('aria-label', 'Move ' + n + ' down'); dn.disabled = i === S.order.length - 1;
+      const wh = document.createElement('button'); wh.type = 'button'; wh.className = 'where' + (onSun ? ' on-sun' : '');
+      wh.textContent = onSun ? 'Sun' : 'Moon';
+      wh.setAttribute('aria-label', n + ' is on the ' + (onSun ? 'sun' : 'moon') + '. Tap to move it');
+      up.addEventListener('click', () => { move(i, -1); });
+      dn.addEventListener('click', () => { move(i, 1); });
+      wh.addEventListener('click', () => {
+        if (onSun) {
+          if (sunApps().length <= 3) { toast('Keep at least 3 apps on the sun.'); return; }
+          S.onMoon.push(n);
+        } else S.onMoon = S.onMoon.filter((x) => x !== n);
+        changed();
+      });
+      row.appendChild(nm); row.appendChild(up); row.appendChild(dn); row.appendChild(wh);
+      box.appendChild(row);
+    });
+  }
+  function move(i, d) {
+    const j = i + d;
+    if (j < 0 || j >= S.order.length) return;
+    const t = S.order[i]; S.order[i] = S.order[j]; S.order[j] = t;
+    changed();
+  }
+  function changed() {
+    save();
+    const keep = APPS[frontIndex()] && APPS[frontIndex()].name;
+    buildFacets();
+    buildItems();
+    const k = APPS.findIndex((a) => a.name === keep);
+    st.rot = frontDeg() - (k === -1 ? 0 : k) * 360 / APPS.length;
+    renderEdit();
+    kick();
+  }
+  $('sunEdit').addEventListener('click', () => { renderEdit(); showOverlay($('edit')); });
+  $('editDone').addEventListener('click', () => hideOverlay($('edit')));
+  $('editReset').addEventListener('click', () => { S.order = BASE_APPS.map((a) => a.name); S.onMoon = []; changed(); });
+  $('edit').addEventListener('click', (e) => { if (e.target === $('edit')) hideOverlay($('edit')); });
+
+  /* ---------- Settings ---------- */
+  const form = $('settingsForm');
+  const RADIOS = ['mode', 'theme', 'sunLook', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound'];
+  function shownTheme() {
+    if (S.theme === 'custom') return { look: S.sunLook, moon: S.moonLook, color: S.sunTime ? 'time' : S.color };
+    const key = S.theme === 'auto' ? lookBlend(phaseNow()).theme : S.theme, th = THEMES[key] || THEMES.daylight;
+    return { look: th.look, moon: th.moon, color: th.color };
+  }
+  function fillForm() {
+    const sh = shownTheme();
+    RADIOS.forEach((name) => {
+      const v = name === 'sunLook' ? sh.look : name === 'moonLook' ? sh.moon : S[name];
+      Array.prototype.forEach.call(form.elements[name], (r) => { r.checked = r.value === v; });
+    });
+    Array.prototype.forEach.call(form.elements.color, (r) => { r.checked = r.value === sh.color; });
+    const now = lookBlend(phaseNow()).theme;
+    $('themeLine').textContent = S.theme === 'auto'
+      ? 'Now: ' + (THEMES[now] ? THEMES[now].name : 'Daylight') + '. Through the day: Plasma dawn, Daylight, Sunset, Eclipse, Black hole, Neon night.'
+      : S.theme === 'custom' ? 'Your own mix of the options below.' : 'Fixed: ' + THEMES[S.theme].name + '. The sky still follows the time.';
+    $('tilt').value = S.tilt;
+    $('tiltOut').textContent = Math.round(S.tilt) + '°';
+    $('hour').value = S.hour;
+    $('hourOut').textContent = fmtHour(S.hour);
+    $('hourRow').hidden = S.sky !== 'preview';
+    $('playDay').textContent = st.demo ? 'Stop the day' : 'Play a day in 20 seconds';
+    const s = sunToday();
+    $('sunLine').textContent = 'Today in Vienna: sunrise ' + fmtHour(s.rise) + ', sunset ' + fmtHour(s.set) + '. The sky follows these times.';
+  }
+  $('tipsAgain').addEventListener('click', () => { S.visits = 0; showTips = true; save(); kick(); toast('The help lines show again.'); });
+  function openSettings() { fillForm(); showOverlay($('settings')); }
+  $('sunSettings').addEventListener('click', openSettings);
+  $('moonSettings').addEventListener('click', openSettings);
+  $('setDone').addEventListener('click', () => hideOverlay($('settings')));
+  $('settings').addEventListener('click', (e) => { if (e.target === $('settings')) hideOverlay($('settings')); });
+  form.addEventListener('submit', (e) => e.preventDefault());
+  function afterChange(prevMode, prevDir) {
+    save();
+    applyLight();
+    if (S.mode !== prevMode) { st.pos = 0; buildFacets(); buildItems(); applyMode(); }
+    if (S.dir !== prevDir || S.mode !== prevMode) { st.rot = frontDeg() - frontIndexSafe() * 360 / Math.max(1, APPS.length); snapRot(); }
+    lastFront = -1;
+    lastLive = -1;
+    kick();
+  }
+  function frontIndexSafe() { const i = frontIndex(); return isFinite(i) ? i : 0; }
+  function onSettings(e) {
+    const prevMode = S.mode, prevDir = S.dir, prevTheme = S.theme;
+    const changed = e && e.target ? e.target.name : '';
+    RADIOS.forEach((name) => { Array.prototype.forEach.call(form.elements[name], (r) => { if (r.checked) S[name] = r.value; }); });
+    Array.prototype.forEach.call(form.elements.color, (r) => {
+      if (!r.checked) return;
+      if (r.value === 'time') S.sunTime = true; else { S.sunTime = false; S.color = r.value; }
+    });
+    if (changed === 'sunLook' || changed === 'moonLook' || changed === 'color') S.theme = 'custom';
+    if (changed === 'theme' && S.theme === 'custom' && prevTheme !== 'custom') {
+      const key = prevTheme === 'auto' ? lookBlend(phaseNow()).theme : prevTheme, th = THEMES[key];
+      if (th) { S.sunLook = th.look; S.moonLook = th.moon; if (th.color === 'time') S.sunTime = true; else { S.sunTime = false; S.color = th.color; } }
+    }
+    if (changed === 'theme' || S.theme !== prevTheme) fillForm();
+    if (S.dir === 'custom' && !S.custom) { S.dir = prevDir; ensureCustom(); }
+    S.tilt = clamp(parseFloat($('tilt').value) || 0, -85, 85);
+    S.hour = clamp(parseFloat($('hour').value) || 0, 0, 24);
+    $('tiltOut').textContent = Math.round(S.tilt) + '°';
+    $('hourOut').textContent = fmtHour(S.hour);
+    $('hourRow').hidden = S.sky !== 'preview';
+    if (st.demo && S.sky !== 'clock') stopDemo();
+    afterChange(prevMode, prevDir);
+  }
+  form.addEventListener('input', onSettings);
+  form.addEventListener('change', onSettings);
+  function stopDemo() { st.demo = false; applyLight(); fillForm(); kick(); }
+  $('playDay').addEventListener('click', () => {
+    if (st.demo) { stopDemo(); return; }
+    st.demo = true;
+    st.demoH = 5;
+    hideOverlay($('settings'));
+    applyLight();
+    kick();
+  });
+
+  function applyMode() {
+    const one = S.mode === 'one';
+    app.classList.toggle('one-mode', one);
+    $('toSun').hidden = one;
+    $('miniSun').hidden = !one;
+    worlds.classList.add('dragging');
+    if (one) { st.screen = 'moon'; worlds.style.transform = 'translateY(-50%)'; }
+    requestAnimationFrame(() => worlds.classList.remove('dragging'));
+  }
+
+  /* ---------- Start ---------- */
+  save();
+  applyLight();
+  buildFacets();
+  buildItems();
+  st.rot = frontDeg();
+  st.prevRot = st.rot;
+  if (S.mode === 'two' && nightness(phaseNow()) > 0.5) st.screen = 'moon';
+  applyMode();
+  if (st.screen === 'moon') {
+    worlds.classList.add('dragging'); worlds.style.transform = 'translateY(-50%)'; requestAnimationFrame(() => worlds.classList.remove('dragging'));
+    if (S.mode === 'two') pushLayer('moon');
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { st.lastFrame = 0; applyLight(); kick(); } });
+  setInterval(() => { if (S.sky === 'clock' && !st.demo) { applyLight(); kick(); } }, 60000);
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
+</script>
+</body>
+</html>
