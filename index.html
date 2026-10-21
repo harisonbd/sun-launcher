@@ -407,6 +407,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         </div>
       </fieldset>
       <fieldset>
+        <legend>Sun position</legend>
+        <div class="seg">
+          <input type="radio" name="liveSun" id="ls-off" value="off"><label for="ls-off">Fixed</label>
+          <input type="radio" name="liveSun" id="ls-on" value="on"><label for="ls-on">Real sun (Vienna)</label>
+        </div>
+        <p id="liveLine" class="helpline"></p>
+      </fieldset>
+      <fieldset>
         <legend>Layout</legend>
         <div class="seg">
           <input type="radio" name="swap" id="swap-off" value="off"><label for="swap-off">Sun dial</label>
@@ -580,7 +588,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const FRONT_FX = ['beam', 'lift', 'dim', 'chips', 'halo', 'glint'];
   // Neon look styles (22 Oct, to try on the phone): classic = the old Neon.
   const NEON_STYLES = ['classic', 'minimal', 'sign', 'synth', 'cyber', 'tron'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'classic', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'classic', liveSun: 'off', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -610,6 +618,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (['glow', 'phase'].indexOf(S.moonDial) === -1) S.moonDial = 'glow';
   if (['edge', 'eclipse', 'orb', 'small', 'setting'].indexOf(S.sunList) === -1) S.sunList = 'edge';
   if (NEON_STYLES.indexOf(S.neonStyle) === -1) S.neonStyle = 'classic';
+  if (S.liveSun !== 'on') S.liveSun = 'off';
   if (S.tilt === 62) S.tilt = 45;
   S.tilt = Math.max(10, Math.min(75, +S.tilt || 45));
   S.size = Math.max(80, Math.min(160, +S.size || 125));
@@ -706,6 +715,31 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const Jset = J2000 + a + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
     const Jrise = Jnoon - (Jset - Jnoon);
     return { rise: fromJulian(Jrise), set: fromJulian(Jset), noon: fromJulian(Jnoon) };
+  }
+  // Real sun height and direction for Vienna (SunCalc formulas): alt 0 = horizon, az 90 = east, 180 = south, 270 = west.
+  function sunAltAz(date) {
+    const rad = Math.PI / 180, d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545, e = rad * 23.4397;
+    const M = rad * (357.5291 + 0.98560028 * d);
+    const C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    const L = M + C + rad * 102.9372 + Math.PI;
+    const dec = Math.asin(Math.sin(e) * Math.sin(L)), ra = Math.atan2(Math.sin(L) * Math.cos(e), Math.cos(L));
+    const lw = rad * -LON, phi = rad * LAT, Hh = rad * (280.16 + 360.9856235 * d) - lw - ra;
+    const alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(Hh));
+    const az = Math.atan2(Math.sin(Hh), Math.cos(Hh) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi));
+    return { alt: alt / rad, az: az / rad + 180 };
+  }
+  // Live sun (Settings > Sun position): small shift of the dial, higher at noon, lower at night, east in the morning.
+  let liveMemo = { k: null, v: [0, 0], alt: 0, az: 180 };
+  function liveSun() {
+    const h = hourNow(), k = Math.round(h * 60);
+    if (liveMemo.k !== k) {
+      const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+      const s = sunAltAz(new Date(d0.getTime() + h * 3600000));
+      const up = s.alt >= 0 ? -0.16 * Math.min(1, s.alt / 40) : 0.06 * Math.min(1, -s.alt / 18);
+      const side = s.alt > -6 ? 0.08 * Math.max(-1, Math.min(1, (s.az - 180) / 90)) : 0;
+      liveMemo = { k: k, v: [side, up + 0.1], alt: s.alt, az: s.az };
+    }
+    return liveMemo;
   }
   let sunCache = { key: '', rise: 6.5, set: 18.8, noon: 12.5 };
   function sunToday() {
@@ -1266,6 +1300,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function sunGeo() {
     const p = S.dir === 'custom' && S.custom ? S.custom : presetGeo(S.dir);
     const g = { cx: st.W * p.cxf, cy: st.H * p.cyf - st.lift, R: p.R, roll: p.roll, tilt: currentTilt() };
+    if (S.liveSun === 'on' && !swapped() && (S.dir === 'flat' || S.dir === 'diagonal')) { const ls = liveSun().v; g.cx += ls[0] * st.W; g.cy += ls[1] * st.H; }
     const T = g.tilt * Math.PI / 180, rho = g.roll * Math.PI / 180;
     const cosT = Math.cos(T), sinT = Math.sin(T), cr = Math.cos(rho), sr = Math.sin(rho), P = Math.max(700, p.R * 4);
     g.cr = cr; g.sr = sr; g.sinT = sinT;
@@ -2695,13 +2730,18 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList', 'neonStyle'];
+  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList', 'neonStyle', 'liveSun'];
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
     if (S.theme === 'custom') return { look: S.sunLook, moon: S.moonLook, color: S.sunTime ? 'time' : S.color };
     const key = S.theme === 'auto' ? lookBlend(phaseNow()).theme : S.theme, th = THEMES[key] || THEMES.daylight;
     return { look: th.look, moon: th.moon, color: th.color };
+  }
+  function liveLine() {
+    const lsun = liveSun(), dirs = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
+    $('liveLine').textContent = (lsun.alt >= 0 ? 'Now the sun is ' + Math.round(lsun.alt) + '° high in the ' + dirs[Math.round(lsun.az / 45) % 8] : 'Now the sun is below the horizon (' + Math.round(lsun.alt) + '°)')
+      + '. Real sun moves the dial a little: higher at noon, lower at night, east in the morning. Works with Flat and 45° turn.';
   }
   function fillForm() {
     const sh = shownTheme();
@@ -2714,6 +2754,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     Array.prototype.forEach.call(form.elements.sunPick, (r) => { r.checked = r.value === sunPickOf(sh.look); });
     $('swapOpts').hidden = S.swap !== 'on';
     $('neonOpts').hidden = sh.look !== 'neon';
+    liveLine();
     const now = lookBlend(phaseNow()).theme;
     $('themeLine').textContent = S.theme === 'auto'
       ? 'Now: ' + (THEMES[now] ? THEMES[now].name : 'Daylight') + '. Sun and moon change through the day. Tap any look below to pick it yourself.'
@@ -2792,7 +2833,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (changed === 'color') { S.sunTime = tappedColor[0]; S.color = tappedColor[1]; }
     $('swapOpts').hidden = S.swap !== 'on';
     if (changed === 'moonLook' || changed === 'sunList') peekScreen('moon');
-    else if (['sunPick', 'neonStyle', 'dir', 'tilt', 'size', 'color', 'frontFx', 'swap', 'skyPhoto', 'moonDial'].indexOf(changed) !== -1) peekScreen('sun');
+    else if (['sunPick', 'neonStyle', 'dir', 'tilt', 'size', 'color', 'frontFx', 'swap', 'skyPhoto', 'moonDial', 'liveSun'].indexOf(changed) !== -1) peekScreen('sun');
     if (changed === 'theme' || isLook || S.theme !== prevTheme) fillForm();
     if (changed === 'dir' && DIR_TILT[S.dir]) $('tilt').value = DIR_TILT[S.dir];
     if (S.dir === 'custom' && !S.custom) { S.dir = prevDir; ensureCustom(); }
@@ -2803,6 +2844,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     $('sizeOut').textContent = Math.round(S.size) + '%';
     $('hourOut').textContent = fmtHour(S.hour);
     $('hourRow').hidden = S.sky !== 'preview';
+    liveLine();
     if (st.demo && S.sky !== 'clock') stopDemo();
     if (swapped() !== prevSwap && S.mode === prevMode) { st.pos = 0; buildFacets(); buildItems(); st.rot = frontDeg(); }
     afterChange(prevMode, prevDir);
