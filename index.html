@@ -66,6 +66,20 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .facet.front .ini { background: var(--sun-ink); color: var(--sun); }
 #app.fx .facet { background: color-mix(in srgb, var(--panel) 72%, transparent); border-color: color-mix(in srgb, var(--sun) 28%, var(--line)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 #app.fx .facet.front { background: var(--sun); border-color: #FFF6D8; box-shadow: 0 0 0 3px color-mix(in srgb, var(--sun) 35%, transparent), 0 0 26px color-mix(in srgb, var(--sun) 70%, transparent); }
+/* Front app test options (Settings > Front app) */
+#app.ff-halo .facet.front, #app.fx.ff-halo .facet.front { box-shadow: 0 0 0 4px color-mix(in srgb, var(--sun) 55%, transparent), 0 0 34px 14px color-mix(in srgb, var(--sun) 75%, transparent), 0 0 70px 30px color-mix(in srgb, var(--sun) 35%, transparent); }
+#app.ff-lift .facet.front, #app.fx.ff-lift .facet.front { height: 56px; padding: 0 18px 0 8px; font-size: 16px; border-radius: 28px; box-shadow: 0 16px 22px rgba(0, 0, 0, 0.55), 0 0 26px color-mix(in srgb, var(--sun) 60%, transparent); }
+#app.ff-lift .facet.front .ini { width: 40px; height: 40px; font-size: 16px; }
+#app.ff-dim .facet:not(.front) { opacity: 0.38 !important; filter: saturate(0.4); }
+#app.ff-arrow .facet.front::after { content: '\203A'; margin-left: 2px; font-size: 24px; line-height: 1; font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; pointer-events: auto; }
+.chips[hidden] { display: none; }
+.chips button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: color-mix(in srgb, var(--panel) 80%, transparent); border: 1px solid color-mix(in srgb, var(--sun) 45%, var(--line)); color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer; }
+/* Sky picture and swapped layout (Settings > Sky picture, Layout) */
+#app.photo-sky #sunScreen { background: #2A2236 url('sky-sunset.jpg') center 55% / cover; }
+#app.swap #sunScreen { background: linear-gradient(180deg, var(--msky-top), var(--msky-bot)); --sun: #DCE2EE; --sun-ink: #1B2233; }
+#app.swap #moonScreen { background: linear-gradient(180deg, var(--sky-top), var(--sky-bot)); }
+#app.swap.photo-sky #moonScreen { background: #2A2236 url('sky-sunset.jpg') center 55% / cover; }
 
 .core { position: absolute; left: 0; top: 0; width: 84px; height: 84px; border-radius: 50%; border: none; background: transparent; color: var(--sun-ink); display: grid; place-items: center; cursor: pointer; z-index: 500; }
 .core.light { color: var(--sun); }
@@ -212,6 +226,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         <div id="sunClock" class="clock"></div>
         <div id="sunName" class="name"></div>
         <div id="sunHint" class="hint"></div>
+        <div id="sunChips" class="chips" hidden></div>
         <div id="sunTip" class="tip"></div>
       </div>
       <div class="clockchip" id="clockChip" aria-live="polite" hidden></div>
@@ -357,6 +372,30 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         </div>
       </fieldset>
       <fieldset>
+        <legend>Sun rays (when the sun look is Rays)</legend>
+        <div class="seg">
+          <input type="radio" name="rayStyle" id="ray-spikes" value="spikes"><label for="ray-spikes">Spikes</label>
+          <input type="radio" name="rayStyle" id="ray-beams" value="beams"><label for="ray-beams">Soft beams</label>
+          <input type="radio" name="rayStyle" id="ray-clouds" value="clouds"><label for="ray-clouds">Through clouds</label>
+          <input type="radio" name="rayStyle" id="ray-starburst" value="starburst"><label for="ray-starburst">Starburst</label>
+          <input type="radio" name="rayStyle" id="ray-corona" value="corona"><label for="ray-corona">Corona</label>
+          <input type="radio" name="rayStyle" id="ray-flames" value="flames"><label for="ray-flames">Flames</label>
+          <input type="radio" name="rayStyle" id="ray-glow" value="glow"><label for="ray-glow">Glow only</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Front app (tap each to turn on or off)</legend>
+        <div class="seg">
+          <input type="checkbox" name="frontFx" id="ff-beam" value="beam"><label for="ff-beam">Beam</label>
+          <input type="checkbox" name="frontFx" id="ff-halo" value="halo"><label for="ff-halo">Halo</label>
+          <input type="checkbox" name="frontFx" id="ff-lift" value="lift"><label for="ff-lift">Bigger</label>
+          <input type="checkbox" name="frontFx" id="ff-glint" value="glint"><label for="ff-glint">Light spot</label>
+          <input type="checkbox" name="frontFx" id="ff-dim" value="dim"><label for="ff-dim">Dim others</label>
+          <input type="checkbox" name="frontFx" id="ff-arrow" value="arrow"><label for="ff-arrow">Open arrow</label>
+          <input type="checkbox" name="frontFx" id="ff-chips" value="chips"><label for="ff-chips">Shortcut buttons</label>
+        </div>
+      </fieldset>
+      <fieldset>
         <legend>Sun direction</legend>
         <div class="seg">
           <input type="radio" name="dir" id="dir-flat" value="flat"><label for="dir-flat">Flat</label>
@@ -390,6 +429,21 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
           <input type="radio" name="moonLook" id="moon-ring" value="ring"><label for="moon-ring">Half ring</label>
           <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
           <input type="radio" name="moonLook" id="moon-rolodex" value="rolodex"><label for="moon-rolodex">Rolodex</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Layout</legend>
+        <div class="seg">
+          <input type="radio" name="swap" id="swap-off" value="off"><label for="swap-off">Sun dial (today)</label>
+          <input type="radio" name="swap" id="swap-on" value="on"><label for="swap-on">Swap: moon dial, sun list</label>
+        </div>
+        <p class="helpline">Swap: the moon items go around the moon, your apps go in a list next to a big sun (Dots look).</p>
+      </fieldset>
+      <fieldset>
+        <legend>Sky picture</legend>
+        <div class="seg">
+          <input type="radio" name="skyPhoto" id="photo-off" value="off"><label for="photo-off">Drawn sky</label>
+          <input type="radio" name="skyPhoto" id="photo-sunset" value="sunset"><label for="photo-sunset">Sunset photo</label>
         </div>
       </fieldset>
       <fieldset>
@@ -488,7 +542,10 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   };
   const TIMELINE = [[0, 'neon'], [4.8, 'neon'], [5.5, 'plasma'], [7.6, 'plasma'], [8.4, 'daylight'], [16.4, 'daylight'], [17.2, 'sunset'], [18.4, 'sunset'], [19.0, 'eclipse'], [19.8, 'eclipse'], [20.4, 'blackhole'], [21.6, 'blackhole'], [22.3, 'neon'], [24, 'neon']];
   const KEY = 'sun-launcher-playground-v4';
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  // Test options (21 Oct): the user tries them on the phone and then says which to remove.
+  const RAY_STYLES = ['spikes', 'beams', 'clouds', 'starburst', 'corona', 'flames', 'glow'];
+  const FRONT_FX = ['beam', 'halo', 'lift', 'glint', 'dim', 'arrow', 'chips'];
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'spikes', frontFx: [], swap: 'off', skyPhoto: 'off', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -504,6 +561,10 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   S.visits = (S.visits || 0) + 1;
   let showTips = S.visits <= 3;
   if (['dots', 'arc', 'ring', 'crescent', 'rolodex'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
+  if (RAY_STYLES.indexOf(S.rayStyle) === -1) S.rayStyle = 'spikes';
+  S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1);
+  if (S.swap !== 'on') S.swap = 'off';
+  if (S.skyPhoto !== 'sunset') S.skyPhoto = 'off';
   if (S.tilt === 62) S.tilt = 45;
   S.tilt = Math.max(10, Math.min(75, +S.tilt || 45));
   S.size = Math.max(80, Math.min(160, +S.size || 125));
@@ -644,7 +705,8 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     const tb = themeBlend(ph), ra = resolveTheme(tb.a, ph), rb = resolveTheme(tb.b, ph);
     return { a: ra.look, b: rb.look, t: ra.look === rb.look ? 0 : tb.t, color: mix(ra.color, rb.color, tb.t), moon: tb.t < 0.5 ? ra.moon : rb.moon, theme: tb.t < 0.5 ? tb.a : tb.b };
   }
-  function currentMoon() { return lookBlend(phaseNow()).moon; }
+  // Swapped layout always uses the Dots list for the apps next to the sun.
+  function currentMoon() { return swapped() ? 'dots' : lookBlend(phaseNow()).moon; }
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function clockText() {
     const d = new Date();
@@ -699,6 +761,9 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     r.setProperty('--sun', sun);
     r.setProperty('--sun-deep', st.deep);
     app.classList.toggle('fx', S.fx === 'fancy');
+    FRONT_FX.forEach((v) => app.classList.toggle('ff-' + v, S.frontFx.indexOf(v) !== -1));
+    app.classList.toggle('swap', swapped());
+    app.classList.toggle('photo-sky', S.skyPhoto === 'sunset');
     const ct = clockText();
     $('sunClock').textContent = ct;
     const chip = $('clockChip');
@@ -1074,7 +1139,19 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   /* ---------- Apps ---------- */
   const sunApps = () => S.order.filter((n) => S.onMoon.indexOf(n) === -1).map((n) => BY[n]);
   const moonApps = () => S.mode === 'one' ? S.order.map((n) => BY[n]) : S.order.filter((n) => S.onMoon.indexOf(n) !== -1).map((n) => BY[n]);
+  // Swapped layout (Settings > Layout, two menus only): the dial shows the moon items, the list shows the sun apps.
+  function swapped() { return S.swap === 'on' && S.mode === 'two'; }
   function moonGroups() {
+    if (swapped()) return [{ name: 'Apps', items: sunApps().map((a) => ({ name: a.name, app: true, hint: a.hint, href: a.href })) }];
+    return moonGroups0();
+  }
+  // The moon items shaped like apps for the dial (at most 10, so the dial stays readable).
+  function moonAsApps() {
+    const out = [];
+    moonGroups0().forEach((g) => g.items.forEach((it) => out.some((o) => o.name === it.name) || out.push({ name: it.name, hint: it.app ? it.hint : g.name, href: it.href || '', short: [], it: Object.assign({ group: g.name }, it) })));
+    return out.slice(0, 10);
+  }
+  function moonGroups0() {
     const g = [];
     const favs = S.favs.filter(Boolean);
     if (favs.length) g.push({ name: 'Favourites', items: favs.map((n) => BY[n] ? { name: n, app: true, hint: BY[n].hint, href: BY[n].href, fav: true } : { name: n, fav: true }) });
@@ -1140,7 +1217,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 
   let facetEls = [];
   function buildFacets() {
-    APPS = sunApps();
+    APPS = swapped() ? moonAsApps() : sunApps();
     const box = $('facets');
     box.textContent = '';
     facetEls = APPS.map((a, i) => {
@@ -1167,7 +1244,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
             suppressClick = true;
             setTimeout(() => { suppressClick = false; }, 450);
             hapt('press');
-            openShortcuts(a);
+            if (a.it) openFav(a.it); else openShortcuts(a);
           }
         }, 450);
       });
@@ -1186,10 +1263,11 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     const c = sunCv.getContext('2d'), W = st.W, H = st.H;
     c.clearRect(0, 0, W, H);
     const fx = fancy(), bl = lookBlend(hour), look = bl.t < 0.5 ? bl.a : bl.b, day = daylight(hour), tw = twilight(hour);
-    const looks = bl.t <= 0.001 || bl.a === bl.b ? [[bl.a, 1]] : bl.t >= 0.999 ? [[bl.b, 1]] : [[bl.a, 1 - bl.t], [bl.b, bl.t]];
+    // Swapped layout: the dial shows the moon with only a soft glow (look 'moon').
+    const looks = swapped() ? [['moon', 1]] : bl.t <= 0.001 || bl.a === bl.b ? [[bl.a, 1]] : bl.t >= 0.999 ? [[bl.b, 1]] : [[bl.a, 1 - bl.t], [bl.b, bl.t]];
     drawStars(c, W, H, nightness(hour) * 0.8, now, fx, [par.x, par.y]);
     const G = sunGeo();
-    if (GLB.ok) {
+    if (GLB.ok && !(S.skyPhoto === 'sunset' && !swapped())) {
       const cl = cloudAt(hour), twl = Math.min(1, twilight(hour));
       cl.sun = [G.cx / W + (0.5 - G.cx / W) * twl, G.cy / H + (1.04 - G.cy / H) * twl];
       cl.time = reduce ? 0 : now / 1000; cl.moving = fx;
@@ -1197,7 +1275,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
       GLB.clouds(c, W, H, cl, now);
       c.restore();
     }
-    const sun = st.sun, deep = st.deep;
+    const sun = swapped() ? '#DCE2EE' : st.sun, deep = swapped() ? '#8F9AB3' : st.deep;
     const n = APPS.length, step = 2 * Math.PI / n, rot = st.rot * Math.PI / 180;
     const front = frontIndex(), fa = frontDeg() * Math.PI / 180;
     const coreR = 50 * S.size / 100, cx = G.cx, cy = G.cy;
@@ -1264,7 +1342,13 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 
     function drawRay(i, look) {
       const a = i * step + rot, f = depthF(a), isF = i === front;
-      if (look === 'rays') {
+      if (look === 'rays' && S.rayStyle === 'beams') {
+        const br = 0.85 + 0.15 * Math.sin(rt * 0.7 + i);
+        softWedge(a, 0.2, G.R * 2.4, (isF ? 0.75 : 0.4 + 0.25 * f) * br);
+        softWedge(a + step / 2, 0.11, G.R * 1.7, (0.25 + 0.15 * depthF(a + step / 2)) * br);
+      } else if (look === 'rays' && S.rayStyle !== 'spikes') {
+        // the other ray styles are drawn once for the whole sun (raysBack / raysFront)
+      } else if (look === 'rays') {
         const a2 = a + step / 2;
         poly([G.polar(coreR * 0.9, a2 - 0.07), G.polar(coreR + (G.R - coreR) * 0.5, a2), G.polar(coreR * 0.9, a2 + 0.07)], hexA(deep, 0.35 + 0.35 * depthF(a2)));
         poly([G.polar(coreR * 0.9, a - 0.14), G.polar(G.R - 14, a), G.polar(coreR * 0.9, a + 0.14)], isF ? sun : hexA(deep, 0.5 + 0.45 * f));
@@ -1289,6 +1373,130 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         line(G.polar(coreR * 1.25, a), G.polar(G.R - 12, a), hexA(sun, 0.75), 2);
         c.restore();
       }
+    }
+
+    /* ---------- Ray styles and front-app light (Settings > Sun rays, Front app) ---------- */
+    const rt = reduce ? 0 : now / 1000;
+    const pale = mix(sun, '#FFF6E0', 0.45);
+    const ffOn = (v) => S.frontFx.indexOf(v) !== -1;
+    function rnd(k) { const x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+    function radial(x, y, r0, r1, stops) {
+      const g = c.createRadialGradient(x, y, r0, x, y, r1);
+      stops.forEach((s) => g.addColorStop(s[0], s[1]));
+      return g;
+    }
+    // soft light wedge in the tilted sun plane, fading with distance
+    function softWedge(a, half, len, al) {
+      const tip = G.polar(len, a), d = Math.hypot(tip[0] - cx, tip[1] - cy) || 1;
+      c.save(); c.globalCompositeOperation = 'lighter';
+      poly([G.polar(coreR * 0.8, a - half * 0.35), G.polar(len, a - half), G.polar(len, a + half), G.polar(coreR * 0.8, a + half * 0.35)],
+        radial(cx, cy, coreR * 0.6, d, [[0, hexA(pale, al.toFixed(3))], [0.45, hexA(pale, (al * 0.6).toFixed(3))], [1, hexA(sun, 0)]]));
+      c.restore();
+    }
+    function glowOnly(k) {
+      const br = 0.9 + 0.1 * Math.sin(rt * 0.6);
+      c.fillStyle = radial(cx, cy, coreR * 0.8, coreR * 3.6 * br, [[0, hexA(pale, (0.85 * k).toFixed(3))], [0.35, hexA(sun, (0.4 * k).toFixed(3))], [1, hexA(sun, 0)]]);
+      c.fillRect(0, 0, W, H);
+      c.fillStyle = radial(cx, cy, coreR, W * 0.9, [[0, hexA(sun, (0.3 * k).toFixed(3))], [1, hexA(sun, 0)]]);
+      c.fillRect(0, 0, W, H);
+    }
+    // drawn behind the sun body
+    function raysBack(lk) {
+      c.save(); c.globalCompositeOperation = 'lighter';
+      const rs = S.rayStyle;
+      if (lk === 'moon') glowOnly(0.6);
+      else if (lk === 'rays' && rs === 'glow') glowOnly(light);
+      else if (lk === 'rays' && rs === 'clouds') {
+        // light beams through gaps in clouds, fanning down from the sun, with a soft glow
+        glowOnly(light * 0.8);
+        for (let k = 0; k < 11; k++) {
+          const ang = Math.PI / 2 + (k - 5) * 0.17 + (rnd(k) - 0.5) * 0.08 + 0.02 * Math.sin(rt * 0.2 + k);
+          const half = 0.03 + 0.05 * rnd(k + 3), len = H * 1.1;
+          const al = (0.16 + 0.16 * rnd(k + 9)) * (0.75 + 0.25 * Math.sin(rt * 0.35 + k * 1.7)) * light;
+          const p = (r, an) => [cx + r * Math.cos(an), cy + r * Math.sin(an)];
+          poly([p(coreR * 1.05, ang - half * 0.5), p(len, ang - half), p(len, ang + half), p(coreR * 1.05, ang + half * 0.5)],
+            radial(cx, cy, coreR, len, [[0, hexA(pale, al.toFixed(3))], [0.6, hexA(sun, (al * 0.5).toFixed(3))], [1, hexA(sun, 0)]]));
+        }
+      } else if (lk === 'rays' && rs === 'corona') {
+        // eclipse corona: long thin pearly streamers, longest at the sides
+        c.fillStyle = radial(cx, cy, coreR * 0.95, coreR * 2.2, [[0, 'rgba(255, 252, 244, 0.7)'], [1, 'rgba(255, 252, 244, 0)']]);
+        c.fillRect(cx - coreR * 2.5, cy - coreR * 2.5, coreR * 5, coreR * 5);
+        for (let k = 0; k < 64; k++) {
+          const th = k / 64 * 2 * Math.PI + (rnd(k) - 0.5) * 0.12;
+          const len = coreR * (1.7 + 3.6 * Math.pow(rnd(k + 20), 1.5)) * (0.55 + 0.7 * Math.abs(Math.cos(th)));
+          const bend = (rnd(k + 40) - 0.5) * 0.35 + 0.03 * Math.sin(rt * 0.4 + k);
+          const x0 = cx + coreR * 0.98 * Math.cos(th), y0 = cy + coreR * 0.98 * Math.sin(th);
+          const x1 = cx + len * Math.cos(th + bend), y1 = cy + len * Math.sin(th + bend);
+          const xm = cx + len * 0.55 * Math.cos(th + bend * 0.2), ym = cy + len * 0.55 * Math.sin(th + bend * 0.2);
+          const g = c.createLinearGradient(x0, y0, x1, y1);
+          const al = (0.35 + 0.35 * rnd(k + 60)) * (0.85 + 0.15 * Math.sin(rt * 0.9 + k));
+          g.addColorStop(0, 'rgba(255, 252, 244, ' + al.toFixed(3) + ')');
+          g.addColorStop(0.5, 'rgba(255, 252, 244, ' + (al * 0.4).toFixed(3) + ')');
+          g.addColorStop(1, 'rgba(255, 252, 244, 0)');
+          c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(xm, ym, x1, y1);
+          c.strokeStyle = g; c.lineWidth = 1 + 3 * rnd(k + 80); c.lineCap = 'round'; c.stroke();
+        }
+      } else if (lk === 'rays' && rs === 'flames') {
+        // short moving tongues of fire at the edge, plus three loops
+        const pt = (r, an) => [cx + r * Math.cos(an), cy + r * Math.sin(an)];
+        for (let k = 0; k < 30; k++) {
+          const th = k / 30 * 2 * Math.PI + (rnd(k) - 0.5) * 0.15;
+          const h = coreR * (0.18 + 0.5 * rnd(k + 5)) * (0.75 + 0.25 * Math.sin(rt * 1.4 + k * 2.3));
+          const w = 0.07 + 0.08 * rnd(k + 11), sway = 0.12 * Math.sin(rt * 0.9 + k);
+          const b0 = pt(coreR * 0.97, th - w), b1 = pt(coreR * 0.97, th + w), tip = pt(coreR + h, th + sway * 0.6);
+          const m0 = pt(coreR + h * 0.6, th - w * 0.6 + sway * 0.3), m1 = pt(coreR + h * 0.6, th + w * 0.6 + sway * 0.3);
+          c.beginPath(); c.moveTo(b0[0], b0[1]);
+          c.quadraticCurveTo(m0[0], m0[1], tip[0], tip[1]);
+          c.quadraticCurveTo(m1[0], m1[1], b1[0], b1[1]);
+          c.closePath();
+          c.fillStyle = radial(cx, cy, coreR * 0.95, coreR + h, [[0, 'rgba(255, 220, 140, 0.95)'], [0.5, 'rgba(250, 120, 45, 0.7)'], [1, 'rgba(200, 45, 20, 0)']]);
+          c.fill();
+        }
+        [[-2.3, 0.75], [0.9, 0.55], [2.6, 0.45]].forEach((L, j) => {
+          const th = L[0] + 0.03 * Math.sin(rt * 0.3 + j), sp = 0.32, hgt = coreR * L[1];
+          const a0 = pt(coreR, th - sp / 2), a1 = pt(coreR, th + sp / 2), top = pt(coreR + hgt * 1.8, th);
+          c.beginPath(); c.moveTo(a0[0], a0[1]); c.quadraticCurveTo(top[0], top[1], a1[0], a1[1]);
+          c.strokeStyle = 'rgba(255, 120, 60, 0.55)'; c.lineWidth = 4; c.lineCap = 'round'; c.stroke();
+          c.strokeStyle = 'rgba(255, 210, 150, 0.5)'; c.lineWidth = 1.5; c.stroke();
+        });
+      }
+      c.restore();
+    }
+    // drawn on top of the sun body
+    function raysFront(lk) {
+      c.save(); c.globalCompositeOperation = 'lighter';
+      if (ffOn('beam')) {
+        // one bright beam of light from the sun centre to the front app
+        const tip = G.polar(G.R * 0.98, fa), d = Math.hypot(tip[0] - cx, tip[1] - cy) || 1;
+        poly([[cx, cy], G.polar(G.R * 0.98, fa - 0.22), G.polar(G.R * 0.98, fa + 0.22)],
+          radial(cx, cy, coreR * 0.2, d, [[0, 'rgba(255, 250, 235, 0)'], [0.35, 'rgba(255, 250, 235, 0.55)'], [1, hexA(pale, 0.85)]]));
+      }
+      if (ffOn('glint')) {
+        // small bright glint with a thin flare line on the ring, under the front app
+        const gp0 = G.polar(G.R, fa), gp = [gp0[0], gp0[1] + 8];
+        c.fillStyle = radial(gp[0], gp[1], 0, 34, [[0, 'rgba(255, 252, 240, 1)'], [0.3, hexA(pale, 0.75)], [1, hexA(sun, 0)]]);
+        c.fillRect(gp[0] - 40, gp[1] - 40, 80, 80);
+        const lg = c.createLinearGradient(gp[0] - 120, 0, gp[0] + 120, 0);
+        lg.addColorStop(0, 'rgba(255, 252, 240, 0)'); lg.addColorStop(0.5, 'rgba(255, 252, 240, 1)'); lg.addColorStop(1, 'rgba(255, 252, 240, 0)');
+        c.fillStyle = lg; c.fillRect(gp[0] - 120, gp[1] - 1.5, 240, 3);
+      }
+      if (lk === 'rays' && S.rayStyle === 'starburst') {
+        // camera starburst: 8 thin spikes from the lens blades, fixed to the picture
+        for (let k = 0; k < 8; k++) {
+          const ang = 0.22 + k * Math.PI / 4, len = (k % 2 ? W * 0.42 : W * 0.7) * (0.96 + 0.04 * Math.sin(rt * 2 + k)), half = k % 2 ? 2.4 : 3.6;
+          const ex = cx + len * Math.cos(ang), ey = cy + len * Math.sin(ang);
+          const nx = -Math.sin(ang) * half, ny = Math.cos(ang) * half;
+          const g = c.createLinearGradient(cx, cy, ex, ey);
+          g.addColorStop(0, 'rgba(255, 252, 240, 1)');
+          g.addColorStop(0.35, hexA(pale, 0.8));
+          g.addColorStop(1, hexA(sun, 0));
+          c.beginPath(); c.moveTo(cx + nx, cy + ny); c.lineTo(ex, ey); c.lineTo(cx - nx, cy - ny); c.closePath();
+          c.fillStyle = g; c.fill();
+        }
+        c.fillStyle = radial(cx, cy, 0, coreR * 1.25, [[0, 'rgba(255, 252, 240, 0.35)'], [1, 'rgba(255, 252, 240, 0)']]);
+        c.fillRect(cx - coreR * 2, cy - coreR * 2, coreR * 4, coreR * 4);
+      }
+      c.restore();
     }
 
     function diskHalf(frontHalf) {
@@ -1376,6 +1584,10 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 
     function body(look) {
     const bx = cx + par.x * 3, by = cy + par.y * 3, press = 1 - 0.06 * (st.press || 0);
+    if (GLB.ok && look === 'moon') {
+      GLB.draw(c, bx, by, coreR * press, { mode: 'moon', light: [0.62, 0.55, 0.05], rot: (reduce ? 0 : Math.sin(now / 1000 * 0.21) * 0.05) - 0.3, shine: 0.17, expo: 1.3, glow: 0.7 + 0.3 * (st.press || 0), margin: 1.15 });
+      return;
+    }
     if (GLB.ok && look === 'blackhole') {
       GLB.draw(c, bx, by, coreR * 0.95 * press, { mode: 'blackhole', tint: sun, time: reduce ? 0 : now / 1000, glow: 0.75 + 0.35 * light, margin: 1.9 });
       return;
@@ -1465,10 +1677,12 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
       c.globalAlpha = lk[1];
       if (lk[0] === 'plasma') plasmaLayers();
       if (lk[0] === 'blackhole') diskHalf(false);
+      raysBack(lk[0]);
       idx.filter((i) => isBack(i * step + rot)).forEach((i) => drawRay(i, lk[0]));
       body(lk[0]);
       if (lk[0] === 'blackhole') diskHalf(true);
       idx.filter((i) => !isBack(i * step + rot)).forEach((i) => drawRay(i, lk[0]));
+      raysFront(lk[0]);
       c.restore();
     });
 
@@ -1518,6 +1732,16 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
       });
       $('sunName').textContent = APPS[front].name;
       $('sunHint').textContent = APPS[front].hint;
+      const fa0 = APPS[front], chips = $('sunChips');
+      chips.textContent = '';
+      chips.hidden = !ffOn('chips') || !(fa0.short || []).length;
+      if (!chips.hidden) fa0.short.slice(0, 3).forEach((t) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = t;
+        b.addEventListener('click', () => { pushRecent(fa0.name); toast(fa0.name + ': ' + t + ' (example)'); });
+        chips.appendChild(b);
+      });
       lastFront = front;
     }
     let maxY = 0, minY = H;
@@ -1533,7 +1757,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   }
 
   function pickApp(i) {
-    if (i === frontIndex()) { openApp(APPS[i]); return; }
+    if (i === frontIndex()) { if (APPS[i].it) openItem(APPS[i].it); else openApp(APPS[i]); return; }
     rotateTo(i);
   }
 
@@ -1609,8 +1833,9 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   }
   function moonGeo() {
     const W = st.W, H = st.H, look = currentMoon();
-    const Ri = Math.min(W * 0.385, 150, H * 0.178), k = Ri / 150, cy = H * 0.5 - st.liftM;
-    const g = { Ri: Ri, k: k, cy: cy, Ix: W * 0.77, Ox: W * 0.615, rO: 230 * k, rI: 215 * k, Cm: W * 0.692 };
+    // Swapped layout: big sun higher up and partly off the right edge (user's pick B, 21 Oct).
+    const sw = swapped(), Ri = Math.min(W * 0.385, 150, H * 0.178) * (sw ? 1.35 : 1), k = Ri / 150, cy = H * (sw ? 0.34 : 0.5) - st.liftM;
+    const g = { Ri: Ri, k: k, cy: cy, Ix: W * (sw ? 0.95 : 0.77), Ox: W * 0.615, rO: 230 * k, rI: 215 * k, Cm: W * 0.692 };
     g.rA = Ri * 1.2;
     g.rIn = Ri * 1.22; g.rOut = Ri * 1.58;
     g.amax = ({ crescent: 80, arc: 78, ring: 76, dots: 78, rolodex: 78 }[look] || 78) * Math.PI / 180;
@@ -1686,7 +1911,21 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 
     const mx = par.x * 3, my = par.y * 3, mt = reduce ? 0 : now / 1000;
     const wob = Math.sin(mt * 0.21) * 0.05 + st.pos * 0.012;
-    if (GLB.ok && (look === 'arc' || look === 'dots' || look === 'ring')) {
+    if (GLB.ok && swapped()) {
+      // GLB caps its picture at 1024 device px, so a big sun is drawn smaller: use the real drawn radius
+      const sr = Math.min(G.Ri * 1.02, 512 / (1.3 * (st.dpr || 1)));
+      const hg = c.createRadialGradient(G.Ix, cy, sr * 0.8, G.Ix, cy, sr * 2.4);
+      hg.addColorStop(0, hexA(st.sun, 0.25)); hg.addColorStop(1, hexA(st.sun, 0));
+      c.fillStyle = hg; c.fillRect(0, 0, W, H);
+      GLB.draw(c, G.Ix + mx, cy + my, sr, { mode: 'sun', tint: st.sun, rot: mt * 0.02, roll: 0, pitch: 0, time: mt, glow: 0.6, margin: 1.3 });
+      // dark side on the left, like the moon's shadow, so the list stays readable
+      c.save();
+      c.beginPath(); c.arc(G.Ix + mx, cy + my, sr * 1.01, 0, 2 * Math.PI); c.clip();
+      const sh = c.createLinearGradient(G.Ix - sr, 0, G.Ix + sr * 0.35, 0);
+      sh.addColorStop(0, 'rgba(12, 8, 20, 0.88)'); sh.addColorStop(0.55, 'rgba(12, 8, 20, 0.55)'); sh.addColorStop(1, 'rgba(12, 8, 20, 0)');
+      c.fillStyle = sh; c.fillRect(G.Ix - sr * 1.1, cy - sr * 1.1, sr * 2.2, sr * 2.2);
+      c.restore();
+    } else if (GLB.ok && (look === 'arc' || look === 'dots' || look === 'ring')) {
       GLB.draw(c, G.Ix + mx, cy + my, look === 'ring' ? G.rIn * 0.92 : G.Ri * 1.02, { mode: 'moon', light: [0.62, 0.55, 0.05], rot: wob - 0.3, shine: 0.17, expo: 1.3, glow: 0.7, margin: 1.15 });
     } else if (GLB.ok && look === 'rolodex') {
       GLB.draw(c, W + 34 + mx, cy - 24 + my, Math.min(170, H * 0.21), { mode: 'moon', light: [-0.62, 0.32, 0.7], rot: wob, shine: 0.1, expo: 1.2, glow: 0.8, margin: 1.15 });
@@ -1985,7 +2224,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     setTimeout(() => { suppressClick = false; }, 400);
   }
   $('sunScreen').addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.corner, .handle, .viewbtn')) return;
+    if (e.target.closest('.corner, .handle, .viewbtn, .chips')) return;
     { const rr = $('sunScreen').getBoundingClientRect(); addRipple('sun', e.clientX - rr.left, e.clientY - rr.top); }
     if (e.target.closest('#core')) { tween('press', 1, 110); const up = () => { tween('press', 0, 420); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); }; window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -2140,7 +2379,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   }
   function openItem(it) {
     if (it.app) { openApp(BY[it.name]); return; }
-    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0.', '', false); return; }
+    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence.', '', false); return; }
     openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
   }
   $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
@@ -2291,7 +2530,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'sunLook', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound'];
+  const RADIOS = ['mode', 'theme', 'sunLook', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'rayStyle', 'swap', 'skyPhoto'];
   function shownTheme() {
     if (S.theme === 'custom') return { look: S.sunLook, moon: S.moonLook, color: S.sunTime ? 'time' : S.color };
     const key = S.theme === 'auto' ? lookBlend(phaseNow()).theme : S.theme, th = THEMES[key] || THEMES.daylight;
@@ -2304,6 +2543,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
       Array.prototype.forEach.call(form.elements[name], (r) => { r.checked = r.value === v; });
     });
     Array.prototype.forEach.call(form.elements.color, (r) => { r.checked = r.value === sh.color; });
+    Array.prototype.forEach.call(form.elements.frontFx, (r) => { r.checked = S.frontFx.indexOf(r.value) !== -1; });
     const now = lookBlend(phaseNow()).theme;
     $('themeLine').textContent = S.theme === 'auto'
       ? 'Now: ' + (THEMES[now] ? THEMES[now].name : 'Daylight') + '. Through the day: Plasma dawn, Daylight, Sunset, Eclipse, Black hole, Neon night.'
@@ -2358,21 +2598,24 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   }
   function frontIndexSafe() { const i = frontIndex(); return isFinite(i) ? i : 0; }
   function onSettings(e) {
-    const prevMode = S.mode, prevDir = S.dir, prevTheme = S.theme;
+    const prevMode = S.mode, prevDir = S.dir, prevTheme = S.theme, prevSwap = swapped();
     const changed = e && e.target ? e.target.name : '';
     RADIOS.forEach((name) => { Array.prototype.forEach.call(form.elements[name], (r) => { if (r.checked) S[name] = r.value; }); });
+    S.frontFx = Array.prototype.filter.call(form.elements.frontFx, (r) => r.checked).map((r) => r.value);
+    // A ray style only shows on the Rays look, so picking one switches the sun to Rays (My own theme).
+    if (changed === 'rayStyle' && S.sunLook !== 'rays') { S.sunLook = 'rays'; S.theme = 'custom'; }
     Array.prototype.forEach.call(form.elements.color, (r) => {
       if (!r.checked) return;
       if (r.value === 'time') S.sunTime = true; else { S.sunTime = false; S.color = r.value; }
     });
     if (changed === 'sunLook' || changed === 'moonLook' || changed === 'color') S.theme = 'custom';
     if (changed === 'moonLook') peekScreen('moon');
-    else if (['sunLook', 'dir', 'tilt', 'size', 'color'].indexOf(changed) !== -1) peekScreen('sun');
+    else if (['sunLook', 'dir', 'tilt', 'size', 'color', 'rayStyle', 'frontFx', 'swap', 'skyPhoto'].indexOf(changed) !== -1) peekScreen('sun');
     if (changed === 'theme' && S.theme === 'custom' && prevTheme !== 'custom') {
       const key = prevTheme === 'auto' ? lookBlend(phaseNow()).theme : prevTheme, th = THEMES[key];
       if (th) { S.sunLook = th.look; S.moonLook = th.moon; if (th.color === 'time') S.sunTime = true; else { S.sunTime = false; S.color = th.color; } }
     }
-    if (changed === 'theme' || S.theme !== prevTheme) fillForm();
+    if (changed === 'theme' || changed === 'rayStyle' || S.theme !== prevTheme) fillForm();
     if (changed === 'dir' && DIR_TILT[S.dir]) $('tilt').value = DIR_TILT[S.dir];
     if (S.dir === 'custom' && !S.custom) { S.dir = prevDir; ensureCustom(); }
     setTilt(parseFloat($('tilt').value));
@@ -2383,6 +2626,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     $('hourOut').textContent = fmtHour(S.hour);
     $('hourRow').hidden = S.sky !== 'preview';
     if (st.demo && S.sky !== 'clock') stopDemo();
+    if (swapped() !== prevSwap && S.mode === prevMode) { st.pos = 0; buildFacets(); buildItems(); st.rot = frontDeg(); }
     afterChange(prevMode, prevDir);
   }
   form.addEventListener('input', onSettings);
