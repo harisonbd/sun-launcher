@@ -76,6 +76,11 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .chips button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: color-mix(in srgb, var(--panel) 80%, transparent); border: 1px solid color-mix(in srgb, var(--sun) 45%, var(--line)); color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer; }
 /* Sky picture and swapped layout (Settings > Sky picture, Layout) */
 #app.photo-sky #sunScreen { background: #2A2236 url('sky-sunset.jpg') center 55% / cover; }
+/* Neon style backgrounds (Settings > Sun > Neon style) */
+#app.nz-sign #sunScreen { background: radial-gradient(ellipse at 50% 40%, #2a1a24 0%, #120a10 60%, #070406 100%); }
+#app.nz-synth #sunScreen { background: linear-gradient(180deg, #0d0221 0%, #2b0a4a 38%, #6a1b6e 52%, #1a0533 100%); }
+#app.nz-cyber #sunScreen { background: linear-gradient(180deg, #050814 0%, #0b1630 50%, #1a0b24 100%); }
+#app.nz-tron #sunScreen { background: radial-gradient(ellipse at 50% 42%, #06202a 0%, #01060a 70%); }
 #app.swap #sunScreen { background: linear-gradient(180deg, var(--msky-top), var(--msky-bot)); --sun: #DCE2EE; --sun-ink: #1B2233; }
 #app.swap #moonScreen { background: linear-gradient(180deg, var(--sky-top), var(--sky-bot)); }
 #app.swap.photo-sky #moonScreen { background: #2A2236 url('sky-sunset.jpg') center 55% / cover; }
@@ -370,6 +375,17 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           <input type="radio" name="sunPick" id="sp-neon" value="neon"><label for="sp-neon">Neon</label>
           <input type="radio" name="sunPick" id="sp-plasma" value="plasma"><label for="sp-plasma">Plasma</label>
         </div>
+        <div id="neonOpts" class="swapopts">
+          <div class="sublg">Neon style</div>
+          <div class="seg">
+            <input type="radio" name="neonStyle" id="nz-classic" value="classic"><label for="nz-classic">Today</label>
+            <input type="radio" name="neonStyle" id="nz-minimal" value="minimal"><label for="nz-minimal">Minimal</label>
+            <input type="radio" name="neonStyle" id="nz-sign" value="sign"><label for="nz-sign">Sign</label>
+            <input type="radio" name="neonStyle" id="nz-synth" value="synth"><label for="nz-synth">Synthwave</label>
+            <input type="radio" name="neonStyle" id="nz-cyber" value="cyber"><label for="nz-cyber">Cyberpunk</label>
+            <input type="radio" name="neonStyle" id="nz-tron" value="tron"><label for="nz-tron">Tron</label>
+          </div>
+        </div>
       </fieldset>
       <fieldset>
         <legend>Moon</legend>
@@ -562,7 +578,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   // Halo and light spot stay: they look good with Black hole.
   const RAY_STYLES = ['glow', 'corona', 'flames'];
   const FRONT_FX = ['beam', 'lift', 'dim', 'chips', 'halo', 'glint'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  // Neon look styles (22 Oct, to try on the phone): classic = the old Neon.
+  const NEON_STYLES = ['classic', 'minimal', 'sign', 'synth', 'cyber', 'tron'];
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'classic', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -591,6 +609,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (S.skyPhoto !== 'sunset') S.skyPhoto = 'off';
   if (['glow', 'halo', 'phase', 'path', 'dust'].indexOf(S.moonDial) === -1) S.moonDial = 'glow';
   if (['edge', 'eclipse', 'orb', 'small', 'setting'].indexOf(S.sunList) === -1) S.sunList = 'edge';
+  if (NEON_STYLES.indexOf(S.neonStyle) === -1) S.neonStyle = 'classic';
   if (S.tilt === 62) S.tilt = 45;
   S.tilt = Math.max(10, Math.min(75, +S.tilt || 45));
   S.size = Math.max(80, Math.min(160, +S.size || 125));
@@ -1313,9 +1332,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const fx = fancy(), bl = lookBlend(hour), look = bl.t < 0.5 ? bl.a : bl.b, day = daylight(hour), tw = twilight(hour);
     // Swapped layout: the dial shows the moon with only a soft glow (look 'moon').
     const looks = swapped() ? [['moon', 1]] : bl.t <= 0.001 || bl.a === bl.b ? [[bl.a, 1]] : bl.t >= 0.999 ? [[bl.b, 1]] : [[bl.a, 1 - bl.t], [bl.b, bl.t]];
-    drawStars(c, W, H, nightness(hour) * 0.8, now, fx, [par.x, par.y]);
+    // Neon styles bring their own background (CSS class nz-*): no drawn clouds, and no stars on the sign's wall.
+    const nz = !swapped() && look === 'neon' && S.neonStyle !== 'classic' ? S.neonStyle : '';
+    ['sign', 'synth', 'cyber', 'tron'].forEach((v) => app.classList.toggle('nz-' + v, nz === v));
+    if (nz !== 'sign') drawStars(c, W, H, nightness(hour) * 0.8, now, fx, [par.x, par.y]);
     const G = sunGeo();
-    if (GLB.ok && !(S.skyPhoto === 'sunset' && !swapped())) {
+    if (GLB.ok && !(S.skyPhoto === 'sunset' && !swapped()) && !(nz && nz !== 'minimal')) {
       const cl = cloudAt(hour), twl = Math.min(1, twilight(hour));
       cl.sun = [G.cx / W + (0.5 - G.cx / W) * twl, G.cy / H + (1.04 - G.cy / H) * twl];
       cl.time = reduce ? 0 : now / 1000; cl.moving = fx;
@@ -1392,6 +1414,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const a = i * step + rot, f = depthF(a), isF = i === front;
       if (look === 'rays') {
         // the Rays look is drawn once for the whole sun (raysBack: glow, corona or flames)
+      } else if (look === 'neon' && S.neonStyle !== 'classic') {
+        // the new neon styles draw their own rays (neonBody / neonBack)
       } else if (look === 'neon') {
         c.save();
         c.globalCompositeOperation = 'lighter';
@@ -1521,6 +1545,100 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         c.fillStyle = lg; c.fillRect(gp[0] - 120, gp[1] - 1.5, 240, 3);
       }
       c.restore();
+    }
+
+    /* ---------- Neon styles (Settings > Sun > Neon style) ---------- */
+    const NEON = { pink: '#FF3EA5', cyan: '#2EF2FF', violet: '#B45CFF', amber: '#FFB547' };
+    // a neon tube like real glass: wide soft bloom, coloured tube, white-hot core
+    function tube(path, col, w, f) {
+      const k = f == null ? 1 : f;
+      c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round'; c.lineJoin = 'round';
+      path(); c.shadowColor = col; c.shadowBlur = w * 7; c.strokeStyle = hexA(col, (0.32 * k).toFixed(3)); c.lineWidth = w * 3; c.stroke();
+      path(); c.shadowBlur = w * 2.5; c.strokeStyle = hexA(col, (0.9 * k).toFixed(3)); c.lineWidth = w; c.stroke();
+      path(); c.shadowBlur = 0; c.strokeStyle = 'rgba(255, 250, 245, ' + (0.8 * k).toFixed(3) + ')'; c.lineWidth = Math.max(0.8, w * 0.32); c.stroke();
+      c.restore();
+    }
+    const arcP = (r, a0, a1, x, y) => () => { c.beginPath(); c.arc(x == null ? cx : x, y == null ? cy : y, r, a0, a1); };
+    const segP = (p0, p1) => () => { c.beginPath(); c.moveTo(p0[0], p0[1]); c.lineTo(p1[0], p1[1]); };
+    const dialP = (r) => () => { c.beginPath(); for (let k = 0; k <= 96; k++) { const pr = G.polar(r, k / 96 * 2 * Math.PI); if (k) c.lineTo(pr[0], pr[1]); else c.moveTo(pr[0], pr[1]); } };
+    const sp = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    // behind the sun: floor grid, wall light, rain and reflections
+    function neonBack(ns) {
+      if (ns === 'sign') {
+        c.fillStyle = radial(cx, cy, coreR, W * 0.75, [[0, 'rgba(255, 62, 165, 0.22)'], [0.5, 'rgba(255, 120, 60, 0.07)'], [1, 'rgba(255, 62, 165, 0)']]);
+        c.fillRect(0, 0, W, H);
+      } else if (ns === 'synth') {
+        const hy = cy + coreR * 1.25;
+        const fl = c.createLinearGradient(0, hy, 0, H); fl.addColorStop(0, '#2a0845'); fl.addColorStop(1, '#07010f');
+        c.fillStyle = fl; c.fillRect(0, hy, W, H - hy);
+        c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(255, 62, 165, 0.55)'; c.shadowColor = NEON.pink; c.shadowBlur = 6; c.lineWidth = 1.2;
+        const sh = (rt * 0.35) % 1;
+        for (let k = 0; k < 14; k++) { const t = (k + sh) / 14, y = hy + (H - hy) * t * t; c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+        for (let i = -10; i <= 10; i++) { c.beginPath(); c.moveTo(cx + i * W * 0.02, hy); c.lineTo(cx + i * W * 0.2, H); c.stroke(); }
+        c.restore();
+        tube(segP([0, hy], [W, hy]), NEON.pink, 2);
+      } else if (ns === 'cyber') {
+        // wet street reflection below the sun and light rain
+        c.save(); c.globalCompositeOperation = 'lighter';
+        for (let k = 0; k < 40; k++) {
+          const y = cy + coreR * 1.6 + k * (H - cy - coreR * 1.6) / 40, wd = coreR * (0.9 + 0.5 * Math.sin(rt * 1.7 + k)) * (1 + k * 0.02);
+          const col = k % 2 ? NEON.cyan : NEON.pink, al = 0.35 * (1 - k / 44);
+          const g = c.createLinearGradient(cx - wd, 0, cx + wd, 0); g.addColorStop(0, hexA(col, 0)); g.addColorStop(0.5, hexA(col, al.toFixed(3))); g.addColorStop(1, hexA(col, 0));
+          c.fillStyle = g; c.fillRect(cx - wd + Math.sin(rt * 2 + k) * 4, y, wd * 2, 2);
+        }
+        c.strokeStyle = 'rgba(180, 230, 255, 0.22)'; c.lineWidth = 1;
+        for (let k = 0; k < 70; k++) {
+          const x = (rnd(k) * W + rt * 40) % W, y = (rnd(k + 70) * H + rt * 520 * (0.8 + 0.4 * rnd(k + 140))) % H;
+          c.beginPath(); c.moveTo(x, y); c.lineTo(x - 3, y + 14); c.stroke();
+        }
+        c.restore();
+      } else if (ns === 'tron') {
+        tube(dialP(G.R + 20), NEON.cyan, 1.2, 0.5);
+      }
+    }
+    // the sun itself
+    function neonBody(ns) {
+      if (ns === 'minimal') {
+        c.fillStyle = radial(cx, cy, 0, coreR, [[0, hexA(sun, 0.1)], [1, hexA(sun, 0.02)]]);
+        c.beginPath(); c.arc(cx, cy, coreR, 0, 2 * Math.PI); c.fill();
+        tube(arcP(coreR, 0, 2 * Math.PI), sun, 2.4);
+        tube(dialP(G.R), sun, 1, 0.35);
+        tube(segP(G.polar(G.R - 9, fa).slice(0, 2), G.polar(G.R + 9, fa).slice(0, 2)), sun, 2);
+      } else if (ns === 'sign') {
+        // glass tubes bent into a sun, with small gaps where the glass bends, clips and one flickering ray
+        tube(arcP(coreR, 0.12, Math.PI - 0.06), NEON.pink, 3);
+        tube(arcP(coreR, Math.PI + 0.06, 2 * Math.PI - 0.12), NEON.pink, 3);
+        tube(arcP(coreR - 9, 0.5, 2 * Math.PI + 0.3), NEON.pink, 2, 0.8);
+        const bad = Math.floor(rt / 3) % 12, flick = Math.sin(rt * 37) > 0.3 ? 1 : 0.25;
+        for (let k = 0; k < 12; k++) { const a = k / 12 * 2 * Math.PI + Math.PI / 12; tube(segP(sp(coreR + 12, a), sp(coreR + 30, a)), NEON.amber, 2.4, k === bad ? flick : 1); }
+        [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4].forEach((a) => { const p = sp(coreR, a); c.fillStyle = '#3a3440'; c.fillRect(p[0] - 3, p[1] - 3, 6, 6); });
+      } else if (ns === 'synth') {
+        // 80s sun: yellow to pink to purple, stripe cuts in the lower half moving down
+        c.save();
+        c.shadowColor = NEON.pink; c.shadowBlur = 40;
+        const g = c.createLinearGradient(0, cy - coreR, 0, cy + coreR); g.addColorStop(0, '#FFE45C'); g.addColorStop(0.5, '#FF7A59'); g.addColorStop(1, '#C02FA0');
+        c.beginPath(); c.arc(cx, cy, coreR, 0, 2 * Math.PI); c.fillStyle = g; c.fill();
+        c.restore();
+        c.save(); c.beginPath(); c.arc(cx, cy, coreR + 1, 0, 2 * Math.PI); c.clip(); c.globalCompositeOperation = 'destination-out';
+        const off = (rt * 6) % 12;
+        for (let k = 0; k < 7; k++) { const y = cy + coreR * 0.05 + k * 12 + off, hgt = 1.5 + k * 1.1; c.fillRect(cx - coreR, y, coreR * 2, hgt); }
+        c.restore();
+      } else if (ns === 'cyber') {
+        // two colours, slightly apart like a colour glitch, with tube rays
+        tube(arcP(coreR, 0, 2 * Math.PI, cx - 2, cy + 1), NEON.pink, 2.6);
+        tube(arcP(coreR + 7, 0, 2 * Math.PI, cx + 2, cy - 1), NEON.cyan, 1.8);
+        const glitch = Math.sin(rt * 0.7) > 0.96;
+        for (let k = 0; k < 8; k++) { const a = k / 8 * 2 * Math.PI + rt * 0.05, o = glitch && k % 3 === 0 ? 6 : 0; tube(segP(sp(coreR + 16, a), sp(coreR + 34 + o, a)), k % 2 ? NEON.cyan : NEON.pink, 2); }
+      } else if (ns === 'tron') {
+        // turning wireframe globe of cyan tubes
+        c.fillStyle = 'rgba(2, 16, 22, 0.85)'; c.beginPath(); c.arc(cx, cy, coreR, 0, 2 * Math.PI); c.fill();
+        [-0.6, -0.3, 0, 0.3, 0.6].forEach((la) => { const ry = coreR * Math.cos(la * Math.PI / 2) , yy = cy + coreR * Math.sin(la * Math.PI / 2) * 0.98;
+          tube(() => { c.beginPath(); c.ellipse(cx, yy, ry, ry * 0.18, 0, 0, 2 * Math.PI); }, NEON.cyan, 1, la === 0 ? 0.9 : 0.45); });
+        for (let k = 0; k < 6; k++) { const ph = k / 6 * Math.PI + rt * 0.4, rx = Math.abs(Math.cos(ph)) * coreR;
+          tube(() => { c.beginPath(); c.ellipse(cx, cy, rx, coreR, 0, 0, 2 * Math.PI); }, NEON.cyan, 1, 0.4 + 0.3 * Math.abs(Math.sin(ph))); }
+        tube(arcP(coreR, 0, 2 * Math.PI), NEON.cyan, 2.4);
+        tube(dialP(G.R), NEON.cyan, 1.2, 0.7);
+      }
     }
 
     function diskHalf(frontHalf) {
@@ -1677,6 +1795,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         line([dx - 34, dy], [dx + 34, dy], 'rgba(255, 252, 240, 0.5)', 1);
         c.restore();
       }
+    } else if (look === 'neon' && S.neonStyle !== 'classic') {
+      neonBody(S.neonStyle);
     } else if (look === 'neon') {
       c.save();
       c.globalCompositeOperation = 'lighter';
@@ -1709,6 +1829,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       c.globalAlpha = lk[1];
       if (lk[0] === 'plasma') plasmaLayers();
       if (lk[0] === 'blackhole') diskHalf(false);
+      if (lk[0] === 'neon' && S.neonStyle !== 'classic') neonBack(S.neonStyle);
       raysBack(lk[0]);
       idx.filter((i) => isBack(i * step + rot)).forEach((i) => drawRay(i, lk[0]));
       body(lk[0]);
@@ -2581,7 +2702,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList'];
+  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList', 'neonStyle'];
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
@@ -2599,6 +2720,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     Array.prototype.forEach.call(form.elements.frontFx, (r) => { r.checked = S.frontFx.indexOf(r.value) !== -1; });
     Array.prototype.forEach.call(form.elements.sunPick, (r) => { r.checked = r.value === sunPickOf(sh.look); });
     $('swapOpts').hidden = S.swap !== 'on';
+    $('neonOpts').hidden = sh.look !== 'neon';
     const now = lookBlend(phaseNow()).theme;
     $('themeLine').textContent = S.theme === 'auto'
       ? 'Now: ' + (THEMES[now] ? THEMES[now].name : 'Daylight') + '. Sun and moon change through the day. Tap any look below to pick it yourself.'
@@ -2663,7 +2785,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     });
     const pick = Array.prototype.find.call(form.elements.sunPick, (r) => r.checked), tappedMoon = S.moonLook, tappedColor = [S.sunTime, S.color];
     // Tapping a look while "Follow the time" is on: start from the looks shown now, then apply the tap.
-    const isLook = changed === 'sunPick' || changed === 'moonLook' || changed === 'color';
+    const isLook = changed === 'sunPick' || changed === 'moonLook' || changed === 'color' || changed === 'neonStyle';
     if (isLook || (changed === 'theme' && S.theme === 'custom')) {
       if (prevTheme === 'auto') {
         const th = THEMES[lookBlend(phaseNow()).theme];
@@ -2672,11 +2794,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       S.theme = 'custom';
     }
     if (changed === 'sunPick' && pick) { if (RAY_STYLES.indexOf(pick.value) !== -1) { S.sunLook = 'rays'; S.rayStyle = pick.value; } else S.sunLook = pick.value; }
+    if (changed === 'neonStyle') S.sunLook = 'neon';
     if (changed === 'moonLook') S.moonLook = tappedMoon;
     if (changed === 'color') { S.sunTime = tappedColor[0]; S.color = tappedColor[1]; }
     $('swapOpts').hidden = S.swap !== 'on';
     if (changed === 'moonLook' || changed === 'sunList') peekScreen('moon');
-    else if (['sunPick', 'dir', 'tilt', 'size', 'color', 'frontFx', 'swap', 'skyPhoto', 'moonDial'].indexOf(changed) !== -1) peekScreen('sun');
+    else if (['sunPick', 'neonStyle', 'dir', 'tilt', 'size', 'color', 'frontFx', 'swap', 'skyPhoto', 'moonDial'].indexOf(changed) !== -1) peekScreen('sun');
     if (changed === 'theme' || isLook || S.theme !== prevTheme) fillForm();
     if (changed === 'dir' && DIR_TILT[S.dir]) $('tilt').value = DIR_TILT[S.dir];
     if (S.dir === 'custom' && !S.custom) { S.dir = prevDir; ensureCustom(); }
