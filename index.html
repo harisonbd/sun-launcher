@@ -143,7 +143,7 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 
 fieldset { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
-.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg { position: relative; display: flex; flex-wrap: wrap; gap: 6px; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label, .preset { flex: 1 1 auto; min-height: 44px; padding: 0 12px; display: grid; place-items: center; border-radius: 12px; background: var(--panel-2); color: var(--ink); font-size: 14px; font-weight: 500; cursor: pointer; border: none; }
 .seg input:checked + label { background: var(--sun); color: var(--sun-ink); font-weight: 600; }

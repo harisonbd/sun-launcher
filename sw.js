@@ -1,6 +1,6 @@
 // Sun Launcher offline cache. Only touches caches whose name starts with 'sun-launcher-',
 // because Docs Reader and Scanner share this web address (harisonbd.github.io).
-const CACHE = 'sun-launcher-v5';
+const CACHE = 'sun-launcher-v6';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
