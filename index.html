@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#0B1430">
 <title>Sun Launcher</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -407,6 +407,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         </div>
       </fieldset>
       <fieldset>
+        <legend>Weather</legend>
+        <div class="seg">
+          <input type="radio" name="weather" id="wx-off" value="off"><label for="wx-off">Off</label>
+          <input type="radio" name="weather" id="wx-real" value="real"><label for="wx-real">Real weather (Vienna)</label>
+        </div>
+        <p id="wxLine" class="helpline"></p>
+      </fieldset>
+      <fieldset>
         <legend>Sun position</legend>
         <div class="seg">
           <input type="radio" name="liveSun" id="ls-off" value="off"><label for="ls-off">Fixed</label>
@@ -588,7 +596,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const FRONT_FX = ['beam', 'lift', 'dim', 'chips', 'halo', 'glint'];
   // Neon look styles (22 Oct, to try on the phone): classic = the old Neon.
   const NEON_STYLES = ['classic', 'minimal', 'sign', 'synth', 'cyber', 'tron'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'classic', liveSun: 'off', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'classic', liveSun: 'off', weather: 'off', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -619,6 +627,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (['edge', 'eclipse', 'orb', 'small', 'setting'].indexOf(S.sunList) === -1) S.sunList = 'edge';
   if (NEON_STYLES.indexOf(S.neonStyle) === -1) S.neonStyle = 'classic';
   if (S.liveSun !== 'on') S.liveSun = 'off';
+  if (S.weather !== 'real') S.weather = 'off';
   if (S.tilt === 62) S.tilt = 45;
   S.tilt = Math.max(10, Math.min(75, +S.tilt || 45));
   S.size = Math.max(80, Math.min(160, +S.size || 125));
@@ -872,6 +881,61 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = alpha;
     while (x > 0) x -= mw;
     for (; x < W; x += mw) c.drawImage(starImg, x, y, mw, mh);
+    c.restore();
+  }
+  /* ---------- Weather (Settings > Weather > Real): Open-Meteo, no key, Vienna's fixed position, every 30 min ---------- */
+  // Only these fixed coordinates are sent. The last answer is kept, so the sky stays as it was when offline.
+  const WX_URL = 'https://api.open-meteo.com/v1/forecast?latitude=48.21&longitude=16.37&current=temperature_2m,cloud_cover,weather_code&timezone=Europe%2FVienna';
+  let WX = null, wxBusy = false;
+  try { WX = JSON.parse(localStorage.getItem('sun-launcher-wx') || 'null'); } catch (e) {}
+  function wxFetch(force) {
+    if (S.weather !== 'real' || wxBusy || !navigator.onLine) return;
+    if (!force && WX && Date.now() - WX.t < 30 * 60000) return;
+    wxBusy = true;
+    fetch(WX_URL, { cache: 'no-store' }).then((r) => r.json()).then((j) => {
+      const c = j.current || {};
+      if (typeof c.cloud_cover !== 'number') return;
+      WX = { t: Date.now(), temp: c.temperature_2m, cloud: c.cloud_cover, code: c.weather_code };
+      try { localStorage.setItem('sun-launcher-wx', JSON.stringify(WX)); } catch (e) {}
+      if (typeof kick === 'function') kick();
+      if (!$('settings').hidden) wxLine();
+    }).catch(() => {}).then(() => { wxBusy = false; });
+  }
+  // What the sky shows now, from the WMO weather code (0 clear ... 61 rain ... 71 snow ... 95 storm).
+  function wxNow() {
+    if (S.weather !== 'real' || !WX) return null;
+    const k = WX.code;
+    return { cloud: WX.cloud / 100, rain: (k >= 51 && k <= 67) || (k >= 80 && k <= 82) || k >= 95, snow: (k >= 71 && k <= 77) || k === 85 || k === 86,
+      fog: k === 45 || k === 48, storm: k >= 95, heavy: [55, 65, 67, 75, 82, 86, 99].indexOf(k) !== -1 };
+  }
+  function wxText(k) {
+    if (k === 0) return 'clear'; if (k <= 2) return 'a few clouds'; if (k === 3) return 'overcast'; if (k === 45 || k === 48) return 'fog';
+    if (k >= 51 && k <= 57) return 'drizzle'; if (k >= 61 && k <= 67) return 'rain'; if (k >= 71 && k <= 77) return 'snow';
+    if (k >= 80 && k <= 82) return 'rain showers'; if (k === 85 || k === 86) return 'snow showers'; if (k >= 95) return 'thunderstorm'; return 'weather code ' + k;
+  }
+  // rain streaks, snow flakes, fog haze and storm flashes on top of the sky
+  function drawWeather(c, W, H, now) {
+    const w = wxNow();
+    if (!w) return;
+    const t = reduce ? 0 : now / 1000, rr = (k) => { const x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+    c.save();
+    if (w.fog) { const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, 'rgba(210, 215, 225, 0.10)'); g.addColorStop(1, 'rgba(210, 215, 225, 0.32)'); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+    if (w.rain) {
+      const n = w.heavy ? 140 : 80;
+      c.strokeStyle = 'rgba(190, 210, 235, 0.28)'; c.lineWidth = 1;
+      for (let k = 0; k < n; k++) {
+        const sp = 700 * (0.8 + 0.4 * rr(k + 9)), x = (rr(k) * W + t * 60) % W, y = (rr(k + 300) * H + t * sp) % H;
+        c.beginPath(); c.moveTo(x, y); c.lineTo(x - 4, y + 16); c.stroke();
+      }
+    }
+    if (w.snow) {
+      c.fillStyle = 'rgba(245, 248, 255, 0.8)';
+      for (let k = 0; k < (w.heavy ? 120 : 70); k++) {
+        const x = (rr(k) * W + Math.sin(t * 0.7 + k) * 18 + t * 8) % W, y = (rr(k + 300) * H + t * 40 * (0.6 + 0.8 * rr(k + 9))) % H;
+        c.beginPath(); c.arc(x, y, 1 + 1.6 * rr(k + 20), 0, 2 * Math.PI); c.fill();
+      }
+    }
+    if (w.storm && !reduce) { const ph = t % 7; if (ph < 0.12 || (ph > 0.25 && ph < 0.32)) { c.fillStyle = 'rgba(235, 240, 255, 0.22)'; c.fillRect(0, 0, W, H); } }
     c.restore();
   }
   let milky = null;
@@ -1386,10 +1450,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const nz = !swapped() && look === 'neon' && S.neonStyle !== 'classic' ? S.neonStyle : '';
     ['sign', 'synth', 'cyber', 'tron'].forEach((v) => app.classList.toggle('nz-' + v, nz === v));
     if (S.skyPhoto === 'stars' && nz !== 'sign') drawStarMap(c, W, H, 0.3 + 0.7 * nightness(hour), now, [par.x, par.y], 0);
-    if (nz !== 'sign') drawStars(c, W, H, nightness(hour) * 0.8, now, fx, [par.x, par.y]);
+    const wxCloud = wxNow() ? wxNow().cloud : 0;
+    if (nz !== 'sign') drawStars(c, W, H, nightness(hour) * 0.8 * (1 - 0.8 * wxCloud), now, fx, [par.x, par.y]);
     const G = sunGeo();
     if (GLB.ok && !(S.skyPhoto === 'sunset' && !swapped()) && S.skyPhoto !== 'stars' && !(nz && nz !== 'minimal')) {
-      const cl = cloudAt(hour), twl = Math.min(1, twilight(hour));
+      const cl = cloudAt(hour), twl = Math.min(1, twilight(hour)), wk = wxNow();
+      // real weather: cloud amount from Open-Meteo (0 = clear sky ... 1 = overcast)
+      if (wk) { cl.cover = 0.08 + 0.72 * wk.cloud; cl.alpha = Math.min(1, cl.alpha * (0.35 + 0.9 * wk.cloud)); }
       cl.sun = [G.cx / W + (0.5 - G.cx / W) * twl, G.cy / H + (1.04 - G.cy / H) * twl];
       cl.time = reduce ? 0 : now / 1000; cl.moving = fx;
       c.save(); c.translate(par.x * 2, par.y * 2);
@@ -1884,6 +1951,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       c.restore();
     }
 
+    drawWeather(c, W, H, now);
     drawRipples(c, 'sun', now, sun);
     facetEls.forEach((el, i) => {
       const a = i * step + rot, p = G.polar(G.R, a), f = depthF(a);
@@ -2205,6 +2273,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         c.fillStyle = first ? '#3A4560' : '#6B7590'; c.fill();
       }
     }
+    drawWeather(c, W, H, now);
     drawRipples(c, 'moon', now, '#DCE2EE');
     const darkLabels = look === 'arc' || look === 'dots' || look === 'rolodex';
     labelPos = [];
@@ -2579,7 +2648,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   function openItem(it) {
     if (it.app) { openApp(BY[it.name]); return; }
-    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC.', '', false); return; }
+    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0.', '', false); return; }
     openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
   }
   $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
@@ -2730,7 +2799,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList', 'neonStyle', 'liveSun'];
+  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList', 'neonStyle', 'liveSun', 'weather'];
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
@@ -2742,6 +2811,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const lsun = liveSun(), dirs = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
     $('liveLine').textContent = (lsun.alt >= 0 ? 'Now the sun is ' + Math.round(lsun.alt) + '° high in the ' + dirs[Math.round(lsun.az / 45) % 8] : 'Now the sun is below the horizon (' + Math.round(lsun.alt) + '°)')
       + '. Real sun moves the dial a little: higher at noon, lower at night, east in the morning. Works with Flat and 45° turn.';
+  }
+  function wxLine() {
+    let s;
+    if (S.weather !== 'real') s = 'Off: the drawn sky follows only the time of day.';
+    else if (!WX) s = navigator.onLine ? 'Asking Open-Meteo for Vienna\'s weather…' : 'No weather yet: you are offline. It comes when you are online.';
+    else { const m = Math.round((Date.now() - WX.t) / 60000); s = 'Vienna now: ' + Math.round(WX.temp) + ' °C, ' + wxText(WX.code) + ', ' + WX.cloud + ' % clouds (' + (m < 2 ? 'just now' : m + ' min ago') + ').'; }
+    $('wxLine').textContent = s + (S.weather === 'real' ? ' Updates every 30 min; only Vienna\'s fixed position is sent.' : '');
   }
   function fillForm() {
     const sh = shownTheme();
@@ -2755,6 +2831,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     $('swapOpts').hidden = S.swap !== 'on';
     $('neonOpts').hidden = sh.look !== 'neon';
     liveLine();
+    wxLine();
     const now = lookBlend(phaseNow()).theme;
     $('themeLine').textContent = S.theme === 'auto'
       ? 'Now: ' + (THEMES[now] ? THEMES[now].name : 'Daylight') + '. Sun and moon change through the day. Tap any look below to pick it yourself.'
@@ -2833,7 +2910,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (changed === 'color') { S.sunTime = tappedColor[0]; S.color = tappedColor[1]; }
     $('swapOpts').hidden = S.swap !== 'on';
     if (changed === 'moonLook' || changed === 'sunList') peekScreen('moon');
-    else if (['sunPick', 'neonStyle', 'dir', 'tilt', 'size', 'color', 'frontFx', 'swap', 'skyPhoto', 'moonDial', 'liveSun'].indexOf(changed) !== -1) peekScreen('sun');
+    else if (['sunPick', 'neonStyle', 'dir', 'tilt', 'size', 'color', 'frontFx', 'swap', 'skyPhoto', 'moonDial', 'liveSun', 'weather'].indexOf(changed) !== -1) peekScreen('sun');
     if (changed === 'theme' || isLook || S.theme !== prevTheme) fillForm();
     if (changed === 'dir' && DIR_TILT[S.dir]) $('tilt').value = DIR_TILT[S.dir];
     if (S.dir === 'custom' && !S.custom) { S.dir = prevDir; ensureCustom(); }
@@ -2845,6 +2922,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     $('hourOut').textContent = fmtHour(S.hour);
     $('hourRow').hidden = S.sky !== 'preview';
     liveLine();
+    if (changed === 'weather') { wxFetch(true); wxLine(); }
     if (st.demo && S.sky !== 'clock') stopDemo();
     if (swapped() !== prevSwap && S.mode === prevMode) { st.pos = 0; buildFacets(); buildItems(); st.rot = frontDeg(); }
     afterChange(prevMode, prevDir);
@@ -2886,7 +2964,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   resize();
   window.addEventListener('resize', resize);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { st.lastFrame = 0; applyLight(); kick(); } });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { st.lastFrame = 0; applyLight(); kick(); wxFetch(false); } });
+  wxFetch(false);
+  setInterval(() => wxFetch(false), 5 * 60000);
   setInterval(() => { if (S.sky === 'clock' && !st.demo) { applyLight(); kick(); } }, 60000);
 })();
 </script>

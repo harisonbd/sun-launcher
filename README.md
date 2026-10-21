@@ -14,3 +14,4 @@ Picture credits: Moon map from NASA/GSFC Scientific Visualization Studio, CGI Mo
 Sun map from Solar System Scope (https://www.solarsystemscope.com/textures/), based on NASA images, CC BY 4.0.
 Sunset sky photo from Unsplash / Pexels, free licence.
 Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio (Deep Star Maps 2020, https://svs.gsfc.nasa.gov/4851). Gaia DR2: ESA/Gaia/DPAC.
+Weather (only when switched on in Settings): Open-Meteo.com (CC BY 4.0), asked with Vienna's fixed position only, every 30 minutes.
