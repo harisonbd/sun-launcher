@@ -378,7 +378,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           <input type="radio" name="sunPick" id="sp-plasma" value="plasma"><label for="sp-plasma">Plasma</label>
         </div>
         <div id="neonOpts" class="swapopts">
-          <div class="sublg">Neon style</div>
+          <div class="sublg">Neon styles (tap one to switch the sun to Neon)</div>
           <div class="seg">
             <input type="radio" name="neonStyle" id="nz-classic" value="classic"><label for="nz-classic">Today</label>
             <input type="radio" name="neonStyle" id="nz-minimal" value="minimal"><label for="nz-minimal">Minimal</label>
@@ -1541,18 +1541,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         poly([G.polar(coreR + 6, a - 0.12), G.polar(G.R - 14, a), G.polar(coreR + 6, a + 0.12)], isF ? hexA(sun, 0.35) : null, hexA(sun, isF ? 1 : 0.35 + 0.5 * f), isF ? 2.2 : 1.3);
         c.restore();
       } else if (look === 'eclipse') {
-        line(G.polar(coreR + 4, a), G.polar(G.R - 12, a), isF ? sun : hexA(sun, 0.18 + 0.5 * f), isF ? 4 : 2);
-        line(G.polar(coreR + 4, a + step / 3), G.polar(coreR + (G.R - coreR) * 0.55, a + step / 3), hexA(sun, 0.12 + 0.25 * f), 1.2);
-        line(G.polar(coreR + 4, a - step / 3), G.polar(coreR + (G.R - coreR) * 0.4, a - step / 3), hexA(sun, 0.12 + 0.25 * f), 1.2);
+        // no drawn lines (22 Oct: they looked fake); the shader's corona has its own streamers
       } else if (look === 'plasma' && isF) {
         c.save();
         c.globalCompositeOperation = 'lighter';
         poly([G.polar(coreR * 0.9, a - 0.1), G.polar(G.R - 10, a), G.polar(coreR * 0.9, a + 0.1)], hexA(sun, 0.7));
-        c.restore();
-      } else if (look === 'blackhole' && isF) {
-        c.save();
-        c.globalCompositeOperation = 'lighter';
-        line(G.polar(coreR * 1.25, a), G.polar(G.R - 12, a), hexA(sun, 0.75), 2);
         c.restore();
       }
     }
@@ -1736,28 +1729,35 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     }
 
     function diskHalf(frontHalf) {
+      // Glowing gas (22 Oct: the thin streaks looked fake): wide soft bands that overlap, no line ends,
+      // brighter on the side that turns toward you (like real black hole pictures), with slow clumps moving round.
       const t = reduce ? 0 : now / 1000;
       c.save();
       c.globalCompositeOperation = 'lighter';
-      const rings = 24;
+      c.lineCap = 'butt';
+      // One smooth stroke per ring (no pieces, so no seams); brightness changes smoothly round it (conic gradient).
+      const rings = 16, r0 = coreR * 1.18, r1 = G.R * 0.9, gap = (r1 - r0) / (rings - 1), conic = typeof c.createConicGradient === 'function';
       for (let k = 0; k < rings; k++) {
-        const u = k / (rings - 1), r = coreR * 1.18 + (G.R * 0.9 - coreR * 1.18) * u;
+        const u = k / (rings - 1), r = r0 + gap * k;
         const col = u < 0.25 ? mix('#FFF4D6', sun, u / 0.25) : mix(sun, '#6E1A0E', (u - 0.25) / 0.75);
-        const al = (0.5 * (1 - u) + 0.07) * (0.6 + 0.4 * light);
+        const al0 = (0.2 * (1 - u) + 0.03) * (0.6 + 0.4 * light);
         const spin = t * (1.5 / (0.35 + u * 2)) + rot;
-        for (let s = 0; s < 3; s++) {
-          const a0 = spin + s * 2.1 + k * 0.7, a1 = a0 + 1.1 + 0.4 * Math.sin(k * 1.7);
-          c.beginPath();
-          let on = false;
-          for (let q = 0; q <= 18; q++) {
-            const aq = a0 + (a1 - a0) * q / 18, want = frontHalf ? !isBack(aq) : isBack(aq), pq = G.polar(r, aq);
-            if (want) { if (on) c.lineTo(pq[0], pq[1]); else { c.moveTo(pq[0], pq[1]); on = true; } } else on = false;
-          }
-          c.strokeStyle = hexA(col, al.toFixed(3));
-          c.lineWidth = 1.4 + (1 - u) * 2.4;
-          c.lineCap = 'round';
-          c.stroke();
+        c.beginPath();
+        let on = false;
+        for (let q = 0; q <= 96; q++) {
+          const aq = q / 96 * 2 * Math.PI, want = frontHalf ? !isBack(aq) : isBack(aq), pq = G.polar(r, aq);
+          if (want) { if (on) c.lineTo(pq[0], pq[1]); else { c.moveTo(pq[0], pq[1]); on = true; } } else on = false;
         }
+        if (conic) {
+          const g = c.createConicGradient(0, cx, cy);
+          for (let s = 0; s <= 24; s++) {
+            const am = s / 24 * 2 * Math.PI, doppler = 0.55 + 0.45 * Math.cos(am), clump = 0.75 + 0.25 * Math.sin(am * 3 - spin * 2 + k * 0.9);
+            g.addColorStop(s / 24, hexA(col, (al0 * doppler * clump).toFixed(3)));
+          }
+          c.strokeStyle = g;
+        } else c.strokeStyle = hexA(col, (al0 * 0.75).toFixed(3));
+        c.lineWidth = gap * 1.9;
+        c.stroke();
       }
       c.restore();
     }
@@ -1845,7 +1845,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         dg.addColorStop(1, hexA(sun, 0));
         c.save(); c.globalCompositeOperation = 'lighter';
         c.fillStyle = dg; c.beginPath(); c.arc(dx, dy, 18, 0, 2 * Math.PI); c.fill();
-        line([dx - 28, dy], [dx + 28, dy], 'rgba(255, 252, 240, 0.4)', 1);
         c.restore();
       }
       return;
@@ -1933,7 +1932,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       c.restore();
     });
 
-    if (fx && look !== 'neon' && look !== 'blackhole') {
+    if (fx && look !== 'neon' && look !== 'blackhole' && look !== 'eclipse') {
       c.save();
       c.globalCompositeOperation = 'lighter';
       const fl = 0.3 * light;
@@ -2829,7 +2828,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     Array.prototype.forEach.call(form.elements.frontFx, (r) => { r.checked = S.frontFx.indexOf(r.value) !== -1; });
     Array.prototype.forEach.call(form.elements.sunPick, (r) => { r.checked = r.value === sunPickOf(sh.look); });
     $('swapOpts').hidden = S.swap !== 'on';
-    $('neonOpts').hidden = sh.look !== 'neon';
+    // Neon style row always shows (22 Oct: it was hard to find); tapping a style switches the sun to Neon.
+    Array.prototype.forEach.call(form.elements.neonStyle, (r) => { r.checked = sh.look === 'neon' && r.value === S.neonStyle; });
     liveLine();
     wxLine();
     const now = lookBlend(phaseNow()).theme;
