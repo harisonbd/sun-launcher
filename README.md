@@ -5,7 +5,8 @@ Private tool for my own phone. Static files only: no server, no login, no keys, 
 Settings and favourites stay in this phone's browser storage. Photos from the camera stay on the phone.
 
 Files: index.html (the app), manifest.webmanifest (name and icon for the home screen),
-sw.js (offline copy), icon-*.png (app icons), sky-sunset.jpg (sunset sky photo for Settings > Sky picture).
+sw.js (offline copy), icon-*.png (app icons), sky-sunset.jpg (sunset sky photo for Settings > Sky picture),
+stars-4k.jpg (NASA star map for Settings > Sky > Real stars, converted from starmap_2020_4k.exr).
 
 Live address after upload: https://harisonbd.github.io/sun-launcher/
 Update: replace index.html, and change the 'sun-launcher-vN' name in sw.js to the next number.
