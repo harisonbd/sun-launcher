@@ -392,7 +392,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
           <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
           <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
-          <input type="radio" name="moonLook" id="moon-rolodex" value="rolodex"><label for="moon-rolodex">Rolodex</label>
+          <input type="radio" name="moonLook" id="moon-phase" value="phase"><label for="moon-phase">Real moon phase</label>
+          <input type="radio" name="moonLook" id="moon-minimal" value="minimal"><label for="moon-minimal">Minimal moon</label>
         </div>
       </fieldset>
       <fieldset>
@@ -594,7 +595,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     { name: 'Info', items: ['Help', 'Tutorial', 'Feedback', 'What is new', 'Licences', 'About'] }
   ];
   const THEMES = {
-    daylight: { name: 'Daylight', look: 'rays', color: 'time', moon: 'rolodex' },
+    daylight: { name: 'Daylight', look: 'rays', color: 'time', moon: 'phase' },
     sunset: { name: 'Sunset', look: 'rays', color: '#FF9F43', moon: 'crescent' },
     eclipse: { name: 'Eclipse', look: 'eclipse', color: 'time', moon: 'dots' },
     blackhole: { name: 'Black hole', look: 'blackhole', color: '#FF6B3D', moon: 'crescent' },
@@ -632,7 +633,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   S.favs = (S.favs || []).filter((n) => typeof n === 'string').slice(0, 5);
   S.visits = (S.visits || 0) + 1;
   let showTips = S.visits <= 3;
-  if (['dots', 'arc', 'crescent', 'rolodex'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
+  // 23 Oct: Rolodex moon removed (user); Real moon phase and Minimal moon added from the early mockups.
+  if (['dots', 'arc', 'crescent', 'phase', 'minimal'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
   if (RAY_STYLES.indexOf(S.rayStyle) === -1) S.rayStyle = 'glow';
   S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1);
   if (S.swap !== 'on') S.swap = 'off';
@@ -2107,6 +2109,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     g.Rr = Math.min(170, H * 0.2);
     g.top = look === 'rolodex' ? cy - g.span : cy - g.rO;
     g.bottom = look === 'rolodex' ? cy + g.span : cy + g.rO;
+    // the mockup looks: the list area is the lower part; touching above it swipes to the sun
+    if (look === 'phase') { g.top = H * 0.64; g.bottom = H * 0.99; }
+    if (look === 'minimal') { g.top = H * 0.46; g.bottom = H * 0.99; }
     g.at = (alpha, role) => {
       const dx = -Math.cos(alpha), dy = Math.sin(alpha);
       if (look === 'rolodex') {
@@ -2175,6 +2180,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
     const mx = par.x * 3, my = par.y * 3, mt = reduce ? 0 : now / 1000;
     const wob = Math.sin(mt * 0.21) * 0.05 + st.pos * 0.012;
+    if (look === 'phase' || look === 'minimal') { moonScene(c, W, H, look, now, live, cur, G, night); return; }
     if (GLB.ok && swapped()) {
       // Sun by the list (Settings > Layout > Swap): five variants. Edge and Setting use real 3D shading (lit),
       // with the night side on the left like the moon, so the list stays readable.
@@ -2360,6 +2366,106 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     sc.style.height = Math.round(G.bottom - G.top) + 'px';
     sc.style.width = Math.round(rolo ? 84 : G.Ix - G.Ri - 20) + 'px';
   }
+  /* ---------- Moon looks from the early mockups (23 Oct): D "Real moon phase" and B "Minimal moon" ---------- */
+  // Both always show today's real phase. The menu items are placed here; group labels, marker and scrub are off.
+  const DAYS_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  // Exact next full and new moon (hour steps, cached 10 min), so the text and the 7-night row agree.
+  let moonEvMemo = { k: null, v: null };
+  function moonEvents() {
+    const k = Math.floor(Date.now() / 600000);
+    if (moonEvMemo.k === k) return moonEvMemo.v;
+    const t0 = Date.now(), v = { full: null, nw: null };
+    let prev = moonIllum(new Date(t0)).phase;
+    for (let h = 1; h <= 24 * 31 && !(v.full && v.nw); h++) {
+      const t = t0 + h * 3600000, p = moonIllum(new Date(t)).phase;
+      if (!v.full && prev < 0.5 && p >= 0.5) v.full = new Date(t);
+      if (!v.nw && prev > 0.9 && p < 0.1) v.nw = new Date(t);
+      prev = p;
+    }
+    moonEvMemo = { k: k, v: v };
+    return v;
+  }
+  const sameDay = (a, b) => !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  function realMoonLight(p) { const th = p * 2 * Math.PI; return [Math.sin(th), 0.1, -Math.cos(th)]; }
+  function moonScene(c, W, H, look, now, live, cur, G, night) {
+    const mn = moonNow(), font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'system-ui, sans-serif';
+    const today = new Date(), ev = moonEvents(), fullD = ev.full || new Date(today.getTime() + Math.round(((0.5 - mn.phase + 1) % 1) * 29.53) * 86400000);
+    const fullTxt = sameDay(fullD, today) ? 'full moon today' : 'full moon on ' + DAYS_LONG[fullD.getDay()] + ' ' + fullD.getDate() + ' ' + MONTHS[fullD.getMonth()];
+    const txt = (s, x, y, size, weight, col, align, caps) => {
+      c.font = weight + ' ' + size + 'px ' + font; c.fillStyle = col; c.textAlign = align || 'left'; c.textBaseline = 'middle';
+      if (caps) { try { c.letterSpacing = '0.12em'; } catch (e) {} }
+      c.fillText(caps ? s.toUpperCase() : s, x, y);
+      if (caps) { try { c.letterSpacing = '0px'; } catch (e) {} }
+    };
+    const glow = (x, y, r, a) => { const g = c.createRadialGradient(x, y, r * 0.9, x, y, r * 2.2); g.addColorStop(0, 'rgba(210, 222, 245, ' + a + ')'); g.addColorStop(1, 'rgba(210, 222, 245, 0)'); c.fillStyle = g; c.fillRect(x - r * 2.3, y - r * 2.3, r * 4.6, r * 4.6); };
+    let listY, rowGap, cards;
+    if (look === 'phase') {
+      // D: big real moon, phase name, the next 7 nights, menu as cards below
+      const r = Math.min(W * 0.31, H * 0.145), mx = W / 2, my = H * 0.27;
+      glow(mx, my, r, (0.08 + 0.12 * mn.fraction).toFixed(3));
+      if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(mn.phase), rot: -0.2, shine: 0.07, expo: 1.3, glow: 1, margin: 1.25 });
+      txt('Tonight in Vienna', W / 2, H * 0.455, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      txt(moonPhaseName(mn.phase).replace(/^./, (s) => s.toUpperCase()), W / 2, H * 0.495, 28, 600, '#F5EFE3', 'center');
+      txt(Math.round(mn.fraction * 100) + ' % lit · ' + fullTxt, W / 2, H * 0.533, 14, 400, 'rgba(195, 204, 221, 0.9)', 'center');
+      const rowY = H * 0.6, gap = Math.min(52, (W - 32) / 7);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(today); d.setDate(d.getDate() + i); d.setHours(21, 0, 0, 0);
+        const x = W / 2 + (i - 3) * gap, p = moonIllum(d).phase;
+        if (i === 0) { c.beginPath(); c.arc(x, rowY, 19, 0, 2 * Math.PI); c.strokeStyle = 'rgba(245, 239, 227, 0.8)'; c.lineWidth = 1.5; c.stroke(); }
+        if (GLB.ok) GLB.draw(c, x, rowY, 14, { mode: 'moon', light: realMoonLight(p), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0, margin: 1.3 });
+        txt(i === 0 ? 'Today' : DAYS[d.getDay()], x, rowY + 28, 12, i === 0 ? 700 : 500, i === 0 ? '#F5EFE3' : 'rgba(195, 204, 221, 0.8)', 'center');
+        if (sameDay(d, ev.full) || sameDay(d, ev.nw)) txt(sameDay(d, ev.full) ? 'Full' : 'New', x, rowY + 44, 11, 700, '#FFC94D', 'center');
+      }
+      listY = H * 0.8; rowGap = 58; cards = true;
+    } else {
+      // B: big date on the left, moon at the right edge, phase and sunset lines, a day curve, a plain list
+      const r = H * 0.19, mx = W * 0.9, my = H * 0.25;
+      glow(mx, my, r, (0.05 + 0.08 * mn.fraction).toFixed(3));
+      if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(mn.phase), rot: 0, shine: 0.035, expo: 1.25, glow: 0.6, margin: 1.06 });
+      txt(DAYS_LONG[today.getDay()], 24, H * 0.115, 12, 600, 'rgba(195, 204, 221, 0.85)', 'left', true);
+      txt(MONTHS_LONG[today.getMonth()], 22, H * 0.165, 44, 300, '#F5EFE3', 'left');
+      txt(String(today.getDate()), 22, H * 0.23, 40, 700, '#F5EFE3', 'left');
+      const sn = sunToday();
+      txt('☾  ' + moonPhaseName(mn.phase).replace(/^./, (s) => s.toUpperCase()) + ' · ' + Math.round(mn.fraction * 100) + ' % lit', 24, H * 0.285, 13, 500, 'rgba(195, 204, 221, 0.95)');
+      txt('☾  ' + fullTxt.replace(/^./, (s) => s.toUpperCase()), 24, H * 0.315, 13, 500, 'rgba(195, 204, 221, 0.95)');
+      txt('☀  Sunset ' + fmtHour(sn.set) + ' · Vienna', 24, H * 0.345, 13, 500, 'rgba(195, 204, 221, 0.95)');
+      // day curve: the sun's real height through today, a dot at the time now
+      const x0 = 24, x1 = W * 0.52, base = H * 0.425, amp = H * 0.03, d0 = new Date(today); d0.setHours(0, 0, 0, 0);
+      c.beginPath();
+      for (let k = 0; k <= 48; k++) { const a = sunAltAz(new Date(d0.getTime() + k * 1800000)).alt; const x = x0 + (x1 - x0) * k / 48, y = base - amp * a / 35; if (k) c.lineTo(x, y); else c.moveTo(x, y); }
+      c.strokeStyle = 'rgba(245, 239, 227, 0.55)'; c.lineWidth = 1.2; c.stroke();
+      c.beginPath(); c.moveTo(x0, base); c.lineTo(x1, base); c.strokeStyle = 'rgba(245, 239, 227, 0.2)'; c.lineWidth = 1; c.stroke();
+      const hNow = hourNow(), aNow = sunAltAz(new Date(d0.getTime() + hNow * 3600000)).alt;
+      c.beginPath(); c.arc(x0 + (x1 - x0) * hNow / 24, base - amp * aNow / 35, 3.5, 0, 2 * Math.PI); c.fillStyle = '#F5EFE3'; c.fill();
+      listY = H * 0.66; rowGap = 44; cards = false;
+    }
+    drawWeather(c, W, H, now);
+    drawRipples(c, 'moon', now, '#DCE2EE');
+    // menu items: cards (D) or a plain list (B), the chosen one in the middle; scroll with the finger
+    const cw = Math.min(280, W - 100);
+    $('items').style.setProperty('--cardw', Math.round(cw) + 'px');
+    itemEls.forEach((el, i) => {
+      const dd = i - st.pos, ad = Math.abs(dd), vis = cards ? ad < 2.6 : ad < 4.6;
+      el.classList.toggle('card', cards);
+      el.style.zIndex = String(200 - Math.round(ad * 10));
+      if (cards) el.style.transform = 'translate(' + (W / 2).toFixed(1) + 'px,' + (listY + dd * rowGap).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (1 - Math.min(ad, 2) * 0.06).toFixed(3) + ')';
+      else el.style.transform = 'translate(18px,' + (listY + dd * rowGap).toFixed(1) + 'px) translate(0,-50%)';
+      el.style.opacity = vis ? Math.max(0.15, 1 - ad * (cards ? 0.38 : 0.2)).toFixed(2) : '0';
+      el.style.visibility = vis ? 'visible' : 'hidden';
+    });
+    labelEls.forEach((el) => { el.style.transform = 'translate(-999px,-999px)'; });
+    $('marker').style.transform = 'translate(-999px,-999px)';
+    if (live !== lastLive && cur) {
+      itemEls.forEach((el, i) => { el.classList.toggle('sel', i === live); el.setAttribute('aria-label', LIST[i].name + (i === live ? ', selected. Tap to open' : '')); });
+      $('moonName').textContent = cur.name;
+      $('moonHint').textContent = cur.app ? cur.hint : cur.group + ' · ' + (live + 1) + ' of ' + LIST.length;
+      lastLive = live;
+    }
+    $('moonInfo').style.top = Math.round(H + 40) + 'px';
+    $('moonTip').hidden = true;
+    const sc = $('scrub'); sc.style.width = '0px';
+  }
   function pickItem(i) {
     if (i === liveIndex()) { openItem(LIST[i]); return; }
     tween('pos', i, 420);
@@ -2406,7 +2512,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       S.custom.roll = drag.start.roll + dx * 0.4;
       kick();
     } else if (drag.kind === 'list') {
-      const np = drag.start - dy / (currentMoon() === 'rolodex' ? 62 : 39);
+      const ml = currentMoon(), np = drag.start - dy / (ml === 'rolodex' ? 62 : ml === 'phase' ? 58 : ml === 'minimal' ? 44 : 39);
       if (S.mode === 'two' && drag.start <= 0.3 && np < -0.7) {
         drag.kind = 'toSun';
         drag.y0 = e.clientY;
@@ -2858,7 +2964,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     Array.prototype.forEach.call(form.elements.neonStyle, (r) => { r.checked = sh.look === 'neon' && r.value === S.neonStyle; });
     liveLine();
     wxLine();
-    const mn = moonNow(), toFull = Math.round(((0.5 - mn.phase + 1) % 1) * 29.53);
+    const mn = moonNow(), fd = moonEvents().full, d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    const toFull = fd ? Math.round((new Date(fd.getFullYear(), fd.getMonth(), fd.getDate()) - d0) / 86400000) : Math.round(((0.5 - mn.phase + 1) % 1) * 29.53);
     $('moonLine').textContent = 'Today: ' + moonPhaseName(mn.phase) + ', ' + Math.round(mn.fraction * 100) + ' % lit' + (toFull > 0 && toFull < 29 ? ', full moon in ' + toFull + (toFull === 1 ? ' day' : ' days') : '') + '. Real: the moon shows this phase, and moonlight brightens the night sky.';
     const now = lookBlend(phaseNow()).theme;
     $('themeLine').textContent = S.theme === 'auto'
