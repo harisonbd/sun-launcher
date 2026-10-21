@@ -8,4 +8,7 @@ Files: index.html (the app), manifest.webmanifest (name and icon for the home sc
 sw.js (offline copy), icon-*.png (app icons).
 
 Live address after upload: https://harisonbd.github.io/sun-launcher/
-Update: replace index.html, and change 'sun-launcher-v1' in sw.js to the next number (v2, v3 ...).
+Update: replace index.html, and change the 'sun-launcher-vN' name in sw.js to the next number.
+
+Picture credits: Moon map from NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain.
+Sun map from Solar System Scope (https://www.solarsystemscope.com/textures/), based on NASA images, CC BY 4.0.
