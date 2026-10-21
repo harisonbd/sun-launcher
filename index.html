@@ -81,6 +81,7 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 #app.swap.photo-sky #moonScreen { background: #2A2236 url('sky-sunset.jpg') center 55% / cover; }
 
 .core { position: absolute; left: 0; top: 0; width: 84px; height: 84px; border-radius: 50%; border: none; background: transparent; color: var(--sun-ink); display: grid; place-items: center; cursor: pointer; z-index: 500; }
+.core[hidden] { display: none; }
 .core.light { color: var(--sun); }
 
 .info { position: absolute; left: 24px; right: 24px; text-align: center; pointer-events: none; text-shadow: 0 1px 14px rgba(10, 15, 31, 0.55), 0 0 2px rgba(10, 15, 31, 0.35); }
@@ -224,7 +225,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     <section id="sunScreen" class="screen" aria-label="Sun menu: your apps">
       <canvas id="sunCanvas" class="paint" aria-hidden="true"></canvas>
       <div id="facets" class="layer"></div>
-      <button type="button" id="core" class="core" aria-label="Camera: take a photo and send it to an app">
+      <!-- Camera button hidden for now (user, 22 Oct: "maybe later"); remove hidden to bring it back. -->
+      <button type="button" id="core" class="core" aria-label="Camera: take a photo and send it to an app" hidden>
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
       </button>
       <div id="sunInfo" class="info">
@@ -1069,6 +1071,19 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   let tweens = [], raf = 0, dirty = true, suppressClick = false;
   const fancy = () => S.fx === 'fancy' && !reduce;
 
+  // Buzz when an item reaches the middle (not half-way, when the front choice flips): once per item,
+  // and for each item a fast spin passes. q = item position as a number (3.0 = item 3 exactly in the middle).
+  const detentQ = {}, detentHit = {};
+  function detentAt(key, q, kind, snd) {
+    const p = detentQ[key];
+    detentQ[key] = q;
+    if (p === undefined || detentHit[key] === undefined) { detentHit[key] = Math.round(q); return; }
+    let hit = null;
+    if (Math.abs(q - Math.round(q)) < 0.08) hit = Math.round(q);
+    else if (Math.floor(p) !== Math.floor(q)) hit = Math.max(Math.floor(p), Math.floor(q));
+    if (detentHit[key] !== null && Math.abs(q - detentHit[key]) > 0.5) detentHit[key] = null;
+    if (hit !== null && hit !== detentHit[key]) { detentHit[key] = hit; hapt(kind); sound(snd); }
+  }
   function kick() { dirty = true; if (!raf) raf = requestAnimationFrame(frame); }
   function tween(key, to, dur) {
     tweens = tweens.filter((w) => w.key !== key);
@@ -1108,6 +1123,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       if (Math.abs(par.tx - par.x) + Math.abs(par.ty - par.y) > 0.002) active = true;
     }
     if (ripples.length) active = true;
+    if (APPS.length) detentAt('sun', (frontDeg() - st.rot) / (360 / APPS.length), 'detent', 'tick');
+    if (LIST.length) detentAt('moon', st.pos, 'detentSoft', 'soft');
     st.omega = (st.rot - st.prevRot) / Math.max(1, dtf);
     st.prevRot = st.rot;
     const lbNow = lookBlend(phaseNow());
@@ -1680,7 +1697,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     core.classList.toggle('light', look === 'eclipse' || look === 'neon' || look === 'blackhole');
 
     if (front !== lastFront) {
-      if (lastFront !== -1) { hapt('detent'); sound('tick'); }
       facetEls.forEach((el, i) => {
         el.classList.toggle('front', i === front);
         el.setAttribute('aria-label', APPS[i].name + (i === front ? ', in front. Tap to open, hold for shortcuts' : ''));
@@ -2004,7 +2020,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     });
     $('moonTip').hidden = !showTips;
     if (live !== lastLive && cur) {
-      if (lastLive !== -1) { hapt('detentSoft'); sound('soft'); }
       itemEls.forEach((el, i) => {
         el.classList.toggle('sel', i === live);
         el.setAttribute('aria-label', LIST[i].name + (i === live ? ', selected. Tap to open' : ''));
