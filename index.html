@@ -46,6 +46,14 @@ body { background: var(--night-deep); color: var(--ink); font-family: var(--font
 #worlds.dragging { transition: none; }
 .screen { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; }
 #sunScreen { top: 0; background: linear-gradient(180deg, var(--sky-top), var(--sky-bot)); }
+/* Planet start screen (mockup G) */
+.planet { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 850; background: #000; transition: transform .45s cubic-bezier(.2, .8, .2, 1); touch-action: none; }
+.planet.away { transform: translateY(-100%); }
+.planet.dragging { transition: none; }
+.planet[hidden] { display: none; }
+.planet-handle { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); min-height: 56px; padding: 0 18px; border: none; background: transparent; color: #DCE3F0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.to-planet { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); min-height: 44px; padding: 0 14px; border: none; background: transparent; color: var(--ink-3); display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 12px; font-weight: 500; cursor: pointer; z-index: 600; }
+.to-planet[hidden] { display: none; }
 #moonScreen { top: 50%; background: linear-gradient(180deg, var(--msky-top), var(--msky-bot)); }
 canvas.paint { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
 .layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -239,6 +247,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 </style>
 
 <div id="app">
+  <!-- Planet start screen (mockup G, 23 Oct): first screen; swipe up for the sun menu -->
+  <div id="planetScreen" class="planet away" aria-label="Start screen: Earth, clock, sunrise and sunset" hidden>
+    <canvas id="planetCanvas" class="paint" aria-hidden="true"></canvas>
+    <button type="button" class="planet-handle" id="planetUp" aria-label="Open the sun menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>
+      <span>Swipe up · Sun menu</span>
+    </button>
+  </div>
   <div id="worlds">
     <section id="sunScreen" class="screen" aria-label="Sun menu: your apps">
       <canvas id="sunCanvas" class="paint" aria-hidden="true"></canvas>
@@ -255,6 +271,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <div id="sunTip" class="tip"></div>
       </div>
       <div class="clockchip" id="clockChip" aria-live="polite" hidden></div>
+      <button type="button" class="to-planet" id="toPlanet" aria-label="Show the Earth start screen" hidden>
+        <span>Earth</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>
+      </button>
       <button type="button" class="corner tl" id="sunSettings" aria-label="Playground settings">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
         <span>Settings</span>
@@ -476,6 +496,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       <details class="more" id="moreSettings">
       <summary>More settings</summary>
       <fieldset>
+        <legend>Start screen</legend>
+        <div class="seg">
+          <input type="radio" name="startScreen" id="ss-planet" value="planet"><label for="ss-planet">Earth (planet)</label>
+          <input type="radio" name="startScreen" id="ss-sun" value="sun"><label for="ss-sun">Sun dial</label>
+        </div>
+        <p class="helpline">Earth: the app opens with the big clock and the real Earth; swipe up for the sun.</p>
+      </fieldset>
+      <fieldset>
         <legend>Menus</legend>
         <div class="seg">
           <input type="radio" name="mode" id="mode-two" value="two"><label for="mode-two">Sun + moon</label>
@@ -621,7 +649,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const FRONT_FX = ['beam', 'lift', 'dim', 'chips', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'sign', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', fpsMeter: 'off', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', fpsMeter: 'off', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -656,6 +684,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (S.weather !== 'real') S.weather = 'off';
   if (S.moonPhase !== 'fixed') S.moonPhase = 'real';
   if (S.fpsMeter !== 'on') S.fpsMeter = 'off';
+  if (S.startScreen !== 'sun') S.startScreen = 'planet';
   if (S.tilt === 62) S.tilt = 45;
   S.tilt = Math.max(10, Math.min(75, +S.tilt || 45));
   S.size = Math.max(80, Math.min(160, +S.size || 125));
@@ -1303,8 +1332,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       '    vec3 h = normalize(Ln + vec3(0.0, 0.0, 1.0)); float glint = pow(max(dot(n, h), 0.0), 60.0) * 0.6 * ocean;',
       '    vec3 c = day * lit * 1.25 + vec3(1.0, 0.9, 0.75) * glint;',
       '    c = mix(c, vec3(1.0) * (lit * 1.05 + 0.02), cl * 0.9);',
-      '    c += night * vec3(1.0, 0.75, 0.45) * 1.4 * (1.0 - dayK) * (1.0 - cl * 0.8);',
-      '    c += vec3(0.35, 0.6, 1.0) * pow(1.0 - zz, 2.6) * smoothstep(-0.25, 0.4, mu0) * 0.9;',
+      '    c += pow(night, vec3(1.8)) * vec3(1.0, 0.8, 0.55) * 3.5 * (1.0 - dayK) * (1.0 - cl * 0.8);',  // city lights bright, dark land stays dark (23 Oct)
+      '    c += day * 0.035 * (1.0 - dayK);',  // a little earthshine so the night side is not pure black
+      '    c += vec3(0.35, 0.6, 1.0) * pow(1.0 - zz, 2.6) * (0.25 + 0.75 * smoothstep(-0.25, 0.4, mu0)) * 0.9;',
       '    col = c * inside; a = inside;',
       '    float halo = exp(-max(r - 1.0, 0.0) * 40.0) * (1.0 - inside) * smoothstep(-0.3, 0.5, dot(normalize(vec3(p, 0.0)), Ln));',
       '    col += vec3(0.35, 0.6, 1.0) * halo * 0.7; a += halo * 0.3;',
@@ -1519,7 +1549,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     st.W = r.width; st.H = r.height;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     st.dpr = dpr;
-    [sunCv, moonCv].forEach((c) => {
+    [sunCv, moonCv, $('planetCanvas')].forEach((c) => {
       c.width = Math.round(st.W * dpr); c.height = Math.round(st.H * dpr);
       c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
     });
@@ -2669,8 +2699,75 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   function snapPos() { tween('pos', clamp(Math.round(st.pos), 0, LIST.length - 1), 320); }
 
+  /* ---------- Planet start screen (mockup G, 23 Oct) ---------- */
+  // Big clock, today's date, sunrise / sunset / moon chips and the real Earth (NASA maps) with the real sunlight
+  // and night lights; Vienna marked. Maps: separate files, cached by sw.js.
+  const planet = { on: false, t: 0 };
+  function subsolar(date) {
+    // the point on Earth where the sun is straight overhead (degrees): lon from the time of day, lat from the season
+    const rad = Math.PI / 180, d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545, M = rad * (357.5291 + 0.98560028 * d);
+    const L = M + rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M)) + rad * 102.9372 + Math.PI;
+    const dec = Math.asin(Math.sin(rad * 23.4397) * Math.sin(L));
+    const utcH = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
+    return { lat: dec / rad, lon: ((180 - utcH * 15) + 540) % 360 - 180 };
+  }
+  function renderPlanet(now) {
+    const c = $('planetCanvas').getContext('2d'), W = st.W, H = st.H, k = W / 390;
+    c.clearRect(0, 0, W, H);
+    drawStars(c, W, H, 0.8, now, fancy(), [par.x, par.y]);
+    // the time shown follows the app's sky time (also "Pick a time" and "Play a day")
+    const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    const d = st.demo || S.sky !== 'clock' ? new Date(d0.getTime() + hourNow() * 3600000) : new Date();
+    const cx = W / 2, cy = H * 1.197, R = 520 * k, centerLon = 32, ss = subsolar(d), rad = Math.PI / 180;
+    const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
+    if (ok) {
+      const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad;
+      PG.draw(c, cx, cy, R, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.0015, light: [Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)], expo: 1.15, margin: 1.06 });
+      const vx = cx + R * Math.cos(LAT * rad) * Math.sin((LON - centerLon) * rad), vy = cy - R * Math.sin(LAT * rad);
+      c.save(); c.globalCompositeOperation = 'lighter';
+      const vg = c.createRadialGradient(vx, vy, 0, vx, vy, 14); vg.addColorStop(0, 'rgba(255, 214, 140, 0.95)'); vg.addColorStop(1, 'rgba(255, 214, 140, 0)');
+      c.fillStyle = vg; c.beginPath(); c.arc(vx, vy, 14, 0, 2 * Math.PI); c.fill(); c.restore();
+      c.font = '600 11.5px ' + (getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif'); c.fillStyle = 'rgba(255, 236, 200, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle';
+      c.shadowColor = '#000'; c.shadowBlur = 6; c.fillText('Vienna', vx + 12, vy - 2); c.shadowBlur = 0;
+    }
+    const font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif';
+    const T = (s, y, size, weight, col) => { c.font = weight + ' ' + size + 'px ' + font; c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s, W / 2, y); };
+    T(DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()], H * 0.115, 17, 500, 'rgba(240, 242, 248, 0.85)');
+    T(String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'), H * 0.2, Math.round(96 * k), 200, '#F5EFE3');
+    const sn = sunToday(), mn = moonNow();
+    const chips = ['☀ Sunrise ' + fmtHour(sn.rise), '☀ Sunset ' + fmtHour(sn.set), '☾ Moon ' + Math.round(mn.fraction * 100) + ' %'];
+    c.font = '500 12.5px ' + font;
+    const ws = chips.map((s) => c.measureText(s).width + 22), gap = 8, total = ws.reduce((a, b) => a + b, 0) + gap * 2;
+    let x = (W - total) / 2; const y = H * 0.3;
+    chips.forEach((s, i) => {
+      c.beginPath(); if (c.roundRect) c.roundRect(x, y - 15, ws[i], 30, 14); else c.rect(x, y - 15, ws[i], 30);
+      c.fillStyle = 'rgba(28, 43, 76, 0.55)'; c.fill(); c.strokeStyle = 'rgba(255, 255, 255, 0.14)'; c.lineWidth = 1; c.stroke();
+      c.fillStyle = 'rgba(240, 242, 248, 0.92)'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s, x + ws[i] / 2, y);
+      x += ws[i] + gap;
+    });
+  }
+  function showPlanet(fromStart) {
+    const el = $('planetScreen');
+    el.hidden = false; planet.on = true; planet.t = performance.now();
+    requestAnimationFrame(() => { el.classList.remove('away'); });
+    if (fromStart) { el.classList.add('dragging'); el.classList.remove('away'); requestAnimationFrame(() => el.classList.remove('dragging')); }
+    else { hapt('swipe'); pushLayer('planetScreen'); }
+    kick();
+  }
+  function hidePlanet(fromBack) {
+    const el = $('planetScreen');
+    if (!planet.on) return;
+    planet.on = false; planet.t = performance.now();
+    el.classList.add('away'); hapt('swipe');
+    if (!fromBack) dropLayer('planetScreen');
+    setTimeout(() => { if (!planet.on) el.hidden = true; }, 500);
+    kick();
+  }
   function render(now, dtf) {
     const h = phaseNow();
+    const pAnim = performance.now() - planet.t < 600;
+    if (planet.on || pAnim) renderPlanet(now);
+    if (planet.on && !pAnim) return;    // the planet covers everything: no need to draw the sun and moon
     if (st.screen === 'sun' || worlds.classList.contains('dragging') || S.mode === 'two') renderSun(now, h, dtf || 16);
     renderMoon(now, h);
   }
@@ -2869,6 +2966,22 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   app.addEventListener('contextmenu', (e) => e.preventDefault());
   $('toMoon').addEventListener('pointerdown', (e) => { worlds.classList.add('dragging'); startDrag('toMoon', e, 0, true); });
   $('toSun').addEventListener('pointerdown', (e) => { worlds.classList.add('dragging'); startDrag('toSun', e, 0, true); });
+  // Planet start screen: swipe up (it follows the finger) or tap the handle for the sun; "Earth" on the sun screen brings it back
+  (function () {
+    const el = $('planetScreen');
+    let p0 = null;
+    el.addEventListener('pointerdown', (e) => { p0 = { y: e.clientY, id: e.pointerId }; el.classList.add('dragging'); });
+    window.addEventListener('pointermove', (e) => { if (!p0 || e.pointerId !== p0.id) return; const dy = Math.min(0, e.clientY - p0.y); el.style.transform = 'translateY(' + dy + 'px)'; });
+    const up = (e) => {
+      if (!p0 || e.pointerId !== p0.id) return;
+      const dy = e.clientY - p0.y; p0 = null;
+      el.classList.remove('dragging'); el.style.transform = '';
+      if (dy < -st.H * 0.12) hidePlanet();
+    };
+    window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+    $('planetUp').addEventListener('click', () => hidePlanet());
+    $('toPlanet').addEventListener('click', () => showPlanet());
+  })();
   $('toMoon').addEventListener('click', (e) => { if (e.detail === 0) goMoon(); });
   $('toSun').addEventListener('click', (e) => { if (e.detail === 0) goSun(); });
   $('viewReset').addEventListener('click', () => {
@@ -2897,7 +3010,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     }
   }
   function closeTop(top) {
-    if (top.name === 'moon') goSun(true);
+    if (top.name === 'planetScreen') hidePlanet(true);
+    else if (top.name === 'moon') goSun(true);
     else if (top.name === 'camera') closeCamera(true);
     else { const el = $(top.name); if (el) hideOverlay(el, true); }
   }
@@ -2977,7 +3091,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   function openItem(it) {
     if (it.app) { openApp(BY[it.name]); return; }
-    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0.', '', false); return; }
+    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain.', '', false); return; }
     openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
   }
   $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
@@ -3128,7 +3242,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'fpsMeter'];
+  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'fpsMeter', 'startScreen'];
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
@@ -3298,6 +3412,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (S.mode === 'two') pushLayer('moon');
   }
   resize();
+  $('toPlanet').hidden = false;
+  if (S.startScreen === 'planet') showPlanet(true);
   window.addEventListener('resize', resize);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { st.lastFrame = 0; applyLight(); kick(); wxFetch(false); } });
   wxFetch(false);
