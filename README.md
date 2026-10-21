@@ -13,3 +13,4 @@ Update: replace index.html, and change the 'sun-launcher-vN' name in sw.js to th
 Picture credits: Moon map from NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain.
 Sun map from Solar System Scope (https://www.solarsystemscope.com/textures/), based on NASA images, CC BY 4.0.
 Sunset sky photo from Unsplash / Pexels, free licence.
+Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio (Deep Star Maps 2020, https://svs.gsfc.nasa.gov/4851). Gaia DR2: ESA/Gaia/DPAC.
