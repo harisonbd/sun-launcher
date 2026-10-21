@@ -67,11 +67,9 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 #app.fx .facet { background: color-mix(in srgb, var(--panel) 72%, transparent); border-color: color-mix(in srgb, var(--sun) 28%, var(--line)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 #app.fx .facet.front { background: var(--sun); border-color: #FFF6D8; box-shadow: 0 0 0 3px color-mix(in srgb, var(--sun) 35%, transparent), 0 0 26px color-mix(in srgb, var(--sun) 70%, transparent); }
 /* Front app test options (Settings > Front app) */
-#app.ff-halo .facet.front, #app.fx.ff-halo .facet.front { box-shadow: 0 0 0 4px color-mix(in srgb, var(--sun) 55%, transparent), 0 0 34px 14px color-mix(in srgb, var(--sun) 75%, transparent), 0 0 70px 30px color-mix(in srgb, var(--sun) 35%, transparent); }
 #app.ff-lift .facet.front, #app.fx.ff-lift .facet.front { height: 56px; padding: 0 18px 0 8px; font-size: 16px; border-radius: 28px; box-shadow: 0 16px 22px rgba(0, 0, 0, 0.55), 0 0 26px color-mix(in srgb, var(--sun) 60%, transparent); }
 #app.ff-lift .facet.front .ini { width: 40px; height: 40px; font-size: 16px; }
 #app.ff-dim .facet:not(.front) { opacity: 0.38 !important; filter: saturate(0.4); }
-#app.ff-arrow .facet.front::after { content: '\203A'; margin-left: 2px; font-size: 24px; line-height: 1; font-weight: 700; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; pointer-events: auto; }
 .chips[hidden] { display: none; }
 .chips button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: color-mix(in srgb, var(--panel) 80%, transparent); border: 1px solid color-mix(in srgb, var(--sun) 45%, var(--line)); color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -374,24 +372,17 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
       <fieldset>
         <legend>Sun rays (when the sun look is Rays)</legend>
         <div class="seg">
-          <input type="radio" name="rayStyle" id="ray-spikes" value="spikes"><label for="ray-spikes">Spikes</label>
-          <input type="radio" name="rayStyle" id="ray-beams" value="beams"><label for="ray-beams">Soft beams</label>
-          <input type="radio" name="rayStyle" id="ray-clouds" value="clouds"><label for="ray-clouds">Through clouds</label>
-          <input type="radio" name="rayStyle" id="ray-starburst" value="starburst"><label for="ray-starburst">Starburst</label>
+          <input type="radio" name="rayStyle" id="ray-glow" value="glow"><label for="ray-glow">Glow</label>
           <input type="radio" name="rayStyle" id="ray-corona" value="corona"><label for="ray-corona">Corona</label>
           <input type="radio" name="rayStyle" id="ray-flames" value="flames"><label for="ray-flames">Flames</label>
-          <input type="radio" name="rayStyle" id="ray-glow" value="glow"><label for="ray-glow">Glow only</label>
         </div>
       </fieldset>
       <fieldset>
         <legend>Front app (tap each to turn on or off)</legend>
         <div class="seg">
           <input type="checkbox" name="frontFx" id="ff-beam" value="beam"><label for="ff-beam">Beam</label>
-          <input type="checkbox" name="frontFx" id="ff-halo" value="halo"><label for="ff-halo">Halo</label>
           <input type="checkbox" name="frontFx" id="ff-lift" value="lift"><label for="ff-lift">Bigger</label>
-          <input type="checkbox" name="frontFx" id="ff-glint" value="glint"><label for="ff-glint">Light spot</label>
           <input type="checkbox" name="frontFx" id="ff-dim" value="dim"><label for="ff-dim">Dim others</label>
-          <input type="checkbox" name="frontFx" id="ff-arrow" value="arrow"><label for="ff-arrow">Open arrow</label>
           <input type="checkbox" name="frontFx" id="ff-chips" value="chips"><label for="ff-chips">Shortcut buttons</label>
         </div>
       </fieldset>
@@ -426,7 +417,6 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         <div class="seg">
           <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
           <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
-          <input type="radio" name="moonLook" id="moon-ring" value="ring"><label for="moon-ring">Half ring</label>
           <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
           <input type="radio" name="moonLook" id="moon-rolodex" value="rolodex"><label for="moon-rolodex">Rolodex</label>
         </div>
@@ -538,14 +528,15 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
     eclipse: { name: 'Eclipse', look: 'eclipse', color: 'time', moon: 'dots' },
     blackhole: { name: 'Black hole', look: 'blackhole', color: '#FF6B3D', moon: 'crescent' },
     neon: { name: 'Neon night', look: 'neon', color: '#7FD3FF', moon: 'arc' },
-    plasma: { name: 'Plasma dawn', look: 'plasma', color: 'time', moon: 'ring' }
+    plasma: { name: 'Plasma dawn', look: 'plasma', color: 'time', moon: 'dots' }
   };
   const TIMELINE = [[0, 'neon'], [4.8, 'neon'], [5.5, 'plasma'], [7.6, 'plasma'], [8.4, 'daylight'], [16.4, 'daylight'], [17.2, 'sunset'], [18.4, 'sunset'], [19.0, 'eclipse'], [19.8, 'eclipse'], [20.4, 'blackhole'], [21.6, 'blackhole'], [22.3, 'neon'], [24, 'neon']];
   const KEY = 'sun-launcher-playground-v4';
   // Test options (21 Oct): the user tries them on the phone and then says which to remove.
-  const RAY_STYLES = ['spikes', 'beams', 'clouds', 'starburst', 'corona', 'flames', 'glow'];
-  const FRONT_FX = ['beam', 'halo', 'lift', 'glint', 'dim', 'arrow', 'chips'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'spikes', frontFx: [], swap: 'off', skyPhoto: 'off', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  // 21 Oct (after phone test): user removed spikes, soft beams, through clouds, starburst, halo, light spot, open arrow.
+  const RAY_STYLES = ['glow', 'corona', 'flames'];
+  const FRONT_FX = ['beam', 'lift', 'dim', 'chips'];
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -560,8 +551,8 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
   S.favs = (S.favs || []).filter((n) => typeof n === 'string').slice(0, 5);
   S.visits = (S.visits || 0) + 1;
   let showTips = S.visits <= 3;
-  if (['dots', 'arc', 'ring', 'crescent', 'rolodex'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
-  if (RAY_STYLES.indexOf(S.rayStyle) === -1) S.rayStyle = 'spikes';
+  if (['dots', 'arc', 'crescent', 'rolodex'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
+  if (RAY_STYLES.indexOf(S.rayStyle) === -1) S.rayStyle = 'glow';
   S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1);
   if (S.swap !== 'on') S.swap = 'off';
   if (S.skyPhoto !== 'sunset') S.skyPhoto = 'off';
@@ -1342,16 +1333,8 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 
     function drawRay(i, look) {
       const a = i * step + rot, f = depthF(a), isF = i === front;
-      if (look === 'rays' && S.rayStyle === 'beams') {
-        const br = 0.85 + 0.15 * Math.sin(rt * 0.7 + i);
-        softWedge(a, 0.2, G.R * 2.4, (isF ? 0.75 : 0.4 + 0.25 * f) * br);
-        softWedge(a + step / 2, 0.11, G.R * 1.7, (0.25 + 0.15 * depthF(a + step / 2)) * br);
-      } else if (look === 'rays' && S.rayStyle !== 'spikes') {
-        // the other ray styles are drawn once for the whole sun (raysBack / raysFront)
-      } else if (look === 'rays') {
-        const a2 = a + step / 2;
-        poly([G.polar(coreR * 0.9, a2 - 0.07), G.polar(coreR + (G.R - coreR) * 0.5, a2), G.polar(coreR * 0.9, a2 + 0.07)], hexA(deep, 0.35 + 0.35 * depthF(a2)));
-        poly([G.polar(coreR * 0.9, a - 0.14), G.polar(G.R - 14, a), G.polar(coreR * 0.9, a + 0.14)], isF ? sun : hexA(deep, 0.5 + 0.45 * f));
+      if (look === 'rays') {
+        // the Rays look is drawn once for the whole sun (raysBack: glow, corona or flames)
       } else if (look === 'neon') {
         c.save();
         c.globalCompositeOperation = 'lighter';
@@ -1385,14 +1368,6 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
       stops.forEach((s) => g.addColorStop(s[0], s[1]));
       return g;
     }
-    // soft light wedge in the tilted sun plane, fading with distance
-    function softWedge(a, half, len, al) {
-      const tip = G.polar(len, a), d = Math.hypot(tip[0] - cx, tip[1] - cy) || 1;
-      c.save(); c.globalCompositeOperation = 'lighter';
-      poly([G.polar(coreR * 0.8, a - half * 0.35), G.polar(len, a - half), G.polar(len, a + half), G.polar(coreR * 0.8, a + half * 0.35)],
-        radial(cx, cy, coreR * 0.6, d, [[0, hexA(pale, al.toFixed(3))], [0.45, hexA(pale, (al * 0.6).toFixed(3))], [1, hexA(sun, 0)]]));
-      c.restore();
-    }
     function glowOnly(k) {
       const br = 0.9 + 0.1 * Math.sin(rt * 0.6);
       c.fillStyle = radial(cx, cy, coreR * 0.8, coreR * 3.6 * br, [[0, hexA(pale, (0.85 * k).toFixed(3))], [0.35, hexA(sun, (0.4 * k).toFixed(3))], [1, hexA(sun, 0)]]);
@@ -1406,18 +1381,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
       const rs = S.rayStyle;
       if (lk === 'moon') glowOnly(0.6);
       else if (lk === 'rays' && rs === 'glow') glowOnly(light);
-      else if (lk === 'rays' && rs === 'clouds') {
-        // light beams through gaps in clouds, fanning down from the sun, with a soft glow
-        glowOnly(light * 0.8);
-        for (let k = 0; k < 11; k++) {
-          const ang = Math.PI / 2 + (k - 5) * 0.17 + (rnd(k) - 0.5) * 0.08 + 0.02 * Math.sin(rt * 0.2 + k);
-          const half = 0.03 + 0.05 * rnd(k + 3), len = H * 1.1;
-          const al = (0.16 + 0.16 * rnd(k + 9)) * (0.75 + 0.25 * Math.sin(rt * 0.35 + k * 1.7)) * light;
-          const p = (r, an) => [cx + r * Math.cos(an), cy + r * Math.sin(an)];
-          poly([p(coreR * 1.05, ang - half * 0.5), p(len, ang - half), p(len, ang + half), p(coreR * 1.05, ang + half * 0.5)],
-            radial(cx, cy, coreR, len, [[0, hexA(pale, al.toFixed(3))], [0.6, hexA(sun, (al * 0.5).toFixed(3))], [1, hexA(sun, 0)]]));
-        }
-      } else if (lk === 'rays' && rs === 'corona') {
+      else if (lk === 'rays' && rs === 'corona') {
         // eclipse corona: long thin pearly streamers, longest at the sides
         c.fillStyle = radial(cx, cy, coreR * 0.95, coreR * 2.2, [[0, 'rgba(255, 252, 244, 0.7)'], [1, 'rgba(255, 252, 244, 0)']]);
         c.fillRect(cx - coreR * 2.5, cy - coreR * 2.5, coreR * 5, coreR * 5);
@@ -1470,31 +1434,6 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
         const tip = G.polar(G.R * 0.98, fa), d = Math.hypot(tip[0] - cx, tip[1] - cy) || 1;
         poly([[cx, cy], G.polar(G.R * 0.98, fa - 0.22), G.polar(G.R * 0.98, fa + 0.22)],
           radial(cx, cy, coreR * 0.2, d, [[0, 'rgba(255, 250, 235, 0)'], [0.35, 'rgba(255, 250, 235, 0.55)'], [1, hexA(pale, 0.85)]]));
-      }
-      if (ffOn('glint')) {
-        // small bright glint with a thin flare line on the ring, under the front app
-        const gp0 = G.polar(G.R, fa), gp = [gp0[0], gp0[1] + 8];
-        c.fillStyle = radial(gp[0], gp[1], 0, 34, [[0, 'rgba(255, 252, 240, 1)'], [0.3, hexA(pale, 0.75)], [1, hexA(sun, 0)]]);
-        c.fillRect(gp[0] - 40, gp[1] - 40, 80, 80);
-        const lg = c.createLinearGradient(gp[0] - 120, 0, gp[0] + 120, 0);
-        lg.addColorStop(0, 'rgba(255, 252, 240, 0)'); lg.addColorStop(0.5, 'rgba(255, 252, 240, 1)'); lg.addColorStop(1, 'rgba(255, 252, 240, 0)');
-        c.fillStyle = lg; c.fillRect(gp[0] - 120, gp[1] - 1.5, 240, 3);
-      }
-      if (lk === 'rays' && S.rayStyle === 'starburst') {
-        // camera starburst: 8 thin spikes from the lens blades, fixed to the picture
-        for (let k = 0; k < 8; k++) {
-          const ang = 0.22 + k * Math.PI / 4, len = (k % 2 ? W * 0.42 : W * 0.7) * (0.96 + 0.04 * Math.sin(rt * 2 + k)), half = k % 2 ? 2.4 : 3.6;
-          const ex = cx + len * Math.cos(ang), ey = cy + len * Math.sin(ang);
-          const nx = -Math.sin(ang) * half, ny = Math.cos(ang) * half;
-          const g = c.createLinearGradient(cx, cy, ex, ey);
-          g.addColorStop(0, 'rgba(255, 252, 240, 1)');
-          g.addColorStop(0.35, hexA(pale, 0.8));
-          g.addColorStop(1, hexA(sun, 0));
-          c.beginPath(); c.moveTo(cx + nx, cy + ny); c.lineTo(ex, ey); c.lineTo(cx - nx, cy - ny); c.closePath();
-          c.fillStyle = g; c.fill();
-        }
-        c.fillStyle = radial(cx, cy, 0, coreR * 1.25, [[0, 'rgba(255, 252, 240, 0.35)'], [1, 'rgba(255, 252, 240, 0)']]);
-        c.fillRect(cx - coreR * 2, cy - coreR * 2, coreR * 4, coreR * 4);
       }
       c.restore();
     }
