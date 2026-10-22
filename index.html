@@ -585,7 +585,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           <input type="radio" name="skyPhoto" id="photo-sunset" value="sunset"><label for="photo-sunset">Sunset photo</label>
           <input type="radio" name="skyPhoto" id="photo-stars" value="stars"><label for="photo-stars">Real stars</label>
         </div>
-        <p class="helpline">Live photo: dawn, day, sunset, blue hour or night photo, matching the real sun in Vienna now.</p>
+        <p class="helpline">Live photo: dawn, day, sunset, blue hour or night photo, matching the real sun in Vienna now. With Real weather on, overcast, rain, snow, fog and thunderstorm photos show too.</p>
       </fieldset>
       <fieldset>
         <legend>Weather</legend>
@@ -879,10 +879,24 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function liveSkyKey() {
     const d = new Date(); d.setHours(0, 0, 0, 0);
     const s = sunAltAz(new Date(d.getTime() + hourNow() * 3600000));
+    // with Real weather (22 Oct, v30): overcast, rain, snow, fog or thunderstorm replace the daylight photos;
+    // at night only snow and thunderstorm show, the other nights keep the night photo
+    const wk = S.weather === 'real' && WX && Date.now() - WX.t < 3 * 3600000 ? wxKind(WX.code, WX.cloud) : '';
+    if (s.alt > -4 && wk) return wk;
+    if (s.alt <= -4 && (wk === 'storm' || wk === 'snow')) return wk === 'snow' ? 'snow-night' : 'storm';
     if (s.alt > 8) return 'day';
     if (s.alt > -4) return s.az < 180 ? 'dawn' : 'sunset';
     if (s.alt > -12) return 'bluehour';
     return 'night';
+  }
+  // Open-Meteo weather code (WMO) + cloud cover -> which weather photo, '' = none
+  function wxKind(k, cloud) {
+    if (k >= 95) return 'storm';
+    if ((k >= 71 && k <= 77) || k === 85 || k === 86) return 'snow';
+    if ((k >= 51 && k <= 67) || (k >= 80 && k <= 82)) return 'rain';
+    if (k === 45 || k === 48) return 'fog';
+    if (k === 3 || cloud >= 85) return 'overcast';
+    return '';
   }
   let liveSkyShown = '';
   function updateLiveSky() {
