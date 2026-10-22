@@ -613,7 +613,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <div class="seg">
           <input type="radio" name="sunView" id="sv-edge" value="edge"><label for="sv-edge">Big edge</label>
           <input type="radio" name="sunView" id="sv-arc" value="arc"><label for="sv-arc">Sun glow arc</label>
-          <input type="radio" name="sunView" id="sv-eclipse" value="eclipse"><label for="sv-eclipse">Eclipse</label>
           <input type="radio" name="sunView" id="sv-small" value="small"><label for="sv-small">Small</label>
         </div>
         <p class="helpline">Real sun today, Minimal sun and Clock dial match the moon looks. Solar activity: real data from NOAA Space Weather (asked every 3 hours).</p>
@@ -634,7 +633,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         </div>
         <div class="tabpane" data-group="sun" data-tab="extra" hidden>
           <div class="seg">
-            <input type="radio" name="sunPick" id="sp-eclipse" value="eclipse"><label for="sp-eclipse">Eclipse</label>
             <input type="radio" name="sunPick" id="sp-blackhole" value="blackhole"><label for="sp-blackhole">Black hole</label>
             <input type="radio" name="sunPick" id="sp-neon" value="neon"><label for="sp-neon">Neon</label>
           </div>
@@ -843,12 +841,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const THEMES = {
     daylight: { name: 'Daylight', look: 'rays', color: 'time', moon: 'phase' },
     sunset: { name: 'Sunset', look: 'rays', color: '#FF9F43', moon: 'crescent' },
-    eclipse: { name: 'Eclipse', look: 'eclipse', color: 'time', moon: 'dots' },
     blackhole: { name: 'Black hole', look: 'blackhole', color: '#FF6B3D', moon: 'crescent' },
     neon: { name: 'Neon night', look: 'neon', color: '#7FD3FF', moon: 'arc' },
     plasma: { name: 'Dawn', look: 'rays', color: 'time', moon: 'dots' }  // v39: Plasma look removed (user)
   };
-  const TIMELINE = [[0, 'neon'], [4.8, 'neon'], [5.5, 'plasma'], [7.6, 'plasma'], [8.4, 'daylight'], [16.4, 'daylight'], [17.2, 'sunset'], [18.4, 'sunset'], [19.0, 'eclipse'], [19.8, 'eclipse'], [20.4, 'blackhole'], [21.6, 'blackhole'], [22.3, 'neon'], [24, 'neon']];
+  const TIMELINE = [[0, 'neon'], [4.8, 'neon'], [5.5, 'plasma'], [7.6, 'plasma'], [8.4, 'daylight'], [16.4, 'daylight'], [17.2, 'sunset'], [19.6, 'sunset'], [20.4, 'blackhole'], [21.6, 'blackhole'], [22.3, 'neon'], [24, 'neon']];
   const KEY = 'sun-launcher-playground-v4';
   // Test options (21 Oct): the user tries them on the phone and then says which to remove.
   // 21 Oct (after phone test): user removed spikes, soft beams, through clouds, starburst, open arrow.
@@ -866,7 +863,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     }
     if (saved) Object.keys(S).forEach((k) => { if (k in saved) S[k] = saved[k]; });
   } catch (e) {}
-  if (['rays', 'eclipse', 'neon', 'blackhole'].indexOf(S.sunLook) === -1) S.sunLook = 'rays';  // Plasma (v39) -> rays
+  if (['rays', 'neon', 'blackhole'].indexOf(S.sunLook) === -1) S.sunLook = 'rays';  // Plasma (v39), Eclipse (v54) -> rays
   if (S.theme !== 'auto' && S.theme !== 'custom' && !THEMES[S.theme]) S.theme = 'auto';
   // The simpler menu has only "Follow the time" and "Pick myself": a saved fixed theme becomes Pick myself with its looks.
   if (S.theme !== 'auto' && S.theme !== 'custom') {
@@ -886,12 +883,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (['glow', 'phase'].indexOf(S.moonDial) === -1) S.moonDial = 'glow';
   if (S.pairLink !== 'off') S.pairLink = 'on';  // v34: Same style on both screens, on by default
   if (S.chargeMode !== 'off') S.chargeMode = 'auto';  // v37: charging mode (calm Earth clock while charging)
-  if (['edge', 'eclipse', 'orb', 'small'].indexOf(S.sunList) === -1) S.sunList = 'edge';
+  if (['edge', 'orb', 'small'].indexOf(S.sunList) === -1) S.sunList = 'edge';
   if (S.sunView === 'setting') S.sunView = 'edge';  // v35: Horizon pair removed (user)
   // 22 Oct (v27): the Swap switch is gone; its looks are now a Sun screen (sun by a list) and a Moon style (Moon dial)
   if (S.swap === 'on') { S.sunView = S.sunList; S.moonLook = 'moondial'; S.theme = 'custom'; }
   S.swap = 'off';
-  if (['dial', 'ring', 'today', 'minimal', 'clock', 'edge', 'arc', 'eclipse', 'orb', 'small'].indexOf(S.sunView) === -1) S.sunView = S.sunView === 'rings' ? 'ring' : 'dial';  // v35: Ringed sun out for now
+  if (S.sunView === 'eclipse') S.sunView = 'edge';  // v54: Eclipse screen removed (user)
+  if (['dial', 'ring', 'today', 'minimal', 'clock', 'edge', 'arc', 'orb', 'small'].indexOf(S.sunView) === -1) S.sunView = S.sunView === 'rings' ? 'ring' : 'dial';  // v35: Ringed sun out for now
   if (['live', 'sunset', 'stars', 'clear'].indexOf(S.skyPhoto) === -1) S.skyPhoto = 'off';
   if (NEON_STYLES.indexOf(S.neonStyle) === -1) S.neonStyle = 'minimal';  // Sign (v39) -> Minimal
   if (S.sunView === 'orb') S.sunView = 'small';  // v39: Glow orb pair removed (user)
@@ -2813,7 +2811,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
 
   // ---- Sun views: the same apps (APPS, st.rot, frontIndex) shown as cards, a list or a big dial ----
-  const SUN_LIST = ['edge', 'arc', 'eclipse', 'small'];
+  const SUN_LIST = ['edge', 'arc', 'small'];
   function sunViewOn() { return S.sunView !== 'dial'; }
   // the list area: a drag that starts here scrolls the apps; above or below it swipes to the Earth or the Moon
   function sunViewGeo() {
@@ -4150,11 +4148,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   $('toSun').addEventListener('click', (e) => { if (e.detail === 0) goSun(); });
   /* ---------- Look editor (v43, E1): tilt, turn, size, ring and place for the Dial and Ring screens; Save as… ---------- */
   // Sun Dial uses its old values (S.tilt, S.size, S.custom = My view). Ring screens use S.tune[key] (tuneOf).
-  const LE_SUN_STYLES = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['eclipse', 'Eclipse'], ['blackhole', 'Black hole'], ['neon', 'Neon']];
+  const LE_SUN_STYLES = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['blackhole', 'Black hole'], ['neon', 'Neon']];
   const LE_MOON_STYLES = [['glow', 'Glow'], ['phase', 'Real phase']];
   let le = null;  // the screen being edited
   // v44 (E2): every screen can be edited; rows = the controls that make sense there (t tilt, u turn, s size, r ring)
-  const LE_SUN = { dial: ['Sun dial', 'tusr'], ring: ['Sun ring', 'tusr'], edge: ['Big edge', 'sr'], arc: ['Glow arc', 'sr'], eclipse: ['Eclipse', 'sr'], small: ['Small sun', 'sr'], today: ['Today', 's'], minimal: ['Minimal', 's'], clock: ['Clock', 's'] };
+  const LE_SUN = { dial: ['Sun dial', 'tusr'], ring: ['Sun ring', 'tusr'], edge: ['Big edge', 'sr'], arc: ['Glow arc', 'sr'], small: ['Small sun', 'sr'], today: ['Today', 's'], minimal: ['Minimal', 's'], clock: ['Clock', 's'] };
   const LE_MOON = { dial3d: ['Moon 3D dial', 'tusr'], moondial: ['Moon dial', 'tusr'], dots: ['Dots', 'sr'], arc: ['Glow arc', 'sr'], small: ['Small moon', 'sr'], crescent: ['Crescent', 's'], phase: ['Real phase', 's'], minimal: ['Minimal', 's'], dial: ['Clock dial', 's'] };
   function leTarget() {
     const kind = S.mode === 'one' || st.screen === 'moon' ? 'moon' : 'sun', v = kind === 'sun' ? S.sunView : currentMoon(), d = (kind === 'sun' ? LE_SUN : LE_MOON)[v];
@@ -4311,7 +4309,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const pd = S.dir;
     leToCustom();
     if (L.kind === 'sun') {
-      S.sunView = L.view; S.rayStyle = L.rayStyle || S.rayStyle; S.neonStyle = L.neonStyle || S.neonStyle; S.sunLook = L.sunLook || S.sunLook;
+      S.sunView = L.view === 'eclipse' ? 'edge' : L.view; S.rayStyle = L.rayStyle || S.rayStyle; S.neonStyle = L.neonStyle || S.neonStyle; S.sunLook = L.sunLook || S.sunLook;
+      if (S.sunLook === 'eclipse') { S.sunLook = 'rays'; S.rayStyle = 'glow'; }  // v54: Eclipse style removed
       if (typeof L.sunTime === 'boolean') { S.sunTime = L.sunTime; S.color = L.color || S.color; }
       if (L.view === 'dial') { S.dir = L.dir || 'flat'; S.tilt = L.tilt || 45; S.size = L.size || 125; S.custom = L.custom ? Object.assign({}, L.custom) : null; if (S.dir === 'custom' && !S.custom) S.dir = 'flat'; }
       if (L.tune) S.tune['sun:' + L.view] = Object.assign({}, L.tune); else delete S.tune['sun:' + L.view];
@@ -4749,7 +4748,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   // ---- Screen style pairs (v34): [key, name, sun screen, moon look, tab]. With "Same style on both screens" on,
   // one tap sets both; off: the Sun screen and Moon style lists pick each screen on its own.
   const PAIRS = [['dial', 'Dial', 'dial', 'dial3d', 'normal'], ['ring', 'Ring', 'ring', 'moondial', 'normal'], ['dots', 'Dots', 'edge', 'dots', 'normal'],
-    ['arc', 'Glow arc', 'arc', 'arc', 'normal'], ['crescent', 'Crescent', 'eclipse', 'crescent', 'normal'],
+    ['arc', 'Glow arc', 'arc', 'arc', 'normal'], ['crescent', 'Crescent', 'small', 'crescent', 'normal'],
     ['today', 'Today', 'today', 'phase', 'extra'], ['minimal', 'Minimal', 'minimal', 'minimal', 'extra'], ['clock', 'Clock', 'clock', 'dial', 'extra'],
     ['small', 'Small', 'small', 'small', 'extra']
     // v39: Glow orb pair removed (user): ['orb', 'Glow orb', 'orb', 'orb', 'extra']
@@ -4774,25 +4773,25 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       : 'Pick the Sun screen in ☀ Sun and the Moon style in ☾ Moon.';
   }
   // Sun style list shows only the styles that change the chosen Sun screen (user, 22 Oct)
-  const VIEW_STYLES = ['glow', 'eclipse', 'blackhole'];
+  const VIEW_STYLES = ['glow', 'blackhole'];
   function sunStyleUI() {
     const v = S.sunView, list = SUN_LIST.indexOf(v) !== -1, view = v !== 'dial' && !list, set = $('sunStyleSet'), note = $('sunStyleNote');
     set.querySelectorAll('.tabs, .tabpane').forEach((el) => el.classList.toggle('sv-hide', list));
     note.hidden = !list && !view;
-    note.textContent = list ? 'This screen has its own sun: pick it in Sun screen above (Big edge, Eclipse, Glow orb, Small, Setting).'
-      : 'On this screen: Glow, Plasma, Eclipse and Black hole. Corona, Flames and Neon work on the Sun dial.';
+    note.textContent = list ? 'This screen has its own sun: pick it in Sun screen above (Big edge, Arc, Small).'
+      : 'On this screen: Glow and Black hole. Corona, Flames and Neon work on the Sun dial.';
     set.querySelectorAll('input[name="sunPick"]').forEach((r) => { set.querySelector('label[for="' + r.id + '"]').hidden = view && VIEW_STYLES.indexOf(r.value) === -1; });
     $('neonOpts').hidden = view;
   }
   // v48: Settings pictures. Cards = groups of the screen pairs; rows = the kinds of the picked card, the moon screens
   // (when "Same style" is off) and the sun styles. Each picture taps the matching old radio (hidden in #oldPickers).
   const PV_FAM = [['ring', 'Ring', 'Dial · Ring', ['dial', 'ring']], ['clock', 'Clock', 'Big dial at the edge', ['clock']],
-    ['info', 'Info', 'Today · Minimal', ['today', 'minimal']], ['side', 'Side list', 'Big edge · Arc · Eclipse · Small', ['edge', 'arc', 'eclipse', 'small']]];
-  const PV_NAME = { dial: 'Dial', ring: 'Ring', clock: 'Clock', today: 'Today', minimal: 'Minimal', edge: 'Big edge', arc: 'Arc', eclipse: 'Eclipse', small: 'Small' };
+    ['info', 'Info', 'Today · Minimal', ['today', 'minimal']], ['side', 'Side list', 'Big edge · Arc · Small', ['edge', 'arc', 'small']]];
+  const PV_NAME = { dial: 'Dial', ring: 'Ring', clock: 'Clock', today: 'Today', minimal: 'Minimal', edge: 'Big edge', arc: 'Arc', small: 'Small' };
   const PV_MOON = [['dial3d', '3D dial'], ['moondial', 'Moon dial'], ['dial', 'Clock dial'], ['phase', 'Real phase'], ['minimal', 'Minimal'], ['dots', 'Dots'], ['arc', 'Arc'], ['crescent', 'Crescent'], ['small', 'Small']];
-  const PV_STY = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['eclipse', 'Eclipse'], ['blackhole', 'Black hole'], ['neon', 'Neon'], ['synth', 'Synthwave']];
+  const PV_STY = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['blackhole', 'Black hole'], ['neon', 'Neon'], ['synth', 'Synthwave']];
   const pvImg = (src, pos) => { const im = document.createElement('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; if (pos) im.style.objectPosition = pos; return im; };
-  const pvPos = (v) => ({ edge: '100% 30%', arc: '100% 30%', eclipse: '100% 30%', small: '100% 40%', clock: '0% 50%', dial: '50% 42%', ring: '50% 45%', today: '50% 15%', minimal: '100% 15%' }[v] || '50% 40%');
+  const pvPos = (v) => ({ edge: '100% 30%', arc: '100% 30%', small: '100% 40%', clock: '0% 50%', dial: '50% 42%', ring: '50% 45%', today: '50% 15%', minimal: '100% 15%' }[v] || '50% 40%');
   const pvMoonPos = (m) => ({ dots: '100% 50%', arc: '100% 50%', crescent: '30% 50%', small: '100% 50%', dial: '0% 50%', phase: '50% 15%', minimal: '100% 20%', dial3d: '50% 50%', moondial: '50% 50%' }[m] || '50% 45%');
   function pvTap(name, value) {
     const r = Array.prototype.find.call(form.elements[name], (x) => x.value === value);
@@ -4852,7 +4851,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // sun styles: only the ones that change this screen
     const list = SUN_LIST.indexOf(view) !== -1, cur = sh.look === 'neon' ? (S.neonStyle === 'synth' ? 'synth' : 'neon') : sunPickOf(sh.look);
     const stys = $('pstyles'); stys.textContent = '';
-    $('pstyleNote').hidden = !list; $('pstyleNote').textContent = 'This screen has its own sun: pick it above (Big edge, Arc, Eclipse, Small).';
+    $('pstyleNote').hidden = !list; $('pstyleNote').textContent = 'This screen has its own sun: pick it above (Big edge, Arc, Small).';
     if (!list) PV_STY.filter((x) => view === 'dial' || VIEW_STYLES.indexOf(x[0]) !== -1).forEach(([v, name]) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'psty' + (v === cur ? ' on' : '');
       b.setAttribute('aria-pressed', v === cur ? 'true' : 'false');
