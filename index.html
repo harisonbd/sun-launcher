@@ -53,7 +53,7 @@ body { background: var(--night-deep); color: var(--ink); font-family: var(--font
 #planetScreen.calm .planet-handle { opacity: 0.2; }
 .planet[hidden] { display: none; }
 .planet-handle { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); min-height: 56px; padding: 0 18px; border: none; background: transparent; color: #DCE3F0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 500; cursor: pointer; }
-.to-planet { position: absolute; left: 50%; top: 60px; transform: translateX(-50%); min-height: 44px; padding: 0 14px; border: none; background: transparent; color: var(--ink-3); display: flex; flex-direction: row; align-items: center; gap: 2px; font-size: 12px; font-weight: 500; cursor: pointer; z-index: 600; min-height: 26px !important; }
+.to-planet { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); min-height: 44px; padding: 0 14px; border: none; background: transparent; color: var(--ink-3); display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 12px; font-weight: 500; cursor: pointer; z-index: 600; }
 .to-planet[hidden] { display: none; }
 #moonScreen { top: 50%; background: linear-gradient(180deg, var(--msky-top), var(--msky-bot)); }
 canvas.paint { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
@@ -177,7 +177,7 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .grp summary .sum { float: right; font-weight: 400; color: var(--ink-2); font-size: 12.5px; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .looks:empty { display: none; }
 .lookchip { min-height: 40px; padding: 0 16px; border-radius: 20px; border: 1.5px solid var(--sun); background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
-.handle.top { top: 56px; min-height: 30px; flex-direction: row; gap: 3px; }  /* v48: under the eye */
+.handle.top { top: 10px; }
 .handle span { display: flex; align-items: center; gap: 6px; }
 
 .item { position: absolute; left: 0; top: 0; pointer-events: auto; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px 0 6px; box-sizing: border-box; border: none; background: transparent; color: #C3CADB; font-size: 16px; font-weight: 500; white-space: nowrap; transform-origin: 14px 50%; cursor: pointer; }
@@ -343,13 +343,15 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .send small { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
 
 /* v46: Watch mode and one-time hints */
-.watchbtn { position: absolute; top: 16px; left: 50%; margin-left: -22px; width: 44px; height: 44px; border-radius: 22px; border: none; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--ink-3); display: flex; align-items: center; justify-content: center; z-index: 860; cursor: pointer; transition: opacity .4s; }
+.watchbtn { position: absolute; top: 74px; right: max(20px, calc(env(safe-area-inset-right, 0px) + 4px)); width: 40px; height: 40px; border-radius: 22px; border: none; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--ink-3); display: flex; align-items: center; justify-content: center; z-index: 860; cursor: pointer; transition: opacity .4s; }
 #app.watch .watchbtn, #app.editing .watchbtn { opacity: 0; pointer-events: none; }
 .watchcatch { position: absolute; inset: 0; z-index: 880; }
 .watchcatch[hidden] { display: none; }
 #app.watch .screen button, #app.watch .clockchip, #app.watch .facet, #app.watch #items, #app.watch #glabels, #app.watch .marker, #app.watch .scrub, #app.watch .bubble, #app.watch .info, #app.watch .chips, #app.watch .favbar, #app.watch .planet-handle, #app.watch .hintpill { opacity: 0 !important; pointer-events: none !important; transition: opacity .5s; }
 .hintpill { position: absolute; transform: translate(-50%, -50%); max-width: 80%; padding: 9px 16px; border-radius: 20px; background: color-mix(in srgb, var(--panel-2) 92%, transparent); color: var(--ink); font-size: 14px; text-align: center; z-index: 700; pointer-events: none; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3); animation: hintIn .4s ease; }
 .hintpill[hidden] { display: none; }
+.speedmeter { position: absolute; left: 10px; top: 70px; z-index: 950; background: rgba(0, 0, 0, 0.72); color: #9effc0; font: 600 12px/1.35 ui-monospace, monospace; padding: 6px 9px; border-radius: 8px; pointer-events: none; white-space: pre; }
+.speedmeter[hidden] { display: none; }
 .hintpill .arr { display: inline-block; animation: nudge 1.2s ease-in-out infinite; }
 .hintpill .arr.r { animation-direction: reverse; }
 @keyframes hintIn { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
@@ -419,7 +421,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       <div id="scrub" class="scrub" aria-hidden="true"></div>
       <div id="bubble" class="bubble" aria-hidden="true" hidden><small id="bubbleGroup"></small><span id="bubbleName"></span></div>
       <button type="button" class="handle top" id="toSun" aria-label="Back to the sun menu">
-        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></svg>Sun</span>
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></svg>Swipe down · Sun</span>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>
       </button>
       <button type="button" class="mini-sun" id="miniSun" aria-label="Camera: take a photo and send it to an app" hidden>
@@ -447,6 +449,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   </button>
   <div id="watchCatch" class="watchcatch" hidden></div>
   <div id="hint" class="hintpill" role="status" hidden></div>
+  <div id="speedMeter" class="speedmeter" aria-live="off" hidden></div>
   <div id="camera" class="camera" hidden>
     <div class="cam-bar">
       <button type="button" class="back" id="camBack" aria-label="Back" data-autofocus>
@@ -797,6 +800,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <p class="helpline">Short one-time tips (hold the sun, turn the dial, pin to the bar, sunset). Each shows twice at most.</p>
       </fieldset>
       <button type="button" class="btn" id="tipsAgain">Show all tips again</button>
+      <button type="button" class="btn" id="speedBtn">Speed check (15 s)</button>
+      <p class="helpline">Shows how often the screen is drawn and how long one drawing takes, top left, for 15 s. Try each screen; send me the numbers.</p>
       </details>
       <button type="button" class="btn" id="lookEditBtn2">Edit look (tilt, turn, size, place)</button>
       <button type="button" class="btn primary" id="setDone" data-autofocus>Done</button>
@@ -2078,7 +2083,21 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   // Battery (v31): after 20 s without a touch, the slow background motion (clouds, loops, Earth) is drawn
   // 20 times a second instead of 60. Any touch, tween or spin makes it full speed again.
   let lastTouch = performance.now(), lastAmbient = 0;
+  // v53: speed check: frames drawn per second and the average / worst time of one drawing, for 15 s
+  const speed = { on: false, n: 0, ms: 0, max: 0, t0: 0, end: 0, timer: 0,
+    add(d) { this.n++; this.ms += d; if (d > this.max) this.max = d; },
+    start() {
+      this.on = true; this.end = performance.now() + 15000; this.n = 0; this.ms = 0; this.max = 0; this.t0 = performance.now();
+      clearInterval(this.timer); $('speedMeter').hidden = false; kick();
+      this.timer = setInterval(() => {
+        const now = performance.now(), sec = (now - this.t0) / 1000, where = planet.on ? 'Earth' + (planet.calm ? ' (night clock)' : '') : st.screen === 'moon' ? 'Moon · ' + currentMoon() : 'Sun · ' + S.sunView;
+        $('speedMeter').textContent = where + (st.watch ? ' · Watch' : '') + '\n' + (this.n / sec).toFixed(0) + ' frames/s\n' + (this.n ? (this.ms / this.n).toFixed(1) : '-') + ' ms avg · ' + this.max.toFixed(1) + ' ms max';
+        this.n = 0; this.ms = 0; this.max = 0; this.t0 = now;
+        if (now > this.end) { this.on = false; clearInterval(this.timer); setTimeout(() => { $('speedMeter').hidden = true; }, 4000); }
+      }, 1000);
+    } };
   window.addEventListener('pointerdown', () => { lastTouch = performance.now(); }, true);
+  window.addEventListener('pointermove', (e) => { if (e.buttons || e.pointerType === 'touch') lastTouch = performance.now(); }, true);  // v53: a long drag counts as touching
   function kick() { dirty = true; if (!raf) raf = requestAnimationFrame(frame); }
   function tween(key, to, dur) {
     tweens = tweens.filter((w) => w.key !== key);
@@ -2125,10 +2144,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     st.prevRot = st.rot;
     const lbNow = lookBlend(phaseNow());
     const ambient = fancy();
-    const idle = !dirty && !active && now - lastTouch > 20000 && now - lastAmbient < 50;
-    if ((dirty || active || ambient) && !idle) {
+    // v53 (battery): the screen is drawn at most 60 times a second while you touch it (90/120 Hz phones too),
+    // 30 for 20 s after the last touch, then 15; the night clock (charging mode) 10. A change from Settings draws at once.
+    const sinceTouch = now - lastTouch, gap = planet.calm ? 98 : sinceTouch < 2000 ? 15 : sinceTouch < 20000 ? 32 : 65;
+    if ((dirty || active || ambient) && (dirty || now - lastAmbient >= gap)) {
+      const t0 = performance.now();
       render(now, dtf); dirty = false;
       lastAmbient = now;
+      if (speed.on) speed.add(performance.now() - t0);
     }
     if ((active || ambient || tweens.length) && !raf && !document.hidden) raf = requestAnimationFrame(frame);
   }
@@ -2945,8 +2968,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       sunAt(sc.sx, sc.sy, sc.R, { glow: 0.9, margin: 1.5 }); bodyAt.sun = { x: sc.sx, y: sc.sy, r: sc.R };
       ringHalf(true);
       if (hzR.on) drawnHills(c, W, H);
-      txt('Sun menu', W / 2, H * 0.125 + 18, 12, 600, muted, 'center', true);
-      txt('Apps', W / 2, H * 0.16 + 18, 24, 500, '#F5EFE3', 'center');
+      txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
+      txt('Apps', W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
       if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
       const s0 = ringPlace(sc, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
@@ -2978,8 +3001,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       rings(false);
       sunAt(sx, sy, R, { glow: 0.9, margin: 1.7 });
       rings(true);
-      txt('Sun menu', W / 2, H * 0.125 + 18, 12, 600, muted, 'center', true);
-      txt(APPS[front].name, W / 2, H * 0.16 + 18, 24, 500, '#F5EFE3', 'center');
+      txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
+      txt(APPS[front].name, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
       if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
       place((d, isF) => {
         const q = ringPlace(sc, Math.PI / 2 + d * (Math.PI * 2 / 12)), f = (q[2] + 1) / 2, ad = Math.abs(d), mA = 6;
@@ -3413,7 +3436,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         const t1 = nextEv.title + ' · ' + evDate(nextEv.date);
         if (me.querySelector('b').textContent !== t1) { me.querySelector('b').textContent = t1; me.querySelector('small').textContent = nextEv.sub + ' · tap for more'; }
       } else me.hidden = true;
-      const rowY = H * 0.6, gap = Math.min(52, (W - 32) / 7);
+      // v53 (user): a clear gap between the event card and the row of small moons, on any screen height
+      const rowY = Math.max(H * 0.6, me.hidden ? 0 : H * 0.46 + me.offsetHeight + 38), gap = Math.min(52, (W - 32) / 7);
       phaseRow = { y: rowY, gap: gap, cx: W / 2 };
       for (let i = 0; i < 7; i++) {
         const d = new Date(today); d.setDate(d.getDate() + i); d.setHours(21, 0, 0, 0);
@@ -3423,7 +3447,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         txt(i === 0 ? 'Today' : DAYS[d.getDay()], x, rowY + 28, 12, i === sel ? 700 : 500, i === sel ? '#F5EFE3' : 'rgba(195, 204, 221, 0.8)', 'center');
         if (sameDay(d, ev.full) || sameDay(d, ev.nw)) txt(sameDay(d, ev.full) ? 'Full' : 'New', x, rowY + 44, 11, 700, '#FFC94D', 'center');
       }
-      listY = H * 0.8; rowGap = 58; cards = true;
+      listY = Math.max(H * 0.8, rowY + 96); rowGap = 58; cards = true;  // v53: stays below the moved row
     } else if (look === 'dial') {
       // A: huge moon at the left edge, a ticked dial that turns with the list, items along the dial
       const k = W / 390, T = tuneOf('moon:dial'), C0 = -150 * k + T.x * W, C1 = H * (0.53 + T.y), R = 262 * k;
@@ -3463,8 +3487,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         else GLB.draw(c, sx, sy, R, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: -0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.2 });
       }
       ringHalf(true);
-      txt('Moon menu', W / 2, H * 0.125 + 18, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      if (cur) txt(cur.group, W / 2, H * 0.16 + 18, 24, 500, '#F5EFE3', 'center');
+      txt('Moon menu', W / 2, H * 0.125, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      if (cur) txt(cur.group, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
       txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       const s0 = ringPlace(scene, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
@@ -3473,8 +3497,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const k = W / 390, sx = W / 2, sy = H * 0.49, R = 76 * k, roll = -0.3, pitch = -0.42;
       const ok1 = PG.need('saturn', 'saturn.jpg'), ok2 = PG.need('ring', 'saturn-ring.png');
       if (ok1 && ok2) PG.draw(c, sx, sy, R, { mode: 'planet', tex: 'saturn', rings: 'ring', roll: roll, pitch: pitch, light: [-0.75, 0.4, 0.55], tint: '#EADBB8', expo: 1.25, margin: 1.3, rot: 0.4 });
-      txt('Moon menu', W / 2, H * 0.125 + 18, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      if (cur) txt(cur.group, W / 2, H * 0.16 + 18, 24, 500, '#F5EFE3', 'center');
+      txt('Moon menu', W / 2, H * 0.125, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      if (cur) txt(cur.group, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
       txt('Swipe sideways to turn the rings · tap to open', W / 2, H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R * 2.36, sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll) };
       const s0 = ringPlace(scene, Math.PI / 2);
@@ -3619,7 +3643,19 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && planet.calm) keepAwake(true); });
   // 7 (v37): the northern lights band (auroral oval) seen from space: green glow around the north, only on the night
   // side. NOAA's Kp for today makes it brighter and pushes it further south (about 2.5° per Kp step above 3).
+  // v53 (battery): the band is drawn into a cached picture, redrawn every 0.5 s or when the Earth turned 0.3°
+  const auCv = document.createElement('canvas'), auC = auCv.getContext('2d'), auKey = { t: -1e9, lon: 1e9, w: 0, h: 0 };
   function drawAuroraSpace(c, cx, cy, R, centerLon, lv, now, toView) {
+    const cw = c.canvas.width, ch = c.canvas.height;
+    if (cw !== auKey.w || ch !== auKey.h || now - auKey.t > 500 || Math.abs(centerLon - auKey.lon) > 0.3) {
+      if (auCv.width !== cw || auCv.height !== ch) { auCv.width = cw; auCv.height = ch; }
+      auC.setTransform(1, 0, 0, 1, 0, 0); auC.clearRect(0, 0, cw, ch); auC.setTransform(c.getTransform());
+      drawAuroraSpace0(auC, cx, cy, R, centerLon, lv, now, toView);
+      auKey.t = now; auKey.lon = centerLon; auKey.w = cw; auKey.h = ch;
+    }
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'lighter'; c.drawImage(auCv, 0, 0); c.restore();
+  }
+  function drawAuroraSpace0(c, cx, cy, R, centerLon, lv, now, toView) {
     solarFetch();
     const kp = SOL && SOL.kp ? SOL.kp[localDay(new Date())] || 0 : 2, rad = Math.PI / 180, t = reduce ? 0 : now / 1000;
     const latC = 67 - Math.max(0, kp - 3) * 2.5, a = Math.min(1, 0.3 + kp * 0.1);
@@ -3673,38 +3709,40 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // v51 (user): the moon is placed by its real direction from the Earth, the same way as the sun, so it turns with
     // the Earth (spin, Watch) and moves with the time; it shows only while it is on our side (mvz > 0), fading out behind.
     const mdl = (mpos.sub.lon - centerLon) * rad, mdec = mpos.sub.lat * rad;
-    const mv = toView([Math.sin(mdl) * Math.cos(mdec), Math.sin(mdec), Math.cos(mdl) * Math.cos(mdec)]), moonA = clamp((mv[2] + 0.05) / 0.15, 0, 1);
-    if (moonA > 0 && GLB.ok) {
+    const mv = toView([Math.sin(mdl) * Math.cos(mdec), Math.sin(mdec), Math.cos(mdl) * Math.cos(mdec)]), mSink = clamp((0.05 - mv[2]) / 0.25, 0, 1);
+    if (mSink < 1 && GLB.ok) {  // v53 (mockup C): the moon also sets behind the Earth's edge, its glow fading
       const mx = cx + clamp(mv[0], -1, 1) * (W / 2 - 34), mr = 15 * k, limbM = cy - Math.sqrt(Math.max(0, R * R - (mx - cx) * (mx - cx)));
-      c.save(); c.globalAlpha = moonA;
       // v47 (user): always a small gap (~10 px) between the moon and the Earth's glowing air
       const airY = cy - Math.sqrt(Math.max(0, R * R * 1.07 * 1.07 - (mx - cx) * (mx - cx)));
       // and never on the time chips (H * 0.3, 36 px tall) unless Watch hides them; if there is no room, the gap to the Earth wins
       const chipLow = st.watch ? H * 0.1 : H * 0.3 + 18 + mr + 8;
-      const my = Math.min(Math.max(limbM - 8 - Math.max(0, mv[2]) * (limbM - 8 - H * 0.42), chipLow), airY - mr - 10);
+      const my0 = Math.min(Math.max(limbM - 8 - Math.max(0, mv[2]) * (limbM - 8 - H * 0.42), chipLow), airY - mr - 10);
+      const my = my0 * (1 - mSink) + (limbM + mr + 6) * mSink;
+      c.save(); c.globalAlpha = 1 - mSink;
       const mg = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3.2); mg.addColorStop(0, 'rgba(210, 222, 245, ' + (0.12 + 0.18 * mnNow.fraction).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(210, 222, 245, 0)');
       c.fillStyle = mg; c.fillRect(mx - mr * 3.3, my - mr * 3.3, mr * 6.6, mr * 6.6);
-      GLB.draw(c, mx, my, mr, { mode: 'moon', light: realMoonLight(mnNow.phase), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0.6, margin: 1.6 });
       c.restore();
-      if (moonA > 0.5) planetMoon = { x: mx, y: my };
+      GLB.draw(c, mx, my, mr, { mode: 'moon', light: realMoonLight(mnNow.phase), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0.6, margin: 1.6 });
+      if (mSink < 0.5) planetMoon = { x: mx, y: my };
     }
     {
       const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad, lv = toView([Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)]);
       // v41: the far sun, seen from space (user): always on the side the light comes from (lv). Sun in front of us
       // (our side is in day): up in the sky; behind the Earth (night): low behind the edge, only its glow peeks out.
       // Drawn before the Earth, so the Earth covers it.
-      // v49 (user): the sun shows only while the side we see is lit; it fades out as it goes behind the Earth
-      // (lv[2] = how much the sun is in front: > 0.1 fully shown, < -0.05 gone) and back at sunrise
-      const sunA = clamp((lv[2] + 0.05) / 0.15, 0, 1);
-      if (GLB.ok && sunA > 0) {
-        c.save(); c.globalAlpha = sunA;
-        const sx = cx + clamp(lv[0], -1, 1) * (W / 2 - 34), limbY = cy - Math.sqrt(Math.max(0, R * R - (sx - cx) * (sx - cx)));
-        const sy = lv[2] >= 0 ? limbY - 8 - lv[2] * (limbY - 8 - H * 0.42) : limbY - 8 - lv[2] * 34, sr = 13 * k;
+      // v53 (user, mockup C): as the sun goes behind the Earth (lv[2] from 0.05 down to -0.2, sink 0 -> 1) it sinks
+      // behind the Earth's edge and the Earth (drawn after it) hides it; its glow fades with it, so nothing peeks on the
+      // dark side (v49 wish). It comes back up the same way at sunrise.
+      const sink = clamp((0.05 - lv[2]) / 0.25, 0, 1);
+      if (GLB.ok && sink < 1) {
+        const sx = cx + clamp(lv[0], -1, 1) * (W / 2 - 34), limbY = cy - Math.sqrt(Math.max(0, R * R - (sx - cx) * (sx - cx))), sr = 13 * k;
+        const sy = (limbY - 8 - Math.max(0, lv[2]) * (limbY - 8 - H * 0.42)) * (1 - sink) + (limbY + sr + 6) * sink;
+        c.save(); c.globalAlpha = 1 - sink;
         const sg = c.createRadialGradient(sx, sy, sr * 0.8, sx, sy, sr * 4.5); sg.addColorStop(0, 'rgba(255, 214, 150, 0.35)'); sg.addColorStop(1, 'rgba(255, 214, 150, 0)');
         c.fillStyle = sg; c.fillRect(sx - sr * 4.6, sy - sr * 4.6, sr * 9.2, sr * 9.2);
-        if (sy < limbY - 4 && sunA > 0.5) planetSun = { x: sx, y: sy };  // v42: tap the sun -> Sun menu
-        GLB.draw(c, sx, sy, sr, { mode: 'sun', tint: '#FFC94D', rot: now / 1000 * 0.02, time: now / 1000, glow: 0.8, margin: 1.6 });
         c.restore();
+        if (sy < limbY - 4 && sink < 0.5) planetSun = { x: sx, y: sy };  // v42: tap the sun -> Sun menu
+        GLB.draw(c, sx, sy, sr, { mode: 'sun', tint: '#FFC94D', rot: now / 1000 * 0.02, time: now / 1000, glow: 0.8, margin: 1.6 });
       }
       // v42: until the Earth photos have loaded (slow mobile data), a simple drawn Earth with the real lit side
       if (!ok) drawnEarth(c, cx, cy, R, lv);
@@ -4000,7 +4038,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     { const rr = $('sunScreen').getBoundingClientRect(); addRipple('sun', e.clientX - rr.left, e.clientY - rr.top); }
     if (e.target.closest('#core')) { tween('press', 1, 110); const up = () => { tween('press', 0, 420); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); }; window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pts.size === 2) { startPinch(); return; }
+    if (pts.size === 2) { if (drag) endDrag(); return; }  // v53: two fingers only in the look editor (gesture rule)
     if (pts.size > 2 || pinch) return;
     st.spin = null;
     stopTween('rot');
@@ -4047,7 +4085,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   (function () {
     const el = $('planetScreen');
     let p0 = null;
-    el.addEventListener('pointerdown', (e) => { p0 = { x: e.clientX, y: e.clientY, id: e.pointerId, mode: '' }; el.classList.add('dragging'); });
+    let skyTap = null, holdT = 0, held = false;
+    el.addEventListener('pointerdown', (e) => {
+      p0 = { x: e.clientX, y: e.clientY, id: e.pointerId, mode: '' }; el.classList.add('dragging');
+      // v53: hold the Earth (0.7 s, without moving) = Watch, like holding the sun or moon opens its editor
+      clearTimeout(holdT); held = false;
+      if (!st.watch && !e.target.closest('button')) holdT = setTimeout(() => { if (p0 && !p0.mode) { held = true; setWatch(true); } }, 700);
+    });
+    window.addEventListener('pointermove', (e) => { if (p0 && e.pointerId === p0.id && Math.hypot(e.clientX - p0.x, e.clientY - p0.y) > 10) clearTimeout(holdT); });
     window.addEventListener('pointermove', (e) => {
       if (!p0 || e.pointerId !== p0.id) return;
       const dx = e.clientX - p0.x, dy0 = e.clientY - p0.y;
@@ -4072,6 +4117,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         p0 = null; el.classList.remove('dragging'); hapt('swipe'); kick();
         return;
       }
+      clearTimeout(holdT);
+      if (held) { held = false; p0 = null; el.classList.remove('dragging'); el.style.transform = ''; return; }  // the hold started Watch: this lift is not a tap
       const dy = e.clientY - p0.y, dx = e.clientX - p0.x, tap = Math.abs(dx) < 10 && Math.abs(dy) < 10;
       const r = el.getBoundingClientRect(), tx = p0.x - r.left, ty = p0.y - r.top; p0 = null;
       el.classList.remove('dragging'); el.style.transform = '';
@@ -4086,6 +4133,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetMoon && Math.hypot(tx - planetMoon.x, ty - planetMoon.y) < 44) { hapt('press'); setCalm(false); hidePlanet(); if (S.mode === 'two') goMoon(); }
       else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSun && Math.hypot(tx - planetSun.x, ty - planetSun.y) < 44) { hapt('press'); setCalm(false); hidePlanet(); goSun(); }
       else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSpot && Math.hypot(tx - planetSpot.x, ty - planetSpot.y) < 44) { hapt('press'); viennaCard(); }
+      // v53: double-tap the empty sky or Earth = Watch (the clock keeps its own double-tap for the night clock)
+      else if (tap) {
+        const tn = performance.now();
+        if (skyTap && tn - skyTap.t < 320 && Math.hypot(tx - skyTap.x, ty - skyTap.y) < 30) { skyTap = null; setWatch(true); }
+        else skyTap = { t: tn, x: tx, y: ty };
+      }
     };
     window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     $('planetUp').addEventListener('click', () => hidePlanet());
@@ -4861,6 +4914,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const s = sunToday();
     $('sunLine').textContent = 'Today' + inCity(' in ') + ': sunrise ' + fmtHour(s.rise) + ', sunset ' + fmtHour(s.set) + '. The sky follows these times.';
   }
+  $('speedBtn').addEventListener('click', () => { hideOverlay($('settings')); speed.start(); });  // v53
   $('tipsAgain').addEventListener('click', () => { S.visits = 0; S.hints = {}; S.tips = 'on'; showTips = true; hintsDone = {}; save(); fillForm(); kick(); toast('All tips show again.'); });
   function openSettings() { st.peek = true; st.peekFrom = st.screen; fillForm(); showOverlay($('settings')); updateLift(); }
   function peekScreen(which) {
