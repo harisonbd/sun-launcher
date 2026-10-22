@@ -1213,7 +1213,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       '    vec3 c = vec3(0.0);',
       '    float lumb = dot(uHas > 0.5 ? surf(n, uRot) : vec3(0.8, 0.5, 0.2), vec3(0.3, 0.59, 0.11));', // outside the if: surf uses fwidth
       '    if (inside > 0.0) {',
-      '      vec2 g = suv(n, uRot) * 38.0;',
+      '      vec2 g = suv(n, uRot) * 38.0 * (1.0 + uDet);',  // uDet: finer grains for a very big sun (Clock dial)
       '      float w1 = fbm(g + vec2(uTime * 0.03, 0.0));',
       '      float gran = smoothstep(0.35, 0.7, fbm(g * 1.15 + w1 * 2.4 - vec2(0.0, uTime * 0.04)));',
       '      c = mix(vec3(0.95, 0.42, 0.06), vec3(1.0, 0.93, 0.68), clamp(gran * 0.4 + lumb * 0.6, 0.0, 1.0));',
@@ -2013,12 +2013,20 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         const hy = cy + coreR * 1.25;
         const fl = c.createLinearGradient(0, hy, 0, H); fl.addColorStop(0, '#2a0845'); fl.addColorStop(1, '#07010f');
         c.fillStyle = fl; c.fillRect(0, hy, W, H - hy);
-        c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(255, 62, 165, 0.55)'; c.shadowColor = NEON.pink; c.shadowBlur = 6; c.lineWidth = 1.2;
+        // floor grid: all lines in one path, glow = a wide faint stroke under a thin one (no shadowBlur: it lagged on the phone, 22 Oct)
+        c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
         const sh = (rt * 0.35) % 1;
-        for (let k = 0; k < 14; k++) { const t = (k + sh) / 14, y = hy + (H - hy) * t * t; c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
-        for (let i = -10; i <= 10; i++) { c.beginPath(); c.moveTo(cx + i * W * 0.02, hy); c.lineTo(cx + i * W * 0.2, H); c.stroke(); }
+        c.beginPath();
+        for (let k = 0; k < 14; k++) { const t = (k + sh) / 14, y = hy + (H - hy) * t * t; c.moveTo(0, y); c.lineTo(W, y); }
+        for (let i = -10; i <= 10; i++) { c.moveTo(cx + i * W * 0.02, hy); c.lineTo(cx + i * W * 0.2, H); }
+        c.strokeStyle = 'rgba(255, 62, 165, 0.16)'; c.lineWidth = 4; c.stroke();
+        c.strokeStyle = 'rgba(255, 62, 165, 0.55)'; c.lineWidth = 1.2; c.stroke();
+        // horizon line
+        c.beginPath(); c.moveTo(0, hy); c.lineTo(W, hy);
+        c.strokeStyle = 'rgba(255, 62, 165, 0.22)'; c.lineWidth = 9; c.stroke();
+        c.strokeStyle = 'rgba(255, 62, 165, 0.9)'; c.lineWidth = 2; c.stroke();
+        c.strokeStyle = 'rgba(255, 250, 245, 0.8)'; c.lineWidth = 0.8; c.stroke();
         c.restore();
-        tube(segP([0, hy], [W, hy]), NEON.pink, 2);
       }
     }
     // the sun itself
@@ -2039,11 +2047,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         [Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4].forEach((a) => { const p = sp(coreR, a); c.fillStyle = '#3a3440'; c.fillRect(p[0] - 3, p[1] - 3, 6, 6); });
       } else if (ns === 'synth') {
         // 80s sun: yellow to pink to purple, stripe cuts in the lower half moving down
-        c.save();
-        c.shadowColor = NEON.pink; c.shadowBlur = 40;
+        // pink glow as a soft gradient (was shadowBlur 40)
+        c.save(); c.globalCompositeOperation = 'lighter';
+        c.fillStyle = radial(cx, cy, coreR * 0.9, coreR * 1.7, [[0, hexA(NEON.pink, 0.45)], [1, hexA(NEON.pink, 0)]]);
+        c.fillRect(cx - coreR * 1.8, cy - coreR * 1.8, coreR * 3.6, coreR * 3.6);
+        c.restore();
         const g = c.createLinearGradient(0, cy - coreR, 0, cy + coreR); g.addColorStop(0, '#FFE45C'); g.addColorStop(0.5, '#FF7A59'); g.addColorStop(1, '#C02FA0');
         c.beginPath(); c.arc(cx, cy, coreR, 0, 2 * Math.PI); c.fillStyle = g; c.fill();
-        c.restore();
         c.save(); c.beginPath(); c.arc(cx, cy, coreR + 1, 0, 2 * Math.PI); c.clip(); c.globalCompositeOperation = 'destination-out';
         const off = (rt * 6) % 12;
         for (let k = 0; k < 7; k++) { const y = cy + coreR * 0.05 + k * 12 + off, hgt = 1.5 + k * 1.1; c.fillRect(cx - coreR, y, coreR * 2, hgt); }
@@ -2362,7 +2372,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     } else {
       // like A. Clock-dial moon: a huge sun at the left edge, a ticked dial that turns, the apps along the dial
       const C0 = -150 * k, C1 = H * 0.53, R = 262 * k;
-      sunAt(C0, C1, R, { glow: 0.9, margin: 1.12, rot: 0.4 + t * 0.02, detail: 1 });
+      // boiling surface (user, 22 Oct: the stretched map looked hand-drawn), with finer grains for this big sun
+      sunAt(C0, C1, R, { glow: 0.9, margin: 1.12, rot: 0.4 + t * 0.02, boil: true, detail: 0.7 });
       c.save(); c.lineCap = 'round';
       const turn = pos * 7.2, off = ((turn % 1.8) + 1.8) % 1.8;
       for (let a = -54 + (1.8 - off); a <= 54; a += 1.8) {
@@ -2984,6 +2995,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (on) { $('bubble').hidden = false; kick(); }
     else bubbleTimer = setTimeout(() => { $('bubble').hidden = true; }, 500);
   }
+  // the Earth screen waits just above the top edge and follows the finger down
+  function startPlanetPeek() { const pl = $('planetScreen'); pl.hidden = false; pl.classList.add('dragging'); planet.peek = true; }
   function onMove(e) {
     if (!drag || pinch) return;
     const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0, dist = Math.sqrt(dx * dx + dy * dy);
@@ -2996,7 +3009,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         drag.decided = true;
         // sun views: a drag inside the list area scrolls the apps; outside it a straight swipe changes the screen
         const vg = sv ? sunViewGeo() : null, inList = sv && drag.y0 >= vg.top && drag.y0 <= vg.bottom;
-        const straight = !inList && Math.abs(dy) > 1.6 * Math.abs(dx) && Math.abs(along) < 0.45 * dist;
+        // up to about 37° from straight up or down counts as a screen swipe (27° missed thumb swipes, 22 Oct)
+        const straight = !inList && Math.abs(dy) > 1.3 * Math.abs(dx) && Math.abs(along) < 0.6 * dist;
         if (S.mode === 'two' && dy < 0 && straight) {
           drag.kind = 'toMoon';
           worlds.classList.add('dragging');
@@ -3006,8 +3020,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         // Swipe down pulls the Earth screen down after the finger (user, 22 Oct)
         if (dy > 0 && straight && !planet.on) {
           drag.kind = 'toPlanet';
-          const pl = $('planetScreen');
-          pl.hidden = false; pl.classList.add('dragging'); planet.peek = true;
+          startPlanetPeek();
           onMove(e);
           return;
         }
@@ -3094,7 +3107,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       if (d.moved ? dy > st.H * 0.12 : d.handle) goSun(); else goMoon();
       if (st.pos < 0) snapPos();
     } else if (d.kind === 'toPlanet') {
-      const pl = $('planetScreen'), go = dy > st.H * 0.12;
+      const pl = $('planetScreen'), go = d.moved ? dy > st.H * 0.12 : d.handle;
       planet.peek = false;
       pl.classList.remove('dragging');
       if (go) { pl.classList.remove('away'); pl.style.transform = ''; showPlanet(); }
@@ -3150,7 +3163,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     setTimeout(() => { suppressClick = false; }, 400);
   }
   $('sunScreen').addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.corner, .handle, .viewbtn, .chips')) return;
+    if (e.target.closest('.corner, .handle, .viewbtn, .chips, .to-planet')) return;
     { const rr = $('sunScreen').getBoundingClientRect(); addRipple('sun', e.clientX - rr.left, e.clientY - rr.top); }
     if (e.target.closest('#core')) { tween('press', 1, 110); const up = () => { tween('press', 0, 420); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); }; window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -3211,7 +3224,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     };
     window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     $('planetUp').addEventListener('click', () => hidePlanet());
-    $('toPlanet').addEventListener('click', () => showPlanet());
+    // "Earth" at the top is a handle like "Swipe up · Moon": drag it down, or tap it (keyboard: Enter)
+    $('toPlanet').addEventListener('pointerdown', (e) => { if (planet.on) return; startPlanetPeek(); startDrag('toPlanet', e, 0, true); });
+    $('toPlanet').addEventListener('click', (e) => { if (e.detail === 0) showPlanet(); });
   })();
   $('toMoon').addEventListener('click', (e) => { if (e.detail === 0) goMoon(); });
   $('toSun').addEventListener('click', (e) => { if (e.detail === 0) goSun(); });
