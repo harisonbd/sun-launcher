@@ -520,7 +520,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       <fieldset>
         <legend>Front app (on / off)</legend>
         <div class="seg">
-          <input type="checkbox" name="frontFx" id="ff-beam" value="beam"><label for="ff-beam">Beam</label>
+          <!-- Beam hidden (v36, user: "does not really look nice") -->
+          <input type="checkbox" name="frontFx" id="ff-beam" value="beam" hidden><label for="ff-beam" hidden>Beam</label>
           <input type="checkbox" name="frontFx" id="ff-lift" value="lift"><label for="ff-lift">Bigger</label>
           <input type="checkbox" name="frontFx" id="ff-dim" value="dim"><label for="ff-dim">Dim others</label>
           <!-- Shortcut buttons hidden (v34): they were only examples; bring back when apps have real shortcuts -->
@@ -767,7 +768,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   // 23 Oct: Rolodex moon removed (user); Real moon phase and Minimal moon added from the early mockups.
   if (['dots', 'arc', 'crescent', 'phase', 'minimal', 'dial', 'moondial', 'dial3d', 'orb', 'small'].indexOf(S.moonLook) === -1) S.moonLook = S.moonLook === 'saturn' ? 'moondial' : 'dots';  // v35: Saturn out for now
   if (RAY_STYLES.indexOf(S.rayStyle) === -1) S.rayStyle = 'glow';
-  S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1 && v !== 'chips');
+  S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1 && v !== 'chips' && v !== 'beam');
   if (['glow', 'phase'].indexOf(S.moonDial) === -1) S.moonDial = 'glow';
   if (S.pairLink !== 'off') S.pairLink = 'on';  // v34: Same style on both screens, on by default
   if (['edge', 'eclipse', 'orb', 'small'].indexOf(S.sunList) === -1) S.sunList = 'edge';
@@ -1071,6 +1072,18 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   // Real moon phase (SunCalc formulas, checked: full moon 25 Jan 2024 = 99.8 %, new moon 8 Apr 2024 = 0 %, first quarter = 50 %).
   // phase: 0 new, 0.25 first quarter, 0.5 full, 0.75 last quarter.
+  // Moon height and direction for Vienna (SunCalc formulas, v36): alt 0 = horizon, az 90 = east, 180 = south, 270 = west
+  function moonAltAz(date) {
+    const rad = Math.PI / 180, d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545, e = rad * 23.4397;
+    const L = rad * (218.316 + 13.176396 * d), M = rad * (134.963 + 13.064993 * d), F = rad * (93.272 + 13.229350 * d);
+    const l = L + rad * 6.289 * Math.sin(M), b = rad * 5.128 * Math.sin(F);
+    const ra = Math.atan2(Math.sin(l) * Math.cos(e) - Math.tan(b) * Math.sin(e), Math.cos(l));
+    const dec = Math.asin(Math.sin(b) * Math.cos(e) + Math.cos(b) * Math.sin(e) * Math.sin(l));
+    const lw = rad * -LON, phi = rad * LAT, Hh = rad * (280.16 + 360.9856235 * d) - lw - ra;
+    const alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(Hh));
+    const az = Math.atan2(Math.sin(Hh), Math.cos(Hh) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi));
+    return { alt: alt / rad, az: az / rad + 180 };
+  }
   function moonIllum(date) {
     const rad = Math.PI / 180, e = rad * 23.4397, d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545;
     const raOf = (l, b) => Math.atan2(Math.sin(l) * Math.cos(e) - Math.tan(b) * Math.sin(e), Math.cos(l));
@@ -3350,10 +3363,32 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // the Earth floats a few pixels up and down; Vienna stays in place on it (user, 22 Oct)
     const cx = W / 2, cy = H * 1.197 + (reduce ? 0 : Math.sin(now / 1000 * 0.6) * 4), R = 520 * k, centerLon = 32, ss = subsolar(d), rad = Math.PI / 180;
     const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
+    // 1 (v36): the real moon in the sky above the Earth, in its real phase, where it is now as seen from Vienna
+    // (left = east, middle = south, right = west; higher = higher in the sky); hidden when it is below the horizon
+    const mpos = moonAltAz(d), mnNow = moonIllum(d), yTop = cy - R;
+    planetMoon = null;
+    if (mpos.alt > 0 && GLB.ok) {
+      const mx = W / 2 + ((mpos.az - 180) / 180) * (W / 2 - 30), my = yTop - 26 - Math.min(mpos.alt, 60) / 60 * (yTop - 26 - H * 0.4), mr = 15 * k;
+      const mg = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3.2); mg.addColorStop(0, 'rgba(210, 222, 245, ' + (0.12 + 0.18 * mnNow.fraction).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(210, 222, 245, 0)');
+      c.fillStyle = mg; c.fillRect(mx - mr * 3.3, my - mr * 3.3, mr * 6.6, mr * 6.6);
+      GLB.draw(c, mx, my, mr, { mode: 'moon', light: realMoonLight(mnNow.phase), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0.6, margin: 1.6 });
+      planetMoon = { x: mx, y: my };
+    }
     if (ok) {
-      const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad;
-      PG.draw(c, cx, cy, R, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.012, light: [Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)], expo: 1.15, margin: 1.06 });
+      const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad, lv = [Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)];
+      PG.draw(c, cx, cy, R, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.012, light: lv, expo: 1.15, margin: 1.06 });
+      // 2 (v36): a thin glowing atmosphere along the Earth's edge, brighter on the side the sun shines from
+      c.save(); c.globalCompositeOperation = 'lighter';
+      const rim = (g) => { c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R * 1.07, 0, 2 * Math.PI); c.arc(cx, cy, R * 0.985, 0, 2 * Math.PI, true); c.fill('evenodd'); };
+      const ag = c.createRadialGradient(cx, cy, R * 0.985, cx, cy, R * 1.07);
+      ag.addColorStop(0, 'rgba(120, 180, 255, 0)'); ag.addColorStop(0.18, 'rgba(120, 180, 255, 0.28)'); ag.addColorStop(1, 'rgba(120, 180, 255, 0)');
+      rim(ag);
+      const lx2 = cx + lv[0] * R * 0.85, ly2 = cy - lv[1] * R * 0.85, sg = c.createRadialGradient(lx2, ly2, 0, lx2, ly2, R * 1.1);
+      sg.addColorStop(0, 'rgba(160, 210, 255, 0.45)'); sg.addColorStop(1, 'rgba(160, 210, 255, 0)');
+      rim(sg);
+      c.restore();
       const vx = cx + R * Math.cos(LAT * rad) * Math.sin((LON - centerLon) * rad), vy = cy - R * Math.sin(LAT * rad);
+      planetSpot = { x: vx, y: vy };
       c.save(); c.globalCompositeOperation = 'lighter';
       const vg = c.createRadialGradient(vx, vy, 0, vx, vy, 14); vg.addColorStop(0, 'rgba(255, 214, 140, 0.95)'); vg.addColorStop(1, 'rgba(255, 214, 140, 0)');
       c.fillStyle = vg; c.beginPath(); c.arc(vx, vy, 14, 0, 2 * Math.PI); c.fill(); c.restore();
@@ -3364,17 +3399,44 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const T = (s, y, size, weight, col) => { c.font = weight + ' ' + size + 'px ' + font; c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s, W / 2, y); };
     T(DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()], H * 0.115, 17, 500, 'rgba(240, 242, 248, 0.85)');
     T(String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'), H * 0.2, Math.round(96 * k), 200, '#F5EFE3');
+    // chips (v36): bigger, with drawn icons (sunrise, sunset, the moon in its real phase)
     const sn = sunToday(), mn = moonNow();
-    const chips = ['☀ Sunrise ' + fmtHour(sn.rise), '☀ Sunset ' + fmtHour(sn.set), '☾ Moon ' + Math.round(mn.fraction * 100) + ' %'];
-    c.font = '500 12.5px ' + font;
-    const ws = chips.map((s) => c.measureText(s).width + 22), gap = 8, total = ws.reduce((a, b) => a + b, 0) + gap * 2;
+    const chips = [['rise', fmtHour(sn.rise)], ['set', fmtHour(sn.set)], ['moon', Math.round(mn.fraction * 100) + ' %']];
+    c.font = '600 14px ' + font;
+    const ws = chips.map((s) => c.measureText(s[1]).width + 52), gap = 10, total = ws.reduce((a, b) => a + b, 0) + gap * 2;
     let x = (W - total) / 2; const y = H * 0.3;
     chips.forEach((s, i) => {
-      c.beginPath(); if (c.roundRect) c.roundRect(x, y - 15, ws[i], 30, 14); else c.rect(x, y - 15, ws[i], 30);
-      c.fillStyle = 'rgba(28, 43, 76, 0.55)'; c.fill(); c.strokeStyle = 'rgba(255, 255, 255, 0.14)'; c.lineWidth = 1; c.stroke();
-      c.fillStyle = 'rgba(240, 242, 248, 0.92)'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s, x + ws[i] / 2, y);
+      c.beginPath(); if (c.roundRect) c.roundRect(x, y - 18, ws[i], 36, 18); else c.rect(x, y - 18, ws[i], 36);
+      c.fillStyle = 'rgba(28, 43, 76, 0.6)'; c.fill(); c.strokeStyle = 'rgba(255, 255, 255, 0.16)'; c.lineWidth = 1; c.stroke();
+      const ix = x + 20, iy = y;
+      if (s[0] === 'moon') { if (GLB.ok) GLB.draw(c, ix, iy, 8, { mode: 'moon', light: realMoonLight(mn.phase), rot: -0.2, shine: 0.15, expo: 1.4, glow: 0, margin: 1.3 }); }
+      else {
+        // half sun on a horizon line, with an arrow up (sunrise) or down (sunset)
+        c.save(); c.strokeStyle = '#FFC94D'; c.fillStyle = '#FFC94D'; c.lineWidth = 1.6; c.lineCap = 'round';
+        c.beginPath(); c.arc(ix, iy + 4, 6, Math.PI, 2 * Math.PI); c.fill();
+        c.beginPath(); c.moveTo(ix - 10, iy + 4.5); c.lineTo(ix + 10, iy + 4.5); c.stroke();
+        const up = s[0] === 'rise', ay = up ? iy - 9 : iy - 4, by2 = up ? iy - 4 : iy - 9;
+        c.beginPath(); c.moveTo(ix + 9, by2 + (up ? 0 : 0)); c.lineTo(ix + 9, ay); c.stroke();
+        c.beginPath(); c.moveTo(ix + 6.5, up ? ay + 2.5 : ay - 2.5); c.lineTo(ix + 9, ay); c.lineTo(ix + 11.5, up ? ay + 2.5 : ay - 2.5); c.stroke();
+        c.restore();
+      }
+      c.fillStyle = 'rgba(244, 246, 250, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(s[1], x + 36, y);
       x += ws[i] + gap;
     });
+  }
+  // 3 (v36): tap Vienna on the Earth (or the moon in the sky) for a short card
+  let planetSpot = null, planetMoon = null;
+  function viennaCard() {
+    const sn = sunToday(), mn = moonNow(), w = S.weather === 'real' && WX ? WX : null, len = sn.set - sn.rise;
+    const ev = skyEvents().find((e) => !e.minor), sol = SOL ? solarInfo() : null;
+    const lines = [
+      w ? 'Now: ' + Math.round(w.temp) + ' °C, ' + wxText(w.code) + ', ' + w.cloud + ' % clouds' : 'Weather: switch on Real weather in Settings to see it here',
+      'Sunrise ' + fmtHour(sn.rise) + ' · Sunset ' + fmtHour(sn.set) + ' · ' + Math.floor(len) + ' h ' + Math.round((len % 1) * 60) + ' min of daylight',
+      'Moon: ' + moonPhaseName(mn.phase) + ', ' + Math.round(mn.fraction * 100) + ' % lit',
+      ev ? 'Next in the sky: ' + ev.title + ' · ' + evDate(ev.date) : '',
+      sol && SOL ? 'Sun: ' + sol.title.toLowerCase() + ' · ' + sol.storm : ''].filter(Boolean);
+    openSheet('Vienna', lines.join('\n'), '', false, [{ label: 'Coming up in the sky', run: openEvents }]);
+    $('sheetText').style.whiteSpace = 'pre-line';
   }
   function showPlanet(fromStart) {
     const el = $('planetScreen');
@@ -3635,13 +3697,16 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   (function () {
     const el = $('planetScreen');
     let p0 = null;
-    el.addEventListener('pointerdown', (e) => { p0 = { y: e.clientY, id: e.pointerId }; el.classList.add('dragging'); });
+    el.addEventListener('pointerdown', (e) => { p0 = { x: e.clientX, y: e.clientY, id: e.pointerId }; el.classList.add('dragging'); });
     window.addEventListener('pointermove', (e) => { if (!p0 || e.pointerId !== p0.id) return; const dy = Math.min(0, e.clientY - p0.y); el.style.transform = 'translateY(' + dy + 'px)'; });
     const up = (e) => {
       if (!p0 || e.pointerId !== p0.id) return;
-      const dy = e.clientY - p0.y; p0 = null;
+      const dy = e.clientY - p0.y, dx = e.clientX - p0.x, tap = Math.abs(dx) < 10 && Math.abs(dy) < 10;
+      const r = el.getBoundingClientRect(), tx = p0.x - r.left, ty = p0.y - r.top; p0 = null;
       el.classList.remove('dragging'); el.style.transform = '';
       if (dy < -st.H * 0.12) hidePlanet();
+      // a tap on Vienna (or on the moon in the sky) opens the Vienna card (v36)
+      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && [planetSpot, planetMoon].some((p) => p && Math.hypot(tx - p.x, ty - p.y) < 44)) { hapt('press'); viennaCard(); }
     };
     window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     $('planetUp').addEventListener('click', () => hidePlanet());
