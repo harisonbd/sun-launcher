@@ -297,13 +297,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <span>Earth</span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>
       </button>
-      <button type="button" class="corner tl" id="sunSettings" aria-label="Playground settings">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
-        <span>Settings</span>
+      <!-- 22 Oct: same round buttons as the moon screen: Search upper left, Settings upper right -->
+      <button type="button" class="roundbtn msearch" id="sunSearch" aria-label="Search apps and functions">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
       </button>
-      <button type="button" class="corner tr" id="sunSearch" aria-label="Search apps and functions">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
-        <span>Search</span>
+      <button type="button" class="roundbtn gear" id="sunSettings" aria-label="Playground settings">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
       </button>
       <button type="button" class="corner bl" id="sunRecent" aria-label="Recent apps">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
@@ -407,7 +406,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   <div id="settings" class="overlay" hidden>
     <form class="sheet" id="settingsForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
       <h2 id="setTitle">Settings</h2>
-      <!-- Simpler menu (21 Oct): the looks you try most at the top, the rest under "More settings". -->
+      <!-- 22 Oct: grouped into sections; each option keeps its name, so saved settings stay. -->
       <fieldset>
         <legend>Looks</legend>
         <div class="seg big">
@@ -416,7 +415,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         </div>
         <p id="themeLine" class="helpline"></p>
       </fieldset>
-      <!-- 22 Oct: Sun style and Moon style are picked on their own, each in tabs (Normal / Extra / Planets). -->
+      <details class="more grp" open>
+      <summary>☀ Sun</summary>
       <fieldset>
         <legend>Sun style</legend>
         <div class="tabs" data-group="sun" role="tablist">
@@ -456,6 +456,60 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <p class="helpline">Real sun today, Minimal sun and Clock dial match the moon looks. Solar activity is sample data for now.</p>
       </fieldset>
       <fieldset>
+        <legend>Sun colour</legend>
+        <div class="seg swatches">
+          <input type="radio" name="color" id="col-0" value="time"><label for="col-0" class="time"><span class="sr">Follow the time of day</span></label>
+          <input type="radio" name="color" id="col-1" value="#FFC94D"><label for="col-1" style="--c: #FFC94D"><span class="sr">Gold</span></label>
+          <input type="radio" name="color" id="col-2" value="#FF9F43"><label for="col-2" style="--c: #FF9F43"><span class="sr">Orange</span></label>
+          <input type="radio" name="color" id="col-3" value="#F7D774"><label for="col-3" style="--c: #F7D774"><span class="sr">Pale yellow</span></label>
+          <input type="radio" name="color" id="col-4" value="#FFB3A1"><label for="col-4" style="--c: #FFB3A1"><span class="sr">Sunset pink</span></label>
+          <input type="radio" name="color" id="col-5" value="#7FD3FF"><label for="col-5" style="--c: #7FD3FF"><span class="sr">Ice blue</span></label>
+          <input type="radio" name="color" id="col-6" value="#FF6B3D"><label for="col-6" style="--c: #FF6B3D"><span class="sr">Ember red</span></label>
+        </div>
+        <p style="margin: 0; font-size: 13px; color: var(--ink-2)">The first colour follows the time of day.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Front app (on / off)</legend>
+        <div class="seg">
+          <input type="checkbox" name="frontFx" id="ff-beam" value="beam"><label for="ff-beam">Beam</label>
+          <input type="checkbox" name="frontFx" id="ff-lift" value="lift"><label for="ff-lift">Bigger</label>
+          <input type="checkbox" name="frontFx" id="ff-dim" value="dim"><label for="ff-dim">Dim others</label>
+          <input type="checkbox" name="frontFx" id="ff-chips" value="chips"><label for="ff-chips">Shortcut buttons</label>
+          <input type="checkbox" name="frontFx" id="ff-halo" value="halo"><label for="ff-halo">Halo</label>
+          <input type="checkbox" name="frontFx" id="ff-glint" value="glint"><label for="ff-glint">Light spot</label>
+        </div>
+        <p class="helpline">Halo and Light spot look best with Black hole.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Sun direction</legend>
+        <div class="seg">
+          <input type="radio" name="dir" id="dir-flat" value="flat"><label for="dir-flat">Flat</label>
+          <input type="radio" name="dir" id="dir-diagonal" value="diagonal"><label for="dir-diagonal">45° turn</label>
+          <input type="radio" name="dir" id="dir-tall" value="tall"><label for="dir-tall">Sideways</label>
+          <input type="radio" name="dir" id="dir-rolodex" value="rolodex"><label for="dir-rolodex">Rolodex</label>
+          <input type="radio" name="dir" id="dir-custom" value="custom"><label for="dir-custom">My view</label>
+        </div>
+        <p class="helpline">Two fingers on the sun: move up or down = tilt, twist = turn, pinch = dial size.</p>
+        <button type="button" class="btn" id="viewReset">Reset view</button>
+      </fieldset>
+      <fieldset>
+        <legend>Sun tilt</legend>
+        <div class="range-row">
+          <input type="range" id="tilt" name="tilt" min="10" max="75" step="1" aria-label="Sun tilt in degrees">
+          <output id="tiltOut" for="tilt"></output>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Sun size</legend>
+        <div class="range-row">
+          <input type="range" id="size" name="size" min="80" max="160" step="5" aria-label="Sun size in percent">
+          <output id="sizeOut" for="size"></output>
+        </div>
+      </fieldset>
+      </details>
+      <details class="more grp">
+      <summary>☾ Moon</summary>
+      <fieldset>
         <legend>Moon style</legend>
         <div class="tabs" data-group="moon" role="tablist">
           <button type="button" data-tab="normal">Normal</button>
@@ -490,6 +544,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         </div>
         <p id="moonLine" class="helpline"></p>
       </fieldset>
+      </details>
+      <details class="more grp">
+      <summary>Sky &amp; weather</summary>
       <fieldset>
         <legend>Sky</legend>
         <div class="seg">
@@ -515,7 +572,39 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <p id="liveLine" class="helpline"></p>
       </fieldset>
       <fieldset>
-        <legend>Layout</legend>
+        <legend>Time of day</legend>
+        <div class="seg">
+          <input type="radio" name="sky" id="sky-clock" value="clock"><label for="sky-clock">Follow the clock</label>
+          <input type="radio" name="sky" id="sky-preview" value="preview"><label for="sky-preview">Pick a time</label>
+          <input type="radio" name="sky" id="sky-night" value="night"><label for="sky-night">Always night</label>
+        </div>
+        <div class="range-row" id="hourRow">
+          <input type="range" id="hour" name="hour" min="0" max="24" step="0.25" aria-label="Time of day for the sky">
+          <output id="hourOut" for="hour"></output>
+        </div>
+        <p id="sunLine" style="margin: 0; font-size: 13px; color: var(--ink-2)"></p>
+        <button type="button" class="btn" id="playDay">Play a day in 20 seconds</button>
+      </fieldset>
+      </details>
+      <details class="more grp">
+      <summary>Layout</summary>
+      <fieldset>
+        <legend>Start screen</legend>
+        <div class="seg">
+          <input type="radio" name="startScreen" id="ss-planet" value="planet"><label for="ss-planet">Earth (planet)</label>
+          <input type="radio" name="startScreen" id="ss-sun" value="sun"><label for="ss-sun">Sun dial</label>
+        </div>
+        <p class="helpline">Earth: the app opens with the big clock and the real Earth; swipe up for the sun.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Menus</legend>
+        <div class="seg">
+          <input type="radio" name="mode" id="mode-two" value="two"><label for="mode-two">Sun + moon</label>
+          <input type="radio" name="mode" id="mode-one" value="one"><label for="mode-one">One menu</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Swap (moves into the styles soon)</legend>
         <div class="seg">
           <input type="radio" name="swap" id="swap-off" value="off"><label for="swap-off">Sun dial</label>
           <input type="radio" name="swap" id="swap-on" value="on"><label for="swap-on">Swap</label>
@@ -537,68 +626,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           </div>
         </div>
       </fieldset>
-      <fieldset>
-        <legend>Front app (on / off)</legend>
-        <div class="seg">
-          <input type="checkbox" name="frontFx" id="ff-beam" value="beam"><label for="ff-beam">Beam</label>
-          <input type="checkbox" name="frontFx" id="ff-lift" value="lift"><label for="ff-lift">Bigger</label>
-          <input type="checkbox" name="frontFx" id="ff-dim" value="dim"><label for="ff-dim">Dim others</label>
-          <input type="checkbox" name="frontFx" id="ff-chips" value="chips"><label for="ff-chips">Shortcut buttons</label>
-          <input type="checkbox" name="frontFx" id="ff-halo" value="halo"><label for="ff-halo">Halo</label>
-          <input type="checkbox" name="frontFx" id="ff-glint" value="glint"><label for="ff-glint">Light spot</label>
-        </div>
-        <p class="helpline">Halo and Light spot look best with Black hole.</p>
-      </fieldset>
-      <details class="more" id="moreSettings">
-      <summary>More settings</summary>
-      <fieldset>
-        <legend>Start screen</legend>
-        <div class="seg">
-          <input type="radio" name="startScreen" id="ss-planet" value="planet"><label for="ss-planet">Earth (planet)</label>
-          <input type="radio" name="startScreen" id="ss-sun" value="sun"><label for="ss-sun">Sun dial</label>
-        </div>
-        <p class="helpline">Earth: the app opens with the big clock and the real Earth; swipe up for the sun.</p>
-      </fieldset>
-      <fieldset>
-        <legend>Menus</legend>
-        <div class="seg">
-          <input type="radio" name="mode" id="mode-two" value="two"><label for="mode-two">Sun + moon</label>
-          <input type="radio" name="mode" id="mode-one" value="one"><label for="mode-one">One menu</label>
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>Sun direction</legend>
-        <div class="seg">
-          <input type="radio" name="dir" id="dir-flat" value="flat"><label for="dir-flat">Flat</label>
-          <input type="radio" name="dir" id="dir-diagonal" value="diagonal"><label for="dir-diagonal">45° turn</label>
-          <input type="radio" name="dir" id="dir-tall" value="tall"><label for="dir-tall">Sideways</label>
-          <input type="radio" name="dir" id="dir-rolodex" value="rolodex"><label for="dir-rolodex">Rolodex</label>
-          <input type="radio" name="dir" id="dir-custom" value="custom"><label for="dir-custom">My view</label>
-        </div>
-        <p class="helpline">Two fingers on the sun: move up or down = tilt, twist = turn, pinch = dial size.</p>
-        <button type="button" class="btn" id="viewReset">Reset view</button>
-      </fieldset>
-      <fieldset>
-        <legend>Sun tilt</legend>
-        <div class="range-row">
-          <input type="range" id="tilt" name="tilt" min="10" max="75" step="1" aria-label="Sun tilt in degrees">
-          <output id="tiltOut" for="tilt"></output>
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>Sun size</legend>
-        <div class="range-row">
-          <input type="range" id="size" name="size" min="80" max="160" step="5" aria-label="Sun size in percent">
-          <output id="sizeOut" for="size"></output>
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>Effects</legend>
-        <div class="seg">
-          <input type="radio" name="fx" id="fx-fancy" value="fancy"><label for="fx-fancy">Fancy</label>
-          <input type="radio" name="fx" id="fx-calm" value="calm"><label for="fx-calm">Calm (saves battery)</label>
-        </div>
-      </fieldset>
+      </details>
+      <details class="more grp">
+      <summary>Feel</summary>
       <fieldset>
         <legend>Vibration</legend>
         <div class="seg">
@@ -615,32 +645,15 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         </div>
       </fieldset>
       <fieldset>
-        <legend>Time of day</legend>
+        <legend>Effects</legend>
         <div class="seg">
-          <input type="radio" name="sky" id="sky-clock" value="clock"><label for="sky-clock">Follow the clock</label>
-          <input type="radio" name="sky" id="sky-preview" value="preview"><label for="sky-preview">Pick a time</label>
-          <input type="radio" name="sky" id="sky-night" value="night"><label for="sky-night">Always night</label>
+          <input type="radio" name="fx" id="fx-fancy" value="fancy"><label for="fx-fancy">Fancy</label>
+          <input type="radio" name="fx" id="fx-calm" value="calm"><label for="fx-calm">Calm (saves battery)</label>
         </div>
-        <div class="range-row" id="hourRow">
-          <input type="range" id="hour" name="hour" min="0" max="24" step="0.25" aria-label="Time of day for the sky">
-          <output id="hourOut" for="hour"></output>
-        </div>
-        <p id="sunLine" style="margin: 0; font-size: 13px; color: var(--ink-2)"></p>
-        <button type="button" class="btn" id="playDay">Play a day in 20 seconds</button>
       </fieldset>
-      <fieldset>
-        <legend>Sun colour</legend>
-        <div class="seg swatches">
-          <input type="radio" name="color" id="col-0" value="time"><label for="col-0" class="time"><span class="sr">Follow the time of day</span></label>
-          <input type="radio" name="color" id="col-1" value="#FFC94D"><label for="col-1" style="--c: #FFC94D"><span class="sr">Gold</span></label>
-          <input type="radio" name="color" id="col-2" value="#FF9F43"><label for="col-2" style="--c: #FF9F43"><span class="sr">Orange</span></label>
-          <input type="radio" name="color" id="col-3" value="#F7D774"><label for="col-3" style="--c: #F7D774"><span class="sr">Pale yellow</span></label>
-          <input type="radio" name="color" id="col-4" value="#FFB3A1"><label for="col-4" style="--c: #FFB3A1"><span class="sr">Sunset pink</span></label>
-          <input type="radio" name="color" id="col-5" value="#7FD3FF"><label for="col-5" style="--c: #7FD3FF"><span class="sr">Ice blue</span></label>
-          <input type="radio" name="color" id="col-6" value="#FF6B3D"><label for="col-6" style="--c: #FF6B3D"><span class="sr">Ember red</span></label>
-        </div>
-        <p style="margin: 0; font-size: 13px; color: var(--ink-2)">The first colour follows the time of day.</p>
-      </fieldset>
+      </details>
+      <details class="more grp" id="moreSettings">
+      <summary>More</summary>
       <fieldset>
         <legend>Speed meter (test)</legend>
         <div class="seg">
@@ -3163,7 +3176,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     setTimeout(() => { suppressClick = false; }, 400);
   }
   $('sunScreen').addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.corner, .handle, .viewbtn, .chips, .to-planet')) return;
+    if (e.target.closest('.corner, .roundbtn, .handle, .viewbtn, .chips, .to-planet')) return;
     { const rr = $('sunScreen').getBoundingClientRect(); addRipple('sun', e.clientX - rr.left, e.clientY - rr.top); }
     if (e.target.closest('#core')) { tween('press', 1, 110); const up = () => { tween('press', 0, 420); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); }; window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
