@@ -1765,6 +1765,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       '    c = mix(c, vec3(1.0) * (lit * 1.05 + 0.02), cl * 0.9);',
       '    c += pow(night, vec3(1.8)) * vec3(1.0, 0.8, 0.55) * 3.5 * (1.0 - dayK) * (1.0 - cl * 0.8);',  // city lights bright, dark land stays dark (23 Oct)
       '    c += day * 0.035 * (1.0 - dayK);',  // a little earthshine so the night side is not pure black
+      '    c += vec3(0.55, 0.62, 0.78) * cl * (0.08 + 0.22 * uGlow) * (1.0 - dayK);',  // v41: night clouds, lit by the moon (uGlow = how full it is)
       '    c += vec3(0.35, 0.6, 1.0) * pow(1.0 - zz, 2.6) * (0.25 + 0.75 * smoothstep(-0.25, 0.4, mu0)) * 0.9;',
       '    col = c * inside; a = inside;',
       '    float halo = exp(-max(r - 1.0, 0.0) * 40.0) * (1.0 - inside) * smoothstep(-0.3, 0.5, dot(normalize(vec3(p, 0.0)), Ln));',
@@ -3463,7 +3464,17 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     }
     if (ok) {
       const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad, lv = [Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)];
-      PG.draw(c, cx, cy, R, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.012, light: lv, expo: 1.15, margin: 1.06 });
+      // v41: the far sun, seen from space (user): always on the side the light comes from (lv). Sun in front of us
+      // (our side is in day): up in the sky; behind the Earth (night): low behind the edge, only its glow peeks out.
+      // Drawn before the Earth, so the Earth covers it.
+      if (GLB.ok) {
+        const sx = cx + clamp(lv[0], -1, 1) * (W / 2 - 34), limbY = cy - Math.sqrt(Math.max(0, R * R - (sx - cx) * (sx - cx)));
+        const sy = lv[2] >= 0 ? limbY - 8 - lv[2] * (limbY - 8 - H * 0.42) : limbY - 8 - lv[2] * 34, sr = 13 * k;
+        const sg = c.createRadialGradient(sx, sy, sr * 0.8, sx, sy, sr * 4.5); sg.addColorStop(0, 'rgba(255, 214, 150, 0.35)'); sg.addColorStop(1, 'rgba(255, 214, 150, 0)');
+        c.fillStyle = sg; c.fillRect(sx - sr * 4.6, sy - sr * 4.6, sr * 9.2, sr * 9.2);
+        GLB.draw(c, sx, sy, sr, { mode: 'sun', tint: '#FFC94D', rot: now / 1000 * 0.02, time: now / 1000, glow: 0.8, margin: 1.6 });
+      }
+      PG.draw(c, cx, cy, R, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.012, light: lv, expo: 1.15, margin: 1.06, glow: mnNow.fraction });
       // 2 (v36): a thin glowing atmosphere along the Earth's edge, brighter on the side the sun shines from
       c.save(); c.globalCompositeOperation = 'lighter';
       const rim = (g) => { c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R * 1.07, 0, 2 * Math.PI); c.arc(cx, cy, R * 0.985, 0, 2 * Math.PI, true); c.fill('evenodd'); };
