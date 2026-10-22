@@ -123,6 +123,10 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 
 .item { position: absolute; left: 0; top: 0; pointer-events: auto; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px 0 6px; box-sizing: border-box; border: none; background: transparent; color: #C3CADB; font-size: 16px; font-weight: 500; white-space: nowrap; transform-origin: 14px 50%; cursor: pointer; }
 .item .grp { display: none; }
+/* Moon 3D dial (v34): items as round initials like the sun dial; the chosen one stays a pill with its name */
+#app.ml-dial3d .item:not(.sel) { width: 40px; height: 40px; min-height: 40px; padding: 0; justify-content: center; border-radius: 50%; background: rgba(34, 48, 84, 0.88); border: 1.5px solid rgba(220, 226, 238, 0.35); color: #EEF0F5; }
+#app.ml-dial3d .item:not(.sel) .nm { display: none; }
+#app.ml-dial3d .item:not(.sel)::before { content: attr(data-ini); font-size: 14px; font-weight: 700; }
 .item.card { width: var(--cardw, 240px); height: 58px; min-height: 58px; padding: 0 16px; gap: 12px; border-radius: 14px; background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid color-mix(in srgb, var(--moon) 20%, var(--line)); color: var(--ink); font-size: 17px; transform-origin: 50% 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
 .item.card .grp { display: block; margin-left: auto; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .item.card.sel { background: var(--moon); border-color: var(--moon); color: var(--moon-ink); }
@@ -218,6 +222,9 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 .tabpane { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .tabpane[hidden] { display: none; }
 .sv-hide, .seg label[hidden] { display: none !important; }
+.switchrow { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 15px; font-weight: 500; cursor: pointer; }
+.switchrow input { width: 22px; height: 22px; accent-color: var(--sun); }
+fieldset[hidden] { display: none; }
 details.more > summary { list-style: none; min-height: 48px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #5B6B8C; display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 600; cursor: pointer; }
 details.more > summary::-webkit-details-marker { display: none; }
 details.more > summary::after { content: '\25BE'; }
@@ -427,20 +434,38 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         </div>
         <p id="themeLine" class="helpline"></p>
       </fieldset>
+      <!-- v34: Screen style pairs: each sun screen has a moon partner with the same name -->
+      <fieldset id="pairSet">
+        <legend>Screen style (sun + moon)</legend>
+        <label class="switchrow"><input type="checkbox" id="pairLink" name="pairLink"> Same style on both screens</label>
+        <div class="tabs" data-group="pair" role="tablist">
+          <button type="button" data-tab="normal">Normal</button>
+          <button type="button" data-tab="extra">Extra</button>
+          <button type="button" data-tab="planets">Planets</button>
+        </div>
+        <div class="tabpane" data-group="pair" data-tab="normal"><div class="seg" id="pairNormal"></div></div>
+        <div class="tabpane" data-group="pair" data-tab="extra" hidden><div class="seg" id="pairExtra"></div></div>
+        <div class="tabpane" data-group="pair" data-tab="planets" hidden><div class="seg" id="pairPlanets"></div></div>
+        <p id="pairLine" class="helpline"></p>
+      </fieldset>
       <details class="more grp" open>
       <summary>☀ Sun</summary>
-      <!-- 22 Oct (v29): pick the screen first; the style list below shows only the styles that change that screen -->
-      <fieldset>
+      <!-- 22 Oct (v29): pick the screen first; the style list below shows only the styles that change that screen.
+           v34: hidden while "Same style on both screens" is on (then Screen style above picks both). -->
+      <fieldset id="sunScreenSet">
         <legend>Sun screen</legend>
         <div class="seg">
           <input type="radio" name="sunView" id="sv-dial" value="dial"><label for="sv-dial">Sun dial</label>
+          <input type="radio" name="sunView" id="sv-ring" value="ring"><label for="sv-ring">Sun ring</label>
           <input type="radio" name="sunView" id="sv-today" value="today"><label for="sv-today">Real sun today</label>
           <input type="radio" name="sunView" id="sv-minimal" value="minimal"><label for="sv-minimal">Minimal sun</label>
           <input type="radio" name="sunView" id="sv-clock" value="clock"><label for="sv-clock">Clock dial</label>
+          <input type="radio" name="sunView" id="sv-rings" value="rings"><label for="sv-rings">Ringed sun</label>
         </div>
         <div class="sublg">Sun by a list (was Swap)</div>
         <div class="seg">
           <input type="radio" name="sunView" id="sv-edge" value="edge"><label for="sv-edge">Big edge</label>
+          <input type="radio" name="sunView" id="sv-arc" value="arc"><label for="sv-arc">Sun glow arc</label>
           <input type="radio" name="sunView" id="sv-eclipse" value="eclipse"><label for="sv-eclipse">Eclipse</label>
           <input type="radio" name="sunView" id="sv-orb" value="orb"><label for="sv-orb">Glow orb</label>
           <input type="radio" name="sunView" id="sv-small" value="small"><label for="sv-small">Small</label>
@@ -498,7 +523,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           <input type="checkbox" name="frontFx" id="ff-beam" value="beam"><label for="ff-beam">Beam</label>
           <input type="checkbox" name="frontFx" id="ff-lift" value="lift"><label for="ff-lift">Bigger</label>
           <input type="checkbox" name="frontFx" id="ff-dim" value="dim"><label for="ff-dim">Dim others</label>
-          <input type="checkbox" name="frontFx" id="ff-chips" value="chips"><label for="ff-chips">Shortcut buttons</label>
+          <!-- Shortcut buttons hidden (v34): they were only examples; bring back when apps have real shortcuts -->
+          <input type="checkbox" name="frontFx" id="ff-chips" value="chips" hidden><label for="ff-chips" hidden>Shortcut buttons</label>
           <input type="checkbox" name="frontFx" id="ff-halo" value="halo"><label for="ff-halo">Halo</label>
           <input type="checkbox" name="frontFx" id="ff-glint" value="glint"><label for="ff-glint">Light spot</label>
         </div>
@@ -533,7 +559,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       </details>
       <details class="more grp">
       <summary>☾ Moon</summary>
-      <fieldset>
+      <fieldset id="moonStyleSet">
         <legend>Moon style</legend>
         <div class="tabs" data-group="moon" role="tablist">
           <button type="button" data-tab="normal">Normal</button>
@@ -545,6 +571,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
             <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
             <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
             <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
+            <input type="radio" name="moonLook" id="moon-orb" value="orb"><label for="moon-orb">Moon glow orb</label>
+            <input type="radio" name="moonLook" id="moon-small" value="small"><label for="moon-small">Small moon</label>
+            <input type="radio" name="moonLook" id="moon-set" value="set"><label for="moon-set">Moonset</label>
           </div>
         </div>
         <div class="tabpane" data-group="moon" data-tab="extra" hidden>
@@ -553,6 +582,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
             <input type="radio" name="moonLook" id="moon-minimal" value="minimal"><label for="moon-minimal">Minimal moon</label>
             <input type="radio" name="moonLook" id="moon-dial" value="dial"><label for="moon-dial">Clock dial</label>
             <input type="radio" name="moonLook" id="moon-moondial" value="moondial"><label for="moon-moondial">Moon dial</label>
+            <input type="radio" name="moonLook" id="moon-dial3d" value="dial3d"><label for="moon-dial3d">Moon 3D dial</label>
           </div>
           <div class="sublg">Moon dial look (was Swap)</div>
           <div class="seg">
@@ -719,7 +749,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const FRONT_FX = ['beam', 'lift', 'dim', 'chips', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'sign', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -742,15 +772,16 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   S.visits = (S.visits || 0) + 1;
   let showTips = S.visits <= 3;
   // 23 Oct: Rolodex moon removed (user); Real moon phase and Minimal moon added from the early mockups.
-  if (['dots', 'arc', 'crescent', 'phase', 'minimal', 'dial', 'moondial', 'saturn'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
+  if (['dots', 'arc', 'crescent', 'phase', 'minimal', 'dial', 'moondial', 'dial3d', 'orb', 'small', 'set', 'saturn'].indexOf(S.moonLook) === -1) S.moonLook = 'dots';
   if (RAY_STYLES.indexOf(S.rayStyle) === -1) S.rayStyle = 'glow';
-  S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1);
+  S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1 && v !== 'chips');
   if (['glow', 'phase'].indexOf(S.moonDial) === -1) S.moonDial = 'glow';
+  if (S.pairLink !== 'off') S.pairLink = 'on';  // v34: Same style on both screens, on by default
   if (['edge', 'eclipse', 'orb', 'small', 'setting'].indexOf(S.sunList) === -1) S.sunList = 'edge';
   // 22 Oct (v27): the Swap switch is gone; its looks are now a Sun screen (sun by a list) and a Moon style (Moon dial)
   if (S.swap === 'on') { S.sunView = S.sunList; S.moonLook = 'moondial'; S.theme = 'custom'; }
   S.swap = 'off';
-  if (['dial', 'today', 'minimal', 'clock', 'edge', 'eclipse', 'orb', 'small', 'setting'].indexOf(S.sunView) === -1) S.sunView = 'dial';
+  if (['dial', 'ring', 'today', 'minimal', 'clock', 'edge', 'arc', 'eclipse', 'orb', 'small', 'setting', 'rings'].indexOf(S.sunView) === -1) S.sunView = 'dial';
   if (['live', 'sunset', 'stars', 'clear'].indexOf(S.skyPhoto) === -1) S.skyPhoto = 'off';
   if (NEON_STYLES.indexOf(S.neonStyle) === -1) S.neonStyle = 'minimal';
   if (S.liveSun !== 'on') S.liveSun = 'off';
@@ -2411,7 +2442,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       return;
     }
     if (GLB.ok && look !== 'neon') {
-      GLB.draw(c, bx, by, coreR * press, { mode: 'sun', boil: look === 'plasma', tint: sun, rot: (reduce ? 0 : now / 1000 * 0.02) + st.rot * Math.PI / 180 * 0.35, roll: G.roll * Math.PI / 180, pitch: -G.tilt * Math.PI / 180 * 0.3, time: reduce ? 0 : now / 1000, glow: (0.55 + 0.5 * light + 0.3 * (st.press || 0)) * (look === 'plasma' ? 0.7 : 1), margin: 1.9 });
+      // v34: the globe turns like one solid body with the ring: its axis stands at a right angle to the ring
+      // (pitch = tilt - 90°) and it turns as far as the apps do (before: 30 % tilt, 35 % turn, so it looked 90° off)
+      GLB.draw(c, bx, by, coreR * press, { mode: 'sun', boil: look === 'plasma', tint: sun, rot: (reduce ? 0 : now / 1000 * 0.02) + st.rot * Math.PI / 180, roll: G.roll * Math.PI / 180, pitch: (G.tilt - 90) * Math.PI / 180, time: reduce ? 0 : now / 1000, glow: (0.55 + 0.5 * light + 0.3 * (st.press || 0)) * (look === 'plasma' ? 0.7 : 1), margin: 1.9 });
       return;
     }
     if (look === 'blackhole') {
@@ -2510,7 +2543,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       el.classList.toggle('flip', flip);
       el.style.zIndex = String(500 + Math.round(p[3]));
       el.style.opacity = (0.3 + 0.7 * f).toFixed(2);
-      el.classList.toggle('mini', dd > (flip ? 1.25 : 0.8));
+      // v34: only the front app shows its name; the neighbours show their round initial (they slid under the front pill)
+      el.classList.toggle('mini', dd > (flip ? 1.25 : 0.3));
     });
     const core = $('core');
     core.style.transform = 'translate(' + (cx - 42).toFixed(1) + 'px,' + (cy - 42).toFixed(1) + 'px) scale(' + (S.size / 100).toFixed(3) + ')';
@@ -2548,7 +2582,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
 
   // ---- Sun views: the same apps (APPS, st.rot, frontIndex) shown as cards, a list or a big dial ----
-  const SUN_LIST = ['edge', 'eclipse', 'orb', 'small', 'setting'];
+  const SUN_LIST = ['edge', 'arc', 'eclipse', 'orb', 'small', 'setting'];
   function sunViewOn() { return S.sunView !== 'dial'; }
   // the list area: a drag that starts here scrolls the apps; above or below it swipes to the Earth or the Moon
   function sunViewGeo() {
@@ -2556,6 +2590,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (v === 'today') return { top: H * 0.67, bottom: H * 0.9, row: 58 };
     if (v === 'minimal') return { top: H * 0.45, bottom: H * 0.88, row: 44 };
     if (SUN_LIST.indexOf(v) !== -1) return { top: H * 0.1, bottom: H * 0.6, row: 50 };
+    if (v === 'ring' || v === 'rings') return { top: H * 0.2, bottom: H * 0.8, row: 55, sideways: true };
     return { top: H * 0.22, bottom: H * 0.86, row: 40 };
   }
   function sunScene(c, W, H, v, now, look) {
@@ -2583,6 +2618,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const r = fn(dOf(i), i === front);
       el.classList.toggle('sv-off', !r);
       if (!r) return;
+      if (r.mini) el.classList.add('mini');
       el.style.transform = 'translate(' + r.x.toFixed(1) + 'px,' + r.y.toFixed(1) + 'px) translate(' + (r.left ? '0' : '-50%') + ',-50%) scale(' + (r.s || 1).toFixed(3) + ')';
       el.style.opacity = clamp(r.o, 0, 1).toFixed(2);
       el.style.zIndex = String(i === front ? 520 : 510);
@@ -2632,7 +2668,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       c.beginPath(); c.moveTo(24, y0); c.lineTo(24 + w, y0); c.strokeStyle = 'rgba(255, 230, 200, 0.15)'; c.stroke();
       const hn = hourNow();
       c.beginPath(); c.arc(24 + hn / 24 * w, y0 - alt(hn) * 18, 3.4, 0, 2 * Math.PI); c.fillStyle = st.sun; c.fill();
-      place((d) => d < -0.6 || d > 6.4 ? null : { left: true, x: 18, y: H * 0.5 + d * 44, o: d < 0 ? 1 + d * 1.6 : Math.min(1, 6.4 - d) });
+      // v34: the app above the chosen one shows too, greyed out more than the ones below (user, 22 Oct)
+      place((d) => d < -1.6 || d > 5.4 ? null : { left: true, x: 18, y: H * 0.53 + d * 44, o: d < -0.5 ? 0.35 * Math.min(1, 1.6 + d) : Math.min(1, 5.4 - d) });
     } else if (SUN_LIST.indexOf(v) !== -1) {
       // Sun by a list (was Swap, 22 Oct): a big sun at the right, the apps as pills on an arc of dots next to it
       const Ri = Math.min(W * 0.385, 150, H * 0.178) * 1.35, bx = W * 0.95, by = H * 0.34, sr = Ri * 1.02, rA = Ri * 1.2, stepA = 14 * Math.PI / 180;
@@ -2667,11 +2704,17 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       } else {
         // Big edge (reworked 22 Oct): fully lit boiling surface with fine grains, soft halo (the half-dark sun looked strange)
         halo(sr * 0.8, sr * 2.4, 0.22);
-        sunAt(bx, by, sr, { tex: 'sun4k', boil: !hd || look === 'plasma', detail: hd ? 0.2 : 0.5, glow: 0.8, margin: 1.3 });
+        sunAt(bx, by, sr, { tex: 'sun4k', boil: look === 'plasma', detail: hd ? 0.2 : 0.4, glow: 0.8, margin: 1.3 });
       }
       // the arc of dots; the chosen app sits at the left-most point
-      c.beginPath(); c.arc(bx, by, rA, Math.PI - 1.36, Math.PI + 1.36); c.strokeStyle = 'rgba(255, 240, 220, 0.18)'; c.lineWidth = 1; c.stroke();
-      for (let i = 0; i < n; i++) {
+      if (v === 'arc') {
+        // Sun glow arc (v34, partner of the moon's Glow arc): a glowing arc, brighter around the chosen app
+        c.save(); c.lineCap = 'round';
+        c.beginPath(); c.arc(bx, by, rA, Math.PI - 1.36, Math.PI + 1.36); c.strokeStyle = 'rgba(255, 236, 214, 0.5)'; c.lineWidth = 2; c.shadowColor = 'rgba(255, 210, 160, 0.7)'; c.shadowBlur = 10; c.stroke();
+        c.beginPath(); c.arc(bx, by, rA, Math.PI - 0.12, Math.PI + 0.12); c.strokeStyle = st.sun; c.lineWidth = 4; c.shadowColor = st.sun; c.shadowBlur = 14; c.stroke();
+        c.restore();
+      } else { c.beginPath(); c.arc(bx, by, rA, Math.PI - 1.36, Math.PI + 1.36); c.strokeStyle = 'rgba(255, 240, 220, 0.18)'; c.lineWidth = 1; c.stroke(); }
+      for (let i = 0; i < n && v !== 'arc'; i++) {
         const d = dOf(i);
         if (Math.abs(d) > 5.5 || i === front) continue;
         const a = d * stepA;
@@ -2685,11 +2728,39 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         const a = d * stepA;
         return { left: true, x: bx - rA * Math.cos(a) + 10, y: by + rA * Math.sin(a), s: 1 - Math.min(0.2, Math.abs(d) * 0.05), o: 1 - Math.min(0.75, Math.abs(d) * 0.17) };
       });
+    } else if (v === 'ring' || v === 'rings') {
+      // v34 partners of Moon dial and Saturn rings. Sun ring: the sun with a thin tilted ring, the apps as round icons
+      // on it, the front one a pill. Ringed sun: a smaller sun with wide Saturn-like rings, the apps as pills on the outer edge.
+      const rg = v === 'rings', k = W / 390, sx = W / 2, sy = H * 0.47, R = (rg ? 64 : 70) * k, roll = rg ? -0.3 : 0, pitch = rg ? -0.42 : -0.7;
+      const sc = { sx: sx, sy: sy, R: R, rr: R * (rg ? 2.6 : 2.15), sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll) };
+      const half = (front, rr, col, lw) => {
+        c.beginPath();
+        for (let q = 0; q <= 64; q++) { const p = ringPlace(Object.assign({}, sc, { rr: rr }), front ? q / 64 * Math.PI : Math.PI + q / 64 * Math.PI); if (q) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }
+        c.strokeStyle = col; c.lineWidth = lw; c.stroke();
+      };
+      const rings = (front) => {
+        if (rg) [[1.45, 'rgba(255, 214, 160, 0.16)', 10 * k], [1.75, 'rgba(255, 200, 140, 0.22)', 14 * k], [2.1, 'rgba(255, 226, 190, 0.14)', 12 * k], [2.45, 'rgba(255, 210, 160, 0.2)', 6 * k], [2.6, 'rgba(255, 236, 210, 0.5)', 1.2]]
+          .forEach((b) => half(front, R * b[0], b[1], b[2]));
+        else { half(front, sc.rr, 'rgba(255, 226, 190, 0.14)', 7); half(front, sc.rr, 'rgba(255, 236, 214, ' + (front ? 0.6 : 0.32) + ')', 1.4); }
+      };
+      rings(false);
+      sunAt(sx, sy, R, { glow: 0.9, margin: 1.7 });
+      rings(true);
+      txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
+      txt(APPS[front].name, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
+      place((d, isF) => {
+        const q = ringPlace(sc, Math.PI / 2 + d * (Math.PI * 2 / 12)), f = (q[2] + 1) / 2, ad = Math.abs(d), mA = 6;
+        const behind = q[2] < 0 && Math.hypot(q[0] - sx, q[1] - sy) < R * 1.15;
+        if (ad >= mA || behind) return null;
+        // only the front app is a pill with its name; the others are round icons, kept on the screen
+        return { x: clamp(q[0], 26, W - 26), y: q[1] + (isF ? 30 : 0), s: isF ? 1 : 0.78 + 0.3 * f, o: isF ? 1 : (0.35 + 0.6 * f) * Math.min(1, mA - ad), mini: !isF };
+      });
     } else {
       // like A. Clock-dial moon: a huge sun at the left edge, a ticked dial that turns, the apps along the dial
       const C0 = -150 * k, C1 = H * 0.53, R = 262 * k;
       // boiling surface (user, 22 Oct: the stretched map looked hand-drawn), with finer grains for this big sun
-      sunAt(C0, C1, R, { tex: 'sun4k', glow: 0.9, margin: 1.12, rot: 0.4 + t * 0.02, boil: !hd || look === 'plasma', detail: hd ? 0.25 : 0.7 });
+      sunAt(C0, C1, R, { tex: 'sun4k', glow: 0.9, margin: 1.12, rot: 0.4 + t * 0.02, boil: look === 'plasma', detail: hd ? 0.25 : 0.45 });
       c.save(); c.lineCap = 'round';
       const turn = pos * 7.2, off = ((turn % 1.8) + 1.8) % 1.8;
       for (let a = -54 + (1.8 - off); a <= 54; a += 1.8) {
@@ -2754,7 +2825,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       b.type = 'button';
       b.className = 'item' + (it.app ? ' app' : '');
       const d = document.createElement('span'); d.className = 'dot'; d.setAttribute('aria-hidden', 'true');
-      const t = document.createElement('span'); t.textContent = it.name;
+      const t = document.createElement('span'); t.textContent = it.name; t.className = 'nm';
+      b.dataset.ini = it.name.charAt(0);
       const gr = document.createElement('small'); gr.className = 'grp'; gr.setAttribute('aria-hidden', 'true'); gr.textContent = it.group;
       b.appendChild(d); b.appendChild(t); b.appendChild(gr);
       b.addEventListener('click', () => { if (suppressClick) return; pickItem(i); });
@@ -2786,8 +2858,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     st.pos = clamp(st.pos, 0, LIST.length - 1);
     lastLive = -1;
   }
+  // the list shape of a moon look: Glow orb, Small moon and Moonset use the Dots list (v34)
+  function moonShape() { const l = currentMoon(); return l === 'orb' || l === 'small' || l === 'set' ? 'dots' : l; }
   function moonGeo() {
-    const W = st.W, H = st.H, look = currentMoon();
+    const W = st.W, H = st.H, look = moonShape();
     const Ri = Math.min(W * 0.385, 150, H * 0.178), k = Ri / 150, cy = H * 0.5 - st.liftM;
     const g = { Ri: Ri, k: k, cy: cy, Ix: W * 0.77, Ox: W * 0.615, rO: 230 * k, rI: 215 * k, Cm: W * 0.692 };
     g.rA = Ri * 1.2;
@@ -2803,7 +2877,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (look === 'phase') { g.top = H * 0.64; g.bottom = H * 0.99; }
     if (look === 'minimal') { g.top = H * 0.46; g.bottom = H * 0.99; }
     if (look === 'dial') { g.top = H * 0.22; g.bottom = H * 0.86; }
-    if (look === 'saturn' || look === 'moondial') { g.top = H * 0.2; g.bottom = H * 0.8; }
+    if (look === 'saturn' || look === 'moondial' || look === 'dial3d') { g.top = H * 0.2; g.bottom = H * 0.8; }
     g.at = (alpha, role) => {
       const dx = -Math.cos(alpha), dy = Math.sin(alpha);
       if (look === 'rolodex') {
@@ -2828,7 +2902,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const liveIndex = () => clamp(Math.round(st.pos), 0, LIST.length - 1);
 
   function renderMoon(now, hour) {
-    const c = moonCv.getContext('2d'), W = st.W, H = st.H, look = currentMoon(), fx = fancy();
+    const c = moonCv.getContext('2d'), W = st.W, H = st.H, look = moonShape(), fx = fancy();
     c.clearRect(0, 0, W, H);
     const night = nightness(hour);
     if (S.skyPhoto === 'stars') drawStarMap(c, W, H, (0.4 + 0.35 * night) * (1 - 0.3 * moonFrSky()), now, [par.x, par.y], 700);
@@ -2875,16 +2949,44 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const wob = Math.sin(mt * 0.21) * 0.05 + st.pos * 0.012;
     // Moon dial uses the Saturn item style (pills on a ring)
     app.classList.toggle('ml-dial', look === 'dial');
-    app.classList.toggle('ml-saturn', look === 'saturn' || look === 'moondial');
+    app.classList.toggle('ml-saturn', look === 'saturn' || look === 'moondial' || look === 'dial3d');
+    app.classList.toggle('ml-dial3d', look === 'dial3d');
     if (look !== 'phase') $('moonEvent').hidden = true;
-    if (look === 'phase' || look === 'minimal' || look === 'dial' || look === 'saturn' || look === 'moondial') { moonScene(c, W, H, look, now, live, cur, G, night); return; }
+    if (look === 'phase' || look === 'minimal' || look === 'dial' || look === 'saturn' || look === 'moondial' || look === 'dial3d') { moonScene(c, W, H, look, now, live, cur, G, night); return; }
     if (S.moonPhase === 'real') {
       // moonlight: around full moon the night sky gets a soft glow from the moon (none at new moon)
       const fr = moonNow().fraction, ml = c.createRadialGradient(G.Ix, cy, G.Ri * 0.8, G.Ix, cy, Math.max(W, H) * 0.8);
       ml.addColorStop(0, 'rgba(210, 222, 245, ' + (0.16 * fr * (0.4 + 0.6 * night)).toFixed(3) + ')'); ml.addColorStop(1, 'rgba(210, 222, 245, 0)');
       c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = ml; c.fillRect(0, 0, W, H); c.restore();
     }
-    if (GLB.ok && (look === 'arc' || look === 'dots' || look === 'ring')) {
+    const look0 = currentMoon();
+    if (look0 === 'orb' || look0 === 'small' || look0 === 'set') {
+      // v34 partners of the sun's Glow orb, Small and Setting: the same dots list, a different moon
+      const bx = G.Ix + mx, by = cy + my, sr = G.Ri * 1.02;
+      const halo = (r0, r1, a) => { const hg = c.createRadialGradient(bx, by, r0, bx, by, r1); hg.addColorStop(0, 'rgba(210, 222, 245, ' + a + ')'); hg.addColorStop(1, 'rgba(210, 222, 245, 0)'); c.fillStyle = hg; c.fillRect(0, 0, W, H); };
+      if (look0 === 'orb') {
+        c.save(); c.globalCompositeOperation = 'lighter';
+        halo(0, sr * 1.5, 0.45); halo(sr * 0.4, sr * 3, 0.15);
+        const core = c.createRadialGradient(bx, by, 0, bx, by, sr * 0.5); core.addColorStop(0, 'rgba(245, 248, 255, 0.95)'); core.addColorStop(1, 'rgba(245, 248, 255, 0)');
+        c.fillStyle = core; c.fillRect(bx - sr, by - sr, sr * 2, sr * 2);
+        c.restore();
+      } else if (look0 === 'small') {
+        const s2 = sr * 0.36, sx2 = W * 0.82 + mx;
+        c.save(); c.globalCompositeOperation = 'lighter'; const hg = c.createRadialGradient(sx2, by, s2 * 0.8, sx2, by, s2 * 3.4); hg.addColorStop(0, 'rgba(210, 222, 245, 0.35)'); hg.addColorStop(1, 'rgba(210, 222, 245, 0)'); c.fillStyle = hg; c.fillRect(0, 0, W, H); c.restore();
+        if (GLB.ok) GLB.draw(c, sx2, by, s2, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: wob - 0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.4 });
+      } else {
+        // moonset: the moon cut by a horizon line, silver light along it, the ground below darker
+        const hy = by + sr * 0.62;
+        c.save(); c.beginPath(); c.rect(0, 0, W, hy); c.clip();
+        if (GLB.ok) GLB.draw(c, bx, by, sr, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: wob - 0.3, shine: 0.17, expo: 1.3, glow: 0.7, margin: 1.15 });
+        c.restore();
+        const hz = c.createLinearGradient(0, hy - 2, 0, hy + 40); hz.addColorStop(0, 'rgba(210, 222, 245, 0.4)'); hz.addColorStop(1, 'rgba(210, 222, 245, 0)');
+        c.fillStyle = hz; c.fillRect(0, hy, W, 40);
+        c.fillStyle = 'rgba(5, 8, 18, 0.5)'; c.fillRect(0, hy + 1, W, H - hy);
+        const lg = c.createLinearGradient(0, 0, W, 0); lg.addColorStop(0, 'rgba(225, 232, 248, 0)'); lg.addColorStop(0.75, 'rgba(225, 232, 248, 0.8)'); lg.addColorStop(1, 'rgba(225, 232, 248, 0.3)');
+        c.fillStyle = lg; c.fillRect(0, hy - 1, W, 2);
+      }
+    } else if (GLB.ok && (look === 'arc' || look === 'dots' || look === 'ring')) {
       GLB.draw(c, G.Ix + mx, cy + my, look === 'ring' ? G.rIn * 0.92 : G.Ri * 1.02, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: wob - 0.3, shine: 0.17, expo: 1.3, glow: 0.7, margin: 1.15 });
     } else if (GLB.ok && look === 'rolodex') {
       GLB.draw(c, W + 34 + mx, cy - 24 + my, Math.min(170, H * 0.21), { mode: 'moon', light: moonLight([-0.62, 0.32, 0.7]), rot: wob, shine: 0.1, expo: 1.2, glow: 0.8, margin: 1.15 });
@@ -3112,10 +3214,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       if (cur) txt(cur.group + ' · ' + (live + 1) + ' of ' + LIST.length, 24, H * 0.195, 13, 400, 'rgba(195, 204, 221, 0.9)');
       txt('Turn the dial · tap to open', W / 2, H * 0.9, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       scene = { kind: 'dial', C0: C0, C1: C1, r: 318 * k };
-    } else if (look === 'moondial') {
-      // Moon dial (was Swap, 22 Oct): the moon with a thin glowing ring; the menu items sit on the ring like on Saturn
-      const k = W / 390, sx = W / 2, sy = H * 0.49, R = 92 * k, roll = -0.18, pitch = -0.45;
-      scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R * 1.75, sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll) };
+    } else if (look === 'moondial' || look === 'dial3d') {
+      // Moon dial (was Swap, 22 Oct): the moon with a thin glowing ring; the menu items sit on the ring like on Saturn.
+      // Moon 3D dial (v34, partner of the Sun dial): flatter tilt like the sun dial, items as round initials, the chosen one a pill
+      const d3 = look === 'dial3d', k = W / 390, sx = W / 2, sy = H * 0.47, R = (d3 ? 66 : 92) * k, roll = d3 ? 0 : -0.18, pitch = d3 ? -0.7 : -0.45;
+      scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R * (d3 ? 2.15 : 1.75), sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll), maxAd: d3 ? 6 : 2.6, step: d3 ? 12 : 12 };
       const ringHalf = (front) => {
         c.beginPath();
         for (let q = 0; q <= 64; q++) { const p = ringPlace(scene, front ? q / 64 * Math.PI : Math.PI + q / 64 * Math.PI); if (q) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }
@@ -3188,14 +3291,15 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       if (scene && scene.kind === 'ring') {
         // on Saturn's ring: 12 places around, the chosen one in front as a white pill under its dot
         const q = ringPlace(scene, Math.PI / 2 + dd * (Math.PI * 2 / 12)), f = (q[2] + 1) / 2, sel = i === live;
-        const behind = q[2] < 0 && Math.hypot(q[0] - scene.sx, q[1] - scene.sy) < scene.R * 1.15, vis = ad < 6 && !behind;
+        // v34: the chosen item and 2 on each side (more piled up at the screen edges)
+        const mA = scene.maxAd || 2.6, behind = q[2] < 0 && Math.hypot(q[0] - scene.sx, q[1] - scene.sy) < scene.R * 1.15, vis = ad < mA && !behind;
         // keep the pill fully on the screen (v32: items at the ring's far left and right were cut off); widths cached
         const wk = sel ? '_ws' : '_wn';
         if (vis && !el[wk]) el[wk] = el.offsetWidth || 0;
         const half = (el[wk] || 0) / 2 * (sel ? 1 : 0.78 + 0.3 * f);
         q[0] = clamp(q[0], half + 8, W - half - 8);
         el.style.transform = 'translate(' + q[0].toFixed(1) + 'px,' + (q[1] + (sel ? 34 : 0)).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (sel ? 1 : 0.78 + 0.3 * f).toFixed(3) + ')';
-        el.style.opacity = vis ? (sel ? '1' : (0.3 + 0.6 * f).toFixed(2)) : '0';
+        el.style.opacity = vis ? (sel ? '1' : ((0.3 + 0.6 * f) * Math.min(1, mA - ad)).toFixed(2)) : '0';
         el.style.visibility = vis ? 'visible' : 'hidden';
         el.style.zIndex = String(sel ? 300 : Math.round(100 + f * 100));
         return;
@@ -3324,7 +3428,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         if (dist < 12) return;
         drag.decided = true;
         // sun views: a drag inside the list area scrolls the apps; outside it a straight swipe changes the screen
-        const vg = sv ? sunViewGeo() : null, inList = sv && drag.y0 >= vg.top && drag.y0 <= vg.bottom;
+        const vg = sv ? sunViewGeo() : null, inList = sv && !vg.sideways && drag.y0 >= vg.top && drag.y0 <= vg.bottom;
         // up to about 37° from straight up or down counts as a screen swipe (27° missed thumb swipes, 22 Oct)
         const straight = !inList && Math.abs(dy) > 1.3 * Math.abs(dx) && Math.abs(along) < 0.6 * dist;
         if (S.mode === 'two' && dy < 0 && straight) {
@@ -3342,7 +3446,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         }
       }
       // sun views scroll up and down: one row of finger movement = one app
-      st.rot = sv ? drag.start + dy / sunViewGeo().row * (360 / APPS.length) : drag.start - along * 0.5 * (G.sinT < 0 ? -1 : 1);
+      // ring screens turn with a sideways swipe (v34)
+      const svg = sv ? sunViewGeo() : null;
+      st.rot = sv ? drag.start + (svg.sideways ? dx : dy) / svg.row * (360 / APPS.length) : drag.start - along * 0.5 * (G.sinT < 0 ? -1 : 1);
       drag.samples.push({ t: performance.now(), v: st.rot });
       if (drag.samples.length > 8) drag.samples.shift();
       kick();
@@ -3352,7 +3458,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       kick();
     } else if (drag.kind === 'list') {
       // Saturn rings turn with a sideways swipe; the other looks scroll up and down
-      const ml = currentMoon(), ringL = ml === 'saturn' || ml === 'moondial', np = ringL ? drag.start - dx / 55 : drag.start - dy / (ml === 'rolodex' ? 62 : ml === 'phase' ? 58 : ml === 'minimal' ? 44 : ml === 'dial' ? 40 : 39);
+      const ml = currentMoon(), ringL = ml === 'saturn' || ml === 'moondial' || ml === 'dial3d', np = ringL ? drag.start - dx / 55 : drag.start - dy / (ml === 'rolodex' ? 62 : ml === 'phase' ? 58 : ml === 'minimal' ? 44 : ml === 'dial' ? 40 : 39);
       if (S.mode === 'two' && !ringL && drag.start <= 0.3 && np < -0.7) {
         drag.kind = 'toSun';
         drag.y0 = e.clientY;
@@ -3826,6 +3932,31 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     else { const m = Math.round((Date.now() - WX.t) / 60000); s = 'Vienna now: ' + Math.round(WX.temp) + ' °C, ' + wxText(WX.code) + ', ' + WX.cloud + ' % clouds (' + (m < 2 ? 'just now' : m + ' min ago') + ').'; }
     $('wxLine').textContent = s + (S.weather === 'real' ? ' Updates every 30 min; only Vienna\'s fixed position is sent.' : '');
   }
+  // ---- Screen style pairs (v34): [key, name, sun screen, moon look, tab]. With "Same style on both screens" on,
+  // one tap sets both; off: the Sun screen and Moon style lists pick each screen on its own.
+  const PAIRS = [['dial', 'Dial', 'dial', 'dial3d', 'normal'], ['ring', 'Ring', 'ring', 'moondial', 'normal'], ['dots', 'Dots', 'edge', 'dots', 'normal'],
+    ['arc', 'Glow arc', 'arc', 'arc', 'normal'], ['crescent', 'Crescent', 'eclipse', 'crescent', 'normal'],
+    ['today', 'Today', 'today', 'phase', 'extra'], ['minimal', 'Minimal', 'minimal', 'minimal', 'extra'], ['clock', 'Clock', 'clock', 'dial', 'extra'],
+    ['orb', 'Glow orb', 'orb', 'orb', 'extra'], ['small', 'Small', 'small', 'small', 'extra'], ['horizon', 'Horizon', 'setting', 'set', 'extra'],
+    ['rings', 'Rings', 'rings', 'saturn', 'planets']];
+  PAIRS.forEach((p) => {
+    const box = $({ normal: 'pairNormal', extra: 'pairExtra', planets: 'pairPlanets' }[p[4]]);
+    const r = document.createElement('input'); r.type = 'radio'; r.name = 'pair'; r.id = 'pr-' + p[0]; r.value = p[0];
+    const l = document.createElement('label'); l.htmlFor = r.id; l.textContent = p[1];
+    box.appendChild(r); box.appendChild(l);
+  });
+  const pairOf = () => PAIRS.find((p) => p[2] === S.sunView && p[3] === shownTheme().moon);
+  function pairUI() {
+    const on = S.pairLink === 'on', cur = pairOf();
+    $('pairLink').checked = on;
+    form.querySelectorAll('#pairSet .tabs, #pairSet .tabpane').forEach((el) => el.classList.toggle('sv-hide', !on));
+    $('sunScreenSet').hidden = on; $('moonStyleSet').hidden = on;
+    Array.prototype.forEach.call(form.elements.pair, (r) => { r.checked = !!cur && r.value === cur[0]; });
+    if (on) showTab('pair', cur ? cur[4] : 'normal');
+    $('pairLine').textContent = on
+      ? (cur ? 'Sun: ' + $('sv-' + cur[2]).nextElementSibling.textContent + ' · Moon: ' + $('moon-' + cur[3]).nextElementSibling.textContent + '.' : 'Your screens are mixed now. Tap a style to match both.') + ' Turn the switch off to pick each screen on its own.'
+      : 'Pick the Sun screen in ☀ Sun and the Moon style in ☾ Moon.';
+  }
   // Sun style list shows only the styles that change the chosen Sun screen (user, 22 Oct)
   const VIEW_STYLES = ['glow', 'plasma', 'eclipse', 'blackhole'];
   function sunStyleUI() {
@@ -3863,6 +3994,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       showTab(g, on ? on.closest('.tabpane').dataset.tab : 'normal');
     });
     sunStyleUI();
+    pairUI();
     liveLine();
     wxLine();
     const mn = moonNow(), fd = moonEvents().full, d0 = new Date(); d0.setHours(0, 0, 0, 0);
@@ -3932,7 +4064,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     });
     const pick = Array.prototype.find.call(form.elements.sunPick, (r) => r.checked), tappedMoon = S.moonLook, tappedColor = [S.sunTime, S.color];
     // Tapping a look while "Follow the time" is on: start from the looks shown now, then apply the tap.
-    const isLook = changed === 'sunPick' || changed === 'moonLook' || changed === 'color' || changed === 'neonStyle' || changed === 'moonDial';
+    const isLook = changed === 'sunPick' || changed === 'moonLook' || changed === 'color' || changed === 'neonStyle' || changed === 'moonDial' || changed === 'pair';
     if (isLook || (changed === 'theme' && S.theme === 'custom')) {
       if (prevTheme === 'auto') {
         const th = THEMES[lookBlend(phaseNow()).theme];
@@ -3945,6 +4077,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (changed === 'moonLook') S.moonLook = tappedMoon;
     if (changed === 'color') { S.sunTime = tappedColor[0]; S.color = tappedColor[1]; }
     if (changed === 'sunView') sunStyleUI();
+    if (changed === 'pairLink') { S.pairLink = $('pairLink').checked ? 'on' : 'off'; pairUI(); }
+    if (changed === 'pair') {
+      const pk = Array.prototype.find.call(form.elements.pair, (r) => r.checked), p = pk && PAIRS.find((x) => x[0] === pk.value);
+      if (p) { S.sunView = p[2]; S.moonLook = p[3]; sunStyleUI(); peekScreen('sun'); }
+    }
     if (changed === 'moonDial') S.moonLook = 'moondial';  // tapping Glow / Phase switches the moon to Moon dial (like Neon styles)
     if (changed === 'moonLook' || changed === 'moonDial') peekScreen('moon');
     else if (['sunPick', 'sunView', 'neonStyle', 'dir', 'tilt', 'size', 'color', 'frontFx', 'skyPhoto', 'liveSun', 'weather'].indexOf(changed) !== -1) peekScreen('sun');
