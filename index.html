@@ -2702,7 +2702,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   /* ---------- Planet start screen (mockup G, 23 Oct) ---------- */
   // Big clock, today's date, sunrise / sunset / moon chips and the real Earth (NASA maps) with the real sunlight
   // and night lights; Vienna marked. Maps: separate files, cached by sw.js.
-  const planet = { on: false, t: 0 };
+  const planet = { on: false, t: 0 }, shown = { screen: null, t: 0 };
   function subsolar(date) {
     // the point on Earth where the sun is straight overhead (degrees): lon from the time of day, lat from the season
     const rad = Math.PI / 180, d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545, M = rad * (357.5291 + 0.98560028 * d);
@@ -2768,8 +2768,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const pAnim = performance.now() - planet.t < 600;
     if (planet.on || pAnim) renderPlanet(now);
     if (planet.on && !pAnim) return;    // the planet covers everything: no need to draw the sun and moon
-    if (st.screen === 'sun' || worlds.classList.contains('dragging') || S.mode === 'two') renderSun(now, h, dtf || 16);
-    renderMoon(now, h);
+    // Lag fix (23 Oct): draw only the screen you see. Both are drawn while you swipe between them and for 0.6 s
+    // after the screen changes (the slide), so the other one is never stale when it comes into view.
+    if (st.screen !== shown.screen) { shown.screen = st.screen; shown.t = performance.now(); }
+    const both = worlds.classList.contains('dragging') || performance.now() - shown.t < 600;
+    if (S.mode === 'two' && (st.screen === 'sun' || both)) renderSun(now, h, dtf || 16);
+    if (st.screen === 'moon' || both || S.mode === 'one') renderMoon(now, h);
   }
 
   /* ---------- Gestures ---------- */
