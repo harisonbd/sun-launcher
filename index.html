@@ -1805,6 +1805,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       } catch (e) { out.failed = true; gl = null; }
       return !!gl;
     }
+    // v42: true when this phone's graphics can hold an 8k map (8192 px wide)
+    out.big = () => !!init() && gl.getParameter(gl.MAX_TEXTURE_SIZE) >= 8192;
     // ask for a map file once; returns true when it is ready
     out.need = function (key, url) {
       if (TEX[key]) return true;
@@ -3440,6 +3442,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     }
     c.restore();
   }
+  // v42: placeholder Earth while the photo maps load: deep blue ball, lit on the sun's side (lv), thin blue air
+  function drawnEarth(c, cx, cy, R, lv) {
+    const lx = cx + lv[0] * R * 0.7, ly = cy - lv[1] * R * 0.7, day = Math.max(0, lv[2]);
+    const g = c.createRadialGradient(lx, ly, R * 0.05, lx, ly, R * (1.3 + 0.6 * day));
+    g.addColorStop(0, 'rgb(70, 120, 175)'); g.addColorStop(0.55, 'rgb(28, 60, 105)'); g.addColorStop(1, 'rgb(6, 12, 26)');
+    c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, 2 * Math.PI); c.fill();
+    c.strokeStyle = 'rgba(120, 180, 255, 0.35)'; c.lineWidth = 3; c.beginPath(); c.arc(cx, cy, R + 1.5, 0, 2 * Math.PI); c.stroke();
+  }
   function renderPlanet(now) {
     const c = $('planetCanvas').getContext('2d'), W = st.W, H = st.H, k = W / 390;
     c.clearRect(0, 0, W, H);
@@ -3451,10 +3461,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // v37: centerLon follows the fidget spin (spin.off); it goes back to 32 (Vienna in front) when the Earth settles
     const cx = W / 2, cy = H * 1.197 + (reduce ? 0 : Math.sin(now / 1000 * 0.6) * 4), R = 520 * k, centerLon = 32 - spin.off, ss = subsolar(d), rad = Math.PI / 180;
     const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
+    // v42: sharper 8k day map (NASA 21600 px, made smaller), only where the phone can hold it; the 4k map shows until it arrives
+    const dayTex = ok && PG.big() && PG.need('earth8', 'earth-day-8k.jpg') ? 'earth8' : 'earth';
     // 1 (v36): the real moon in the sky above the Earth, in its real phase, where it is now as seen from Vienna
     // (left = east, middle = south, right = west; higher = higher in the sky); hidden when it is below the horizon
     const mpos = moonAltAz(d), mnNow = moonIllum(d), yTop = cy - R;
-    planetMoon = null;
+    planetMoon = null; planetSun = null;
     if (mpos.alt > 0 && GLB.ok) {
       const mx = W / 2 + ((mpos.az - 180) / 180) * (W / 2 - 30), my = yTop - 26 - Math.min(mpos.alt, 60) / 60 * (yTop - 26 - H * 0.4), mr = 15 * k;
       const mg = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3.2); mg.addColorStop(0, 'rgba(210, 222, 245, ' + (0.12 + 0.18 * mnNow.fraction).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(210, 222, 245, 0)');
@@ -3462,7 +3474,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       GLB.draw(c, mx, my, mr, { mode: 'moon', light: realMoonLight(mnNow.phase), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0.6, margin: 1.6 });
       planetMoon = { x: mx, y: my };
     }
-    if (ok) {
+    {
       const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad, lv = [Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)];
       // v41: the far sun, seen from space (user): always on the side the light comes from (lv). Sun in front of us
       // (our side is in day): up in the sky; behind the Earth (night): low behind the edge, only its glow peeks out.
@@ -3472,30 +3484,35 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         const sy = lv[2] >= 0 ? limbY - 8 - lv[2] * (limbY - 8 - H * 0.42) : limbY - 8 - lv[2] * 34, sr = 13 * k;
         const sg = c.createRadialGradient(sx, sy, sr * 0.8, sx, sy, sr * 4.5); sg.addColorStop(0, 'rgba(255, 214, 150, 0.35)'); sg.addColorStop(1, 'rgba(255, 214, 150, 0)');
         c.fillStyle = sg; c.fillRect(sx - sr * 4.6, sy - sr * 4.6, sr * 9.2, sr * 9.2);
+        if (sy < limbY - 4) planetSun = { x: sx, y: sy };  // v42: tap the sun -> Sun menu
         GLB.draw(c, sx, sy, sr, { mode: 'sun', tint: '#FFC94D', rot: now / 1000 * 0.02, time: now / 1000, glow: 0.8, margin: 1.6 });
       }
-      PG.draw(c, cx, cy, R, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.012, light: lv, expo: 1.15, margin: 1.06, glow: mnNow.fraction });
-      // 2 (v36): a thin glowing atmosphere along the Earth's edge, brighter on the side the sun shines from
-      c.save(); c.globalCompositeOperation = 'lighter';
-      const rim = (g) => { c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R * 1.07, 0, 2 * Math.PI); c.arc(cx, cy, R * 0.985, 0, 2 * Math.PI, true); c.fill('evenodd'); };
-      const ag = c.createRadialGradient(cx, cy, R * 0.985, cx, cy, R * 1.07);
-      ag.addColorStop(0, 'rgba(120, 180, 255, 0)'); ag.addColorStop(0.18, 'rgba(120, 180, 255, 0.28)'); ag.addColorStop(1, 'rgba(120, 180, 255, 0)');
-      rim(ag);
-      const lx2 = cx + lv[0] * R * 0.85, ly2 = cy - lv[1] * R * 0.85, sg = c.createRadialGradient(lx2, ly2, 0, lx2, ly2, R * 1.1);
-      sg.addColorStop(0, 'rgba(160, 210, 255, 0.45)'); sg.addColorStop(1, 'rgba(160, 210, 255, 0)');
-      rim(sg);
-      c.restore();
-      // 7 (v37): northern lights seen from space, a green band around the north on the night side (stronger with high Kp)
-      drawAuroraSpace(c, cx, cy, R, centerLon, lv, now);
-      const vx = cx + R * Math.cos(LAT * rad) * Math.sin((LON - centerLon) * rad), vy = cy - R * Math.sin(LAT * rad);
-      const vz = Math.cos(LAT * rad) * Math.cos((LON - centerLon) * rad);  // < 0: Vienna is on the far side while spinning
-      planetSpot = vz > 0.1 ? { x: vx, y: vy } : null;
-      if (planetSpot) {
-        c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = Math.min(1, vz * 4);
-        const vg = c.createRadialGradient(vx, vy, 0, vx, vy, 14); vg.addColorStop(0, 'rgba(255, 214, 140, 0.95)'); vg.addColorStop(1, 'rgba(255, 214, 140, 0)');
-        c.fillStyle = vg; c.beginPath(); c.arc(vx, vy, 14, 0, 2 * Math.PI); c.fill(); c.restore();
-        c.font = '600 11.5px ' + (getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif'); c.fillStyle = 'rgba(255, 236, 200, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle';
-        c.shadowColor = '#000'; c.shadowBlur = 6; c.fillText('Vienna', vx + 12, vy - 2); c.shadowBlur = 0;
+      // v42: until the Earth photos have loaded (slow mobile data), a simple drawn Earth with the real lit side
+      if (!ok) drawnEarth(c, cx, cy, R, lv);
+      else {
+        PG.draw(c, cx, cy, R, { mode: 'earth', tex: dayTex, tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.012, light: lv, expo: 1.15, margin: 1.06, glow: mnNow.fraction });
+        // 2 (v36): a thin glowing atmosphere along the Earth's edge, brighter on the side the sun shines from
+        c.save(); c.globalCompositeOperation = 'lighter';
+        const rim = (g) => { c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R * 1.07, 0, 2 * Math.PI); c.arc(cx, cy, R * 0.985, 0, 2 * Math.PI, true); c.fill('evenodd'); };
+        const ag = c.createRadialGradient(cx, cy, R * 0.985, cx, cy, R * 1.07);
+        ag.addColorStop(0, 'rgba(120, 180, 255, 0)'); ag.addColorStop(0.18, 'rgba(120, 180, 255, 0.28)'); ag.addColorStop(1, 'rgba(120, 180, 255, 0)');
+        rim(ag);
+        const lx2 = cx + lv[0] * R * 0.85, ly2 = cy - lv[1] * R * 0.85, sg = c.createRadialGradient(lx2, ly2, 0, lx2, ly2, R * 1.1);
+        sg.addColorStop(0, 'rgba(160, 210, 255, 0.45)'); sg.addColorStop(1, 'rgba(160, 210, 255, 0)');
+        rim(sg);
+        c.restore();
+        // 7 (v37): northern lights seen from space, a green band around the north on the night side (stronger with high Kp)
+        drawAuroraSpace(c, cx, cy, R, centerLon, lv, now);
+        const vx = cx + R * Math.cos(LAT * rad) * Math.sin((LON - centerLon) * rad), vy = cy - R * Math.sin(LAT * rad);
+        const vz = Math.cos(LAT * rad) * Math.cos((LON - centerLon) * rad);  // < 0: Vienna is on the far side while spinning
+        planetSpot = vz > 0.1 ? { x: vx, y: vy } : null;
+        if (planetSpot) {
+          c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = Math.min(1, vz * 4);
+          const vg = c.createRadialGradient(vx, vy, 0, vx, vy, 14); vg.addColorStop(0, 'rgba(255, 214, 140, 0.95)'); vg.addColorStop(1, 'rgba(255, 214, 140, 0)');
+          c.fillStyle = vg; c.beginPath(); c.arc(vx, vy, 14, 0, 2 * Math.PI); c.fill(); c.restore();
+          c.font = '600 11.5px ' + (getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif'); c.fillStyle = 'rgba(255, 236, 200, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle';
+          c.shadowColor = '#000'; c.shadowBlur = 6; c.fillText('Vienna', vx + 12, vy - 2); c.shadowBlur = 0;
+        }
       }
     }
     const font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif';
@@ -3537,7 +3554,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     });
   }
   // 3 (v36): tap Vienna on the Earth (or the moon in the sky) for a short card
-  let planetSpot = null, planetMoon = null;
+  let planetSpot = null, planetMoon = null, planetSun = null;
   function viennaCard() {
     const sn = sunToday(), mn = moonNow(), w = S.weather === 'real' && WX ? WX : null, len = sn.set - sn.rise;
     const ev = skyEvents().find((e) => !e.minor), sol = SOL ? solarInfo() : null;
@@ -3846,6 +3863,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       }
       // a tap on Vienna opens the Vienna card (v36); a tap on the moon in the sky opens the moon menu (v38, user)
       else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetMoon && Math.hypot(tx - planetMoon.x, ty - planetMoon.y) < 44) { hapt('press'); setCalm(false); hidePlanet(); if (S.mode === 'two') goMoon(); }
+      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSun && Math.hypot(tx - planetSun.x, ty - planetSun.y) < 44) { hapt('press'); setCalm(false); hidePlanet(); goSun(); }
       else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSpot && Math.hypot(tx - planetSpot.x, ty - planetSpot.y) < 44) { hapt('press'); viennaCard(); }
     };
     window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
