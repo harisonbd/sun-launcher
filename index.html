@@ -53,7 +53,7 @@ body { background: var(--night-deep); color: var(--ink); font-family: var(--font
 #planetScreen.calm .planet-handle { opacity: 0.2; }
 .planet[hidden] { display: none; }
 .planet-handle { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); min-height: 56px; padding: 0 18px; border: none; background: transparent; color: #DCE3F0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 500; cursor: pointer; }
-.to-planet { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); min-height: 44px; padding: 0 14px; border: none; background: transparent; color: var(--ink-3); display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 12px; font-weight: 500; cursor: pointer; z-index: 600; }
+.to-planet { position: absolute; left: 50%; top: 60px; transform: translateX(-50%); min-height: 44px; padding: 0 14px; border: none; background: transparent; color: var(--ink-3); display: flex; flex-direction: row; align-items: center; gap: 2px; font-size: 12px; font-weight: 500; cursor: pointer; z-index: 600; min-height: 26px !important; }
 .to-planet[hidden] { display: none; }
 #moonScreen { top: 50%; background: linear-gradient(180deg, var(--msky-top), var(--msky-bot)); }
 canvas.paint { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
@@ -149,9 +149,35 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .le-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
 .le-btns .btn { min-height: 44px; }
 .looks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+/* v48: Settings with pictures (mockup settings-v48c) */
+.lookchip.add { border-style: dashed; border-color: var(--line); color: var(--ink-2); font-weight: 500; }
+.leg2 { color: var(--sun); font-weight: 600; font-size: 12px; margin-left: 6px; }
+.pcards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.pcard { position: relative; text-align: left; background: var(--panel-2); border: 2px solid transparent; border-radius: 16px; padding: 6px; color: var(--ink); cursor: pointer; }
+.pcard.on { border-color: var(--sun); }
+.pcard.on::after { content: '✓'; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 11px; background: var(--sun); color: var(--sun-ink); font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+.pcard .pair { display: flex; gap: 3px; height: 112px; border-radius: 11px; overflow: hidden; background: #0b1020; }
+.pcard .pair img { width: 50%; height: 100%; object-fit: cover; }
+.pcard b { display: block; font-size: 14px; margin: 6px 4px 0; }
+.pcard small { display: block; color: var(--ink-2); font-size: 11.5px; margin: 0 4px 2px; }
+.psec { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); margin: 14px 2px 8px; }
+.psec:empty { display: none; }
+.swipe { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; -webkit-mask-image: linear-gradient(90deg, #000 86%, transparent); mask-image: linear-gradient(90deg, #000 86%, transparent); }
+.swipe.fits { -webkit-mask-image: none; mask-image: none; }
+.swipe::-webkit-scrollbar { display: none; }
+.swipe:empty { display: none; }
+.pvar, .psty { flex: 0 0 auto; scroll-snap-align: start; border: none; background: none; color: var(--ink-2); font-size: 11.5px; text-align: center; padding: 0; cursor: pointer; }
+.pvar img { width: 76px; height: 96px; object-fit: cover; border-radius: 10px; border: 2px solid transparent; display: block; margin-bottom: 3px; }
+.psty img { width: 62px; height: 62px; object-fit: cover; border-radius: 31px; border: 2px solid transparent; display: block; margin: 0 auto 3px; }
+.pvar.on, .psty.on { color: var(--ink); font-weight: 700; }
+.pvar.on img, .psty.on img { border-color: var(--sun); }
+.pdots { display: flex; justify-content: center; gap: 5px; margin-top: 6px; min-height: 6px; }
+.pdots span { width: 6px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.25); transition: width .2s; }
+.pdots span.on { width: 16px; background: var(--sun); }
+.grp summary .sum { float: right; font-weight: 400; color: var(--ink-2); font-size: 12.5px; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .looks:empty { display: none; }
 .lookchip { min-height: 40px; padding: 0 16px; border-radius: 20px; border: 1.5px solid var(--sun); background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
-.handle.top { top: 10px; }
+.handle.top { top: 56px; min-height: 30px; flex-direction: row; gap: 3px; }  /* v48: under the eye */
 .handle span { display: flex; align-items: center; gap: 6px; }
 
 .item { position: absolute; left: 0; top: 0; pointer-events: auto; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px 0 6px; box-sizing: border-box; border: none; background: transparent; color: #C3CADB; font-size: 16px; font-weight: 500; white-space: nowrap; transform-origin: 14px 50%; cursor: pointer; }
@@ -317,7 +343,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .send small { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
 
 /* v46: Watch mode and one-time hints */
-.watchbtn { position: absolute; top: 18px; left: 76px; width: 44px; height: 44px; border-radius: 22px; border: none; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--ink-3); display: flex; align-items: center; justify-content: center; z-index: 860; cursor: pointer; transition: opacity .4s; }
+.watchbtn { position: absolute; top: 16px; left: 50%; margin-left: -22px; width: 44px; height: 44px; border-radius: 22px; border: none; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--ink-3); display: flex; align-items: center; justify-content: center; z-index: 860; cursor: pointer; transition: opacity .4s; }
 #app.watch .watchbtn, #app.editing .watchbtn { opacity: 0; pointer-events: none; }
 .watchcatch { position: absolute; inset: 0; z-index: 880; }
 .watchcatch[hidden] { display: none; }
@@ -393,7 +419,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       <div id="scrub" class="scrub" aria-hidden="true"></div>
       <div id="bubble" class="bubble" aria-hidden="true" hidden><small id="bubbleGroup"></small><span id="bubbleName"></span></div>
       <button type="button" class="handle top" id="toSun" aria-label="Back to the sun menu">
-        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></svg>Swipe down · Sun</span>
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></svg>Sun</span>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>
       </button>
       <button type="button" class="mini-sun" id="miniSun" aria-label="Camera: take a photo and send it to an app" hidden>
@@ -496,19 +522,71 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   <div id="settings" class="overlay" hidden>
     <form class="sheet" id="settingsForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
       <h2 id="setTitle">Settings</h2>
+      <!-- v48 (user, mockup settings-v48c): one sheet with everything on it. My looks, 4 screen cards (sun + moon),
+           the kinds of the picked card, sun styles as round pictures, moon style, then 3 groups to mix and match.
+           The old option controls stay underneath (hidden box below), so saved settings and the code that reads
+           them stay the same; the pictures only tap them. -->
+      <fieldset class="mylooks">
+        <legend>My looks</legend>
+        <div class="looks" id="looksSun"></div>
+        <div class="looks" id="looksMoon"></div>
+        <p class="helpline" id="looksSunHelp"></p>
+        <p class="helpline" id="looksMoonHelp" hidden></p>
+        <div class="looks"><button type="button" class="lookchip add" id="lookEditBtn">+ Edit look</button></div>
+      </fieldset>
+      <fieldset id="screenSet">
+        <legend>Screen <span class="leg2">sun + moon</span></legend>
+        <div class="pcards" id="pcards"></div>
+        <label class="switchrow"><input type="checkbox" id="pairLink" name="pairLink"> Same style on both screens</label>
+        <div class="psec" id="pvarTitle"></div>
+        <div class="swipe" id="pvars"></div>
+        <div class="pdots" id="pvarsDots"></div>
+        <div id="pmoonWrap" hidden>
+          <div class="psec">Moon screen</div>
+          <div class="swipe" id="pmoons"></div>
+          <div class="pdots" id="pmoonsDots"></div>
+        </div>
+      </fieldset>
+      <fieldset id="styleSet">
+        <legend>Sun style</legend>
+        <div class="swipe" id="pstyles"></div>
+        <div class="pdots" id="pstylesDots"></div>
+        <p class="helpline" id="pstyleNote" hidden></p>
+      </fieldset>
+      <fieldset>
+        <legend>Sun colour</legend>
+        <div class="seg swatches">
+          <input type="radio" name="color" id="col-0" value="time"><label for="col-0" class="time"><span class="sr">Follow the time of day</span></label>
+          <input type="radio" name="color" id="col-1" value="#FFC94D"><label for="col-1" style="--c: #FFC94D"><span class="sr">Gold</span></label>
+          <input type="radio" name="color" id="col-2" value="#FF9F43"><label for="col-2" style="--c: #FF9F43"><span class="sr">Orange</span></label>
+          <input type="radio" name="color" id="col-3" value="#F7D774"><label for="col-3" style="--c: #F7D774"><span class="sr">Pale yellow</span></label>
+          <input type="radio" name="color" id="col-4" value="#FFB3A1"><label for="col-4" style="--c: #FFB3A1"><span class="sr">Sunset pink</span></label>
+          <input type="radio" name="color" id="col-5" value="#7FD3FF"><label for="col-5" style="--c: #7FD3FF"><span class="sr">Ice blue</span></label>
+          <input type="radio" name="color" id="col-6" value="#FF6B3D"><label for="col-6" style="--c: #FF6B3D"><span class="sr">Ember red</span></label>
+        </div>
+        <p style="margin: 0; font-size: 13px; color: var(--ink-2)">The first colour follows the time of day.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Moon style</legend>
+        <div class="seg">
+            <input type="radio" name="moonDial" id="md-glow" value="glow"><label for="md-glow">Glow</label>
+            <input type="radio" name="moonDial" id="md-phase" value="phase"><label for="md-phase">Phase</label>
+        </div>
+      </fieldset>
       <!-- 22 Oct: grouped into sections; each option keeps its name, so saved settings stay. -->
       <fieldset>
-        <legend>Looks</legend>
+        <legend>Look follows the time of day</legend>
         <div class="seg big">
           <input type="radio" name="theme" id="th-auto" value="auto"><label for="th-auto">Follow the time</label>
           <input type="radio" name="theme" id="th-custom" value="custom"><label for="th-custom">Pick myself</label>
         </div>
         <p id="themeLine" class="helpline"></p>
       </fieldset>
+      <!-- the old pickers: hidden, still the source of truth for the radios (pairs, sun screen, sun style, moon look) -->
+      <div id="oldPickers" hidden>
       <!-- v34: Screen style pairs: each sun screen has a moon partner with the same name -->
       <fieldset id="pairSet">
         <legend>Screen style (sun + moon)</legend>
-        <label class="switchrow"><input type="checkbox" id="pairLink" name="pairLink"> Same style on both screens</label>
         <div class="tabs" data-group="pair" role="tablist">
           <button type="button" data-tab="normal">Normal</button>
           <button type="button" data-tab="extra">Extra</button>
@@ -516,22 +594,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <div class="tabpane" data-group="pair" data-tab="normal"><div class="seg" id="pairNormal"></div></div>
         <div class="tabpane" data-group="pair" data-tab="extra" hidden><div class="seg" id="pairExtra"></div></div>
         <p id="pairLine" class="helpline"></p>
-      </fieldset>
-      <details class="more grp" open>
-      <summary>☀ Sun</summary>
-      <fieldset class="mylooks">
-        <legend>My looks</legend>
-        <div class="looks" id="looksSun"></div>
-        <p class="helpline" id="looksSunHelp">Tap Edit look to tilt, turn, size and move the sun, then save it here (up to 5).</p>
-        <button type="button" class="btn" data-editlook="sun">Edit look</button>
-      </fieldset>
-      <fieldset>
-        <legend>Sun sets behind the hills</legend>
-        <div class="seg">
-          <input type="radio" name="sunSet" id="ss-off" value="off"><label for="ss-off">Off</label>
-          <input type="radio" name="sunSet" id="ss-on" value="on"><label for="ss-on">On</label>
-        </div>
-        <p class="helpline">Sun dial and Sun ring: about an hour before sunset the sun sinks behind the hills, and the ring tilts so the apps stay above it. At night it waits under the hills and rises in the morning. Real sun height for Vienna (Pick a time works too).</p>
       </fieldset>
       <!-- 22 Oct (v29): pick the screen first; the style list below shows only the styles that change that screen.
            v34: hidden while "Same style on both screens" is on (then Screen style above picks both). -->
@@ -582,28 +644,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           </div>
         </div>
       </fieldset>
-      <fieldset>
-        <legend>Sun colour</legend>
-        <div class="seg swatches">
-          <input type="radio" name="color" id="col-0" value="time"><label for="col-0" class="time"><span class="sr">Follow the time of day</span></label>
-          <input type="radio" name="color" id="col-1" value="#FFC94D"><label for="col-1" style="--c: #FFC94D"><span class="sr">Gold</span></label>
-          <input type="radio" name="color" id="col-2" value="#FF9F43"><label for="col-2" style="--c: #FF9F43"><span class="sr">Orange</span></label>
-          <input type="radio" name="color" id="col-3" value="#F7D774"><label for="col-3" style="--c: #F7D774"><span class="sr">Pale yellow</span></label>
-          <input type="radio" name="color" id="col-4" value="#FFB3A1"><label for="col-4" style="--c: #FFB3A1"><span class="sr">Sunset pink</span></label>
-          <input type="radio" name="color" id="col-5" value="#7FD3FF"><label for="col-5" style="--c: #7FD3FF"><span class="sr">Ice blue</span></label>
-          <input type="radio" name="color" id="col-6" value="#FF6B3D"><label for="col-6" style="--c: #FF6B3D"><span class="sr">Ember red</span></label>
-        </div>
-        <p style="margin: 0; font-size: 13px; color: var(--ink-2)">The first colour follows the time of day.</p>
-      </fieldset>
-      </details>
-      <details class="more grp">
-      <summary>☾ Moon</summary>
-      <fieldset class="mylooks">
-        <legend>My looks</legend>
-        <div class="looks" id="looksMoon"></div>
-        <p class="helpline" id="looksMoonHelp">Tap Edit look to tilt, turn, size and move the moon, then save it here (up to 5).</p>
-        <button type="button" class="btn" data-editlook="moon">Edit look</button>
-      </fieldset>
       <fieldset id="moonStyleSet">
         <legend>Moon style</legend>
         <div class="tabs" data-group="moon" role="tablist">
@@ -626,24 +666,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
             <input type="radio" name="moonLook" id="moon-moondial" value="moondial"><label for="moon-moondial">Moon dial</label>
             <input type="radio" name="moonLook" id="moon-dial3d" value="dial3d"><label for="moon-dial3d">Moon 3D dial</label>
           </div>
-          <div class="sublg">Moon dial look (was Swap)</div>
-          <div class="seg">
-            <input type="radio" name="moonDial" id="md-glow" value="glow"><label for="md-glow">Glow</label>
-            <input type="radio" name="moonDial" id="md-phase" value="phase"><label for="md-phase">Phase</label>
-          </div>
         </div>
       </fieldset>
-      <fieldset>
-        <legend>Moon phase</legend>
-        <div class="seg">
-          <input type="radio" name="moonPhase" id="mp-real" value="real"><label for="mp-real">Real (today)</label>
-          <input type="radio" name="moonPhase" id="mp-fixed" value="fixed"><label for="mp-fixed">Fixed</label>
-        </div>
-        <p id="moonLine" class="helpline"></p>
-      </fieldset>
-      </details>
-      <details class="more grp">
-      <summary>Sky &amp; weather</summary>
+      </div>
+      <div class="psec">Mix and match</div>
+      <details class="more grp" id="grpSky">
+      <summary>Sky &amp; place <span class="sum" id="sumSky"></span></summary>
       <fieldset>
         <legend>Sky</legend>
         <div class="seg">
@@ -693,9 +721,17 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <p id="sunLine" style="margin: 0; font-size: 13px; color: var(--ink-2)"></p>
         <button type="button" class="btn" id="playDay">Play a day in 20 seconds</button>
       </fieldset>
+      <fieldset>
+        <legend>Sun sets behind the hills</legend>
+        <div class="seg">
+          <input type="radio" name="sunSet" id="ss-off" value="off"><label for="ss-off">Off</label>
+          <input type="radio" name="sunSet" id="ss-on" value="on"><label for="ss-on">On</label>
+        </div>
+        <p class="helpline">Sun dial and Sun ring: about an hour before sunset the sun sinks behind the hills, and the ring tilts so the apps stay above it. At night it waits under the hills and rises in the morning. Real sun height for Vienna (Pick a time works too).</p>
+      </fieldset>
       </details>
-      <details class="more grp">
-      <summary>Layout</summary>
+      <details class="more grp" id="grpFeel">
+      <summary>Start &amp; feel <span class="sum" id="sumFeel"></span></summary>
       <fieldset>
         <legend>Start screen</legend>
         <div class="seg">
@@ -719,9 +755,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         </div>
         <p class="helpline">The Earth screen becomes a calm clock and the screen stays on. Double-tap the clock to start or stop it by hand (some browsers, like Brave, do not tell if the phone is charging).</p>
       </fieldset>
-      </details>
-      <details class="more grp">
-      <summary>Feel</summary>
       <fieldset>
         <legend>Vibration</legend>
         <div class="seg">
@@ -746,7 +779,15 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       </fieldset>
       </details>
       <details class="more grp" id="moreSettings">
-      <summary>More</summary>
+      <summary>More <span class="sum" id="sumMore"></span></summary>
+      <fieldset>
+        <legend>Moon phase</legend>
+        <div class="seg">
+          <input type="radio" name="moonPhase" id="mp-real" value="real"><label for="mp-real">Real (today)</label>
+          <input type="radio" name="moonPhase" id="mp-fixed" value="fixed"><label for="mp-fixed">Fixed</label>
+        </div>
+        <p id="moonLine" class="helpline"></p>
+      </fieldset>
       <fieldset>
         <legend>Tips</legend>
         <div class="seg">
@@ -757,6 +798,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       </fieldset>
       <button type="button" class="btn" id="tipsAgain">Show all tips again</button>
       </details>
+      <button type="button" class="btn" id="lookEditBtn2">Edit look (tilt, turn, size, place)</button>
       <button type="button" class="btn primary" id="setDone" data-autofocus>Done</button>
     </form>
   </div>
@@ -2901,8 +2943,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       sunAt(sc.sx, sc.sy, sc.R, { glow: 0.9, margin: 1.5 }); bodyAt.sun = { x: sc.sx, y: sc.sy, r: sc.R };
       ringHalf(true);
       if (hzR.on) drawnHills(c, W, H);
-      txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
-      txt('Apps', W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Sun menu', W / 2, H * 0.125 + 18, 12, 600, muted, 'center', true);
+      txt('Apps', W / 2, H * 0.16 + 18, 24, 500, '#F5EFE3', 'center');
       if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
       const s0 = ringPlace(sc, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
@@ -2934,8 +2976,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       rings(false);
       sunAt(sx, sy, R, { glow: 0.9, margin: 1.7 });
       rings(true);
-      txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
-      txt(APPS[front].name, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Sun menu', W / 2, H * 0.125 + 18, 12, 600, muted, 'center', true);
+      txt(APPS[front].name, W / 2, H * 0.16 + 18, 24, 500, '#F5EFE3', 'center');
       if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
       place((d, isF) => {
         const q = ringPlace(sc, Math.PI / 2 + d * (Math.PI * 2 / 12)), f = (q[2] + 1) / 2, ad = Math.abs(d), mA = 6;
@@ -3419,8 +3461,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         else GLB.draw(c, sx, sy, R, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: -0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.2 });
       }
       ringHalf(true);
-      txt('Moon menu', W / 2, H * 0.125, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      if (cur) txt(cur.group, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Moon menu', W / 2, H * 0.125 + 18, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      if (cur) txt(cur.group, W / 2, H * 0.16 + 18, 24, 500, '#F5EFE3', 'center');
       txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       const s0 = ringPlace(scene, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
@@ -3429,8 +3471,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const k = W / 390, sx = W / 2, sy = H * 0.49, R = 76 * k, roll = -0.3, pitch = -0.42;
       const ok1 = PG.need('saturn', 'saturn.jpg'), ok2 = PG.need('ring', 'saturn-ring.png');
       if (ok1 && ok2) PG.draw(c, sx, sy, R, { mode: 'planet', tex: 'saturn', rings: 'ring', roll: roll, pitch: pitch, light: [-0.75, 0.4, 0.55], tint: '#EADBB8', expo: 1.25, margin: 1.3, rot: 0.4 });
-      txt('Moon menu', W / 2, H * 0.125, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      if (cur) txt(cur.group, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Moon menu', W / 2, H * 0.125 + 18, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      if (cur) txt(cur.group, W / 2, H * 0.16 + 18, 24, 500, '#F5EFE3', 'center');
       txt('Swipe sideways to turn the rings · tap to open', W / 2, H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R * 2.36, sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll) };
       const s0 = ringPlace(scene, Math.PI / 2);
@@ -4668,6 +4710,93 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     set.querySelectorAll('input[name="sunPick"]').forEach((r) => { set.querySelector('label[for="' + r.id + '"]').hidden = view && VIEW_STYLES.indexOf(r.value) === -1; });
     $('neonOpts').hidden = view;
   }
+  // v48: Settings pictures. Cards = groups of the screen pairs; rows = the kinds of the picked card, the moon screens
+  // (when "Same style" is off) and the sun styles. Each picture taps the matching old radio (hidden in #oldPickers).
+  const PV_FAM = [['ring', 'Ring', 'Dial · Ring', ['dial', 'ring']], ['clock', 'Clock', 'Big dial at the edge', ['clock']],
+    ['info', 'Info', 'Today · Minimal', ['today', 'minimal']], ['side', 'Side list', 'Big edge · Arc · Eclipse · Small', ['edge', 'arc', 'eclipse', 'small']]];
+  const PV_NAME = { dial: 'Dial', ring: 'Ring', clock: 'Clock', today: 'Today', minimal: 'Minimal', edge: 'Big edge', arc: 'Arc', eclipse: 'Eclipse', small: 'Small' };
+  const PV_MOON = [['dial3d', '3D dial'], ['moondial', 'Moon dial'], ['dial', 'Clock dial'], ['phase', 'Real phase'], ['minimal', 'Minimal'], ['dots', 'Dots'], ['arc', 'Arc'], ['crescent', 'Crescent'], ['small', 'Small']];
+  const PV_STY = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['eclipse', 'Eclipse'], ['blackhole', 'Black hole'], ['neon', 'Neon'], ['synth', 'Synthwave']];
+  const pvImg = (src, pos) => { const im = document.createElement('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; if (pos) im.style.objectPosition = pos; return im; };
+  const pvPos = (v) => ({ edge: '100% 30%', arc: '100% 30%', eclipse: '100% 30%', small: '100% 40%', clock: '0% 50%', dial: '50% 42%', ring: '50% 45%', today: '50% 15%', minimal: '100% 15%' }[v] || '50% 40%');
+  const pvMoonPos = (m) => ({ dots: '100% 50%', arc: '100% 50%', crescent: '30% 50%', small: '100% 50%', dial: '0% 50%', phase: '50% 15%', minimal: '100% 20%', dial3d: '50% 50%', moondial: '50% 50%' }[m] || '50% 45%');
+  function pvTap(name, value) {
+    const r = Array.prototype.find.call(form.elements[name], (x) => x.value === value);
+    if (!r) return;
+    r.checked = true;
+    r.dispatchEvent(new Event('change', { bubbles: true }));
+    hapt('detent');
+  }
+  function pvPickView(view) {
+    if (S.pairLink === 'on') { const pk = PAIRS.find((x) => x[2] === view); if (pk) { pvTap('pair', pk[0]); return; } }
+    pvTap('sunView', view);
+  }
+  function pvDots(row, dots) {
+    const el = $(row), d = $(dots), n = Math.max(1, Math.ceil(el.scrollWidth / Math.max(1, el.clientWidth) - 0.02));
+    el.classList.toggle('fits', n <= 1);
+    if (d.childElementCount !== (n > 1 ? n : 0)) { d.textContent = ''; if (n > 1) for (let i = 0; i < n; i++) d.appendChild(document.createElement('span')); }
+    const on = Math.round(el.scrollLeft / Math.max(1, el.scrollWidth - el.clientWidth) * (n - 1));
+    Array.prototype.forEach.call(d.children, (sp, i) => sp.classList.toggle('on', i === on));
+  }
+  [['pvars', 'pvarsDots'], ['pmoons', 'pmoonsDots'], ['pstyles', 'pstylesDots']].forEach(([r, d]) => $(r).addEventListener('scroll', () => pvDots(r, d), { passive: true }));
+  function renderPicks() {
+    const sh = shownTheme(), view = S.sunView, fam = PV_FAM.find((f) => f[3].indexOf(view) !== -1) || PV_FAM[0], link = S.pairLink === 'on';
+    const moonOf = (v) => { const pk = PAIRS.find((x) => x[2] === v); return pk ? pk[3] : 'dots'; };
+    // the 4 cards
+    const cards = $('pcards'); cards.textContent = '';
+    PV_FAM.forEach((f) => {
+      const v = f === fam ? view : f[3][0], m = f === fam && !link ? sh.moon : moonOf(v);
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pcard' + (f === fam ? ' on' : '');
+      b.setAttribute('aria-pressed', f === fam ? 'true' : 'false'); b.setAttribute('aria-label', f[1] + ': ' + f[2]);
+      const pr = document.createElement('div'); pr.className = 'pair';
+      pr.appendChild(pvImg('pv-sun-' + v + '.jpg', pvPos(v))); pr.appendChild(pvImg('pv-moon-' + m + '.jpg', pvMoonPos(m)));
+      const t = document.createElement('b'); t.textContent = f[1]; const sm = document.createElement('small'); sm.textContent = f[2];
+      b.appendChild(pr); b.appendChild(t); b.appendChild(sm);
+      b.addEventListener('click', () => { if (f !== fam) pvPickView(f[3][0]); });
+      cards.appendChild(b);
+    });
+    // the kinds of the picked card
+    const vars = $('pvars'); vars.textContent = '';
+    $('pvarTitle').textContent = fam[3].length > 1 ? fam[1] + ' · which one' : '';
+    if (fam[3].length > 1) fam[3].forEach((v) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pvar' + (v === view ? ' on' : '');
+      b.setAttribute('aria-pressed', v === view ? 'true' : 'false');
+      b.appendChild(pvImg('pv-sun-' + v + '.jpg', pvPos(v))); b.appendChild(document.createTextNode(PV_NAME[v]));
+      b.addEventListener('click', () => pvPickView(v));
+      vars.appendChild(b);
+    });
+    // the moon screens, only when "Same style on both screens" is off
+    $('pmoonWrap').hidden = link;
+    const moons = $('pmoons'); moons.textContent = '';
+    if (!link) PV_MOON.forEach(([m, name]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pvar' + (m === sh.moon ? ' on' : '');
+      b.setAttribute('aria-pressed', m === sh.moon ? 'true' : 'false');
+      b.appendChild(pvImg('pv-moon-' + m + '.jpg', pvMoonPos(m))); b.appendChild(document.createTextNode(name));
+      b.addEventListener('click', () => pvTap('moonLook', m));
+      moons.appendChild(b);
+    });
+    // sun styles: only the ones that change this screen
+    const list = SUN_LIST.indexOf(view) !== -1, cur = sh.look === 'neon' ? (S.neonStyle === 'synth' ? 'synth' : 'neon') : sunPickOf(sh.look);
+    const stys = $('pstyles'); stys.textContent = '';
+    $('pstyleNote').hidden = !list; $('pstyleNote').textContent = 'This screen has its own sun: pick it above (Big edge, Arc, Eclipse, Small).';
+    if (!list) PV_STY.filter((x) => view === 'dial' || VIEW_STYLES.indexOf(x[0]) !== -1).forEach(([v, name]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'psty' + (v === cur ? ' on' : '');
+      b.setAttribute('aria-pressed', v === cur ? 'true' : 'false');
+      b.appendChild(pvImg('pv-style-' + v + '.jpg')); b.appendChild(document.createTextNode(name));
+      b.addEventListener('click', () => { if (v === 'neon') pvTap('neonStyle', 'minimal'); else if (v === 'synth') pvTap('neonStyle', 'synth'); else pvTap('sunPick', v); });
+      stys.appendChild(b);
+    });
+    // v48: Moon style (Glow / Phase) only where it changes the moon: the two ring screens
+    $('md-glow').closest('fieldset').hidden = sh.moon !== 'moondial' && sh.moon !== 'dial3d';
+    // what each group has now
+    const lab = (name) => { const r = Array.prototype.find.call(form.elements[name], (x) => x.checked); const l = r && form.querySelector('label[for="' + r.id + '"]'); return l ? l.textContent.trim() : ''; };
+    $('sumSky').textContent = [lab('skyPhoto'), S.loc === 'gps' ? (CITY || 'my location') : 'Vienna', S.sunSet === 'on' ? 'sunset on' : ''].filter(Boolean).join(' · ');
+    $('sumFeel').textContent = [lab('startScreen'), lab('haptics'), S.sound === 'on' ? 'sound on' : 'sound off'].filter(Boolean).join(' · ');
+    $('sumMore').textContent = ['moon ' + lab('moonPhase').toLowerCase(), 'tips ' + (S.tips === 'on' ? 'on' : 'off')].join(' · ');
+    requestAnimationFrame(() => { pvDots('pvars', 'pvarsDots'); pvDots('pmoons', 'pmoonsDots'); pvDots('pstyles', 'pstylesDots'); });
+  }
+  // + Edit look: the editor for the screen you came from (sun or moon)
+  ['lookEditBtn', 'lookEditBtn2'].forEach((id) => $(id).addEventListener('click', () => openLookEdit(st.peekFrom === 'moon' || S.mode === 'one' ? 'moon' : 'sun')));
   function showTab(g, name) {
     form.querySelectorAll('.tabs[data-group="' + g + '"] button').forEach((b) => { b.classList.toggle('on', b.dataset.tab === name); b.setAttribute('aria-selected', String(b.dataset.tab === name)); });
     form.querySelectorAll('.tabpane[data-group="' + g + '"]').forEach((p) => { p.hidden = p.dataset.tab !== name; });
@@ -4683,8 +4812,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       Array.prototype.forEach.call(form.elements[name], (r) => { r.checked = r.value === v; });
     });
     Array.prototype.forEach.call(form.elements.color, (r) => { r.checked = r.value === sh.color; });
+    if (typeof renderPicks === 'function') setTimeout(renderPicks, 0);  // v48
     Array.prototype.forEach.call(form.elements.sunPick, (r) => { r.checked = r.value === sunPickOf(sh.look); });
-    Array.prototype.forEach.call(form.elements.moonDial, (r) => { r.checked = sh.moon === 'moondial' && r.value === S.moonDial; });
+    Array.prototype.forEach.call(form.elements.moonDial, (r) => { r.checked = (sh.moon === 'moondial' || sh.moon === 'dial3d') && r.value === S.moonDial; });  // v48: both ring moons
     // Neon style row always shows (22 Oct: it was hard to find); tapping a style switches the sun to Neon.
     Array.prototype.forEach.call(form.elements.neonStyle, (r) => { r.checked = sh.look === 'neon' && r.value === S.neonStyle; });
     // open the tab that holds the sun and moon style in use
@@ -4739,6 +4869,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   form.addEventListener('submit', (e) => e.preventDefault());
   function afterChange(prevMode, prevDir) {
     save();
+    renderPicks();  // v48
     applyLight();
     if (S.mode !== prevMode) { st.pos = 0; buildFacets(); buildItems(); applyMode(); }
     if (S.dir !== prevDir || S.mode !== prevMode) { st.rot = frontDeg() - frontIndexSafe() * 360 / Math.max(1, APPS.length); snapRot(); }
@@ -4776,7 +4907,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const pk = Array.prototype.find.call(form.elements.pair, (r) => r.checked), p = pk && PAIRS.find((x) => x[0] === pk.value);
       if (p) { S.sunView = p[2]; S.moonLook = p[3]; sunStyleUI(); peekScreen(st.peekFrom === 'moon' ? 'moon' : 'sun'); }  // v47: a pair changes both: stay on the screen you came from
     }
-    if (changed === 'moonDial') S.moonLook = 'moondial';  // tapping Glow / Phase switches the moon to Moon dial (like Neon styles)
+    if (changed === 'moonDial' && S.moonLook !== 'dial3d') S.moonLook = 'moondial';  // v48: the 3D dial keeps its screen  // tapping Glow / Phase switches the moon to Moon dial (like Neon styles)
     if (changed === 'moonLook' || changed === 'moonDial') peekScreen('moon');
     else if (['sunPick', 'sunView', 'neonStyle', 'color', 'skyPhoto', 'liveSun', 'weather', 'sunSet'].indexOf(changed) !== -1) peekScreen('sun');
     if (changed === 'moonPhase') peekScreen('moon');
