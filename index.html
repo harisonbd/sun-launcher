@@ -1419,7 +1419,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const TEXSRC = { sun: 'tex-sun.jpg', moon: 'tex-moon.jpg' };
   const GLB = (function () {
     const out = { ok: false };
-    let cv, gl, prog, L = {}, buf, tex = {}, loaded = {};
+    let cv, gl, prog, L = {}, buf, tex = {}, loaded = {}, loading = {};
     const VS = 'attribute vec2 aP; varying vec2 vP; void main(){ vP = aP; gl_Position = vec4(aP, 0.0, 1.0); }';
     const FS = [
       '#extension GL_OES_standard_derivatives : enable',
@@ -1566,8 +1566,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
       ['uCB', 'uCL', 'uCH', 'uSunP', 'uAsp', 'uCover', 'uCA', 'uEdge', 'uTex', 'uMode', 'uScale', 'uRot', 'uRoll', 'uPitch', 'uTime', 'uAA', 'uGlow', 'uShine', 'uExpo', 'uHas', 'uL', 'uTint', 'uLit', 'uBoil', 'uDet'].forEach((k) => { L[k] = gl.getUniformLocation(prog, k); });
       gl.clearColor(0, 0, 0, 0);
-      Object.keys(TEXSRC).forEach((k) => {
-        if (TEXSRC[k].indexOf('%%') === 0) return;  // not built yet (playground file)
+      Object.keys(TEXSRC).forEach((k) => loadTex(k, TEXSRC[k]));
+      out.ok = true;
+    } catch (e) { out.ok = false; return out; }
+    // maps load once; extra maps (the 4k sun) only when a screen asks for them with GLB.need()
+    function loadTex(k, src) {
+        if (src.indexOf('%%') === 0 || loading[k]) return;  // not built yet (playground file) or already asked for
+        loading[k] = true;
         const im = new Image();
         im.onload = () => {
           const t = gl.createTexture();
@@ -1582,10 +1587,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           if (ani) gl.texParameterf(gl.TEXTURE_2D, ani.TEXTURE_MAX_ANISOTROPY_EXT, 4);
           tex[k] = t; loaded[k] = true; kickLater();
         };
-        im.src = TEXSRC[k];
-      });
-      out.ok = true;
-    } catch (e) { out.ok = false; return out; }
+        im.src = src;
+    }
+    // 4k sun (v33): only for the very big suns, only if this phone's graphics chip takes 4096-pixel maps
+    out.need = (k, src) => { if (gl.getParameter(gl.MAX_TEXTURE_SIZE) >= 4096) loadTex(k, src); return !!loaded[k]; };
     const MODES = { moon: 0, sun: 1, eclipse: 2, blackhole: 3 };
     const hexRgb = (h) => hexToRgb(h).map((v) => v / 255);
     // Draw one body into the 2D context c, centred at x, y with radius R (CSS px).
@@ -1597,7 +1602,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const s = Math.min(cv.width, want);
       gl.viewport(0, 0, s, s);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      const texKey = o.tex || (o.mode === 'eclipse' ? 'moon' : o.mode === 'sun' ? 'sun' : o.mode === 'moon' ? 'moon' : '');
+      // o.tex: an extra map (the 4k sun); until it has loaded, the normal map is used
+      const defKey = o.mode === 'eclipse' ? 'moon' : o.mode === 'sun' ? 'sun' : o.mode === 'moon' ? 'moon' : '';
+      const texKey = o.tex && loaded[o.tex] ? o.tex : defKey;
       const has = !!(texKey && loaded[texKey]);
       if (has) { gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex[texKey]); }
       gl.uniform1i(L.uTex, 0);
@@ -2586,6 +2593,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     }
     const today = new Date();
     const sol = solarInfo();
+    // the very big suns use the 4k map once it has loaded (v33); the first time it downloads 3.7 MB, then it is saved
+    const hd = GLB.ok && (v === 'clock' || v === 'edge' || v === 'setting') && GLB.need('sun4k', 'tex-sun-4k.jpg');
     if (v === 'today' || v === 'minimal' || v === 'clock') solarFetch();
     if (v === 'today') {
       // like D. Real moon phase: big sun, a short report, the next 7 days, apps as cards below
@@ -2648,7 +2657,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         const hy = by + sr * 0.62;
         halo(sr * 0.8, sr * 2.6, 0.35);
         c.save(); c.beginPath(); c.rect(0, 0, W, hy); c.clip();
-        if (GLB.ok) GLB.draw(c, bx, by, sr, { mode: 'sun', tint: st.sun, rot: t * 0.02, time: t, glow: 0.7, margin: 1.3, lit: 1, light: [0.82, 0.25, 0.5] });
+        if (GLB.ok) GLB.draw(c, bx, by, sr, { mode: 'sun', tex: hd ? 'sun4k' : '', tint: st.sun, rot: t * 0.02, time: t, glow: 0.7, margin: 1.3, lit: 1, light: [0.82, 0.25, 0.5] });
         c.restore();
         const hz = c.createLinearGradient(0, hy - 2, 0, hy + 40); hz.addColorStop(0, hexA(st.sun, 0.55)); hz.addColorStop(1, hexA(st.sun, 0));
         c.fillStyle = hz; c.fillRect(0, hy, W, 40);
@@ -2658,7 +2667,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       } else {
         // Big edge (reworked 22 Oct): fully lit boiling surface with fine grains, soft halo (the half-dark sun looked strange)
         halo(sr * 0.8, sr * 2.4, 0.22);
-        sunAt(bx, by, sr, { boil: true, detail: 0.5, glow: 0.8, margin: 1.3 });
+        sunAt(bx, by, sr, { tex: 'sun4k', boil: !hd || look === 'plasma', detail: hd ? 0.2 : 0.5, glow: 0.8, margin: 1.3 });
       }
       // the arc of dots; the chosen app sits at the left-most point
       c.beginPath(); c.arc(bx, by, rA, Math.PI - 1.36, Math.PI + 1.36); c.strokeStyle = 'rgba(255, 240, 220, 0.18)'; c.lineWidth = 1; c.stroke();
@@ -2680,7 +2689,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       // like A. Clock-dial moon: a huge sun at the left edge, a ticked dial that turns, the apps along the dial
       const C0 = -150 * k, C1 = H * 0.53, R = 262 * k;
       // boiling surface (user, 22 Oct: the stretched map looked hand-drawn), with finer grains for this big sun
-      sunAt(C0, C1, R, { glow: 0.9, margin: 1.12, rot: 0.4 + t * 0.02, boil: true, detail: 0.7 });
+      sunAt(C0, C1, R, { tex: 'sun4k', glow: 0.9, margin: 1.12, rot: 0.4 + t * 0.02, boil: !hd || look === 'plasma', detail: hd ? 0.25 : 0.7 });
       c.save(); c.lineCap = 'round';
       const turn = pos * 7.2, off = ((turn % 1.8) + 1.8) % 1.8;
       for (let a = -54 + (1.8 - off); a <= 54; a += 1.8) {
