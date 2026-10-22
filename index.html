@@ -317,7 +317,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .send small { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
 
 /* v46: Watch mode and one-time hints */
-.watchbtn { position: absolute; bottom: 28px; left: 96px; width: 44px; height: 44px; border-radius: 22px; border: none; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--ink-3); display: flex; align-items: center; justify-content: center; z-index: 860; cursor: pointer; transition: opacity .4s; }
+.watchbtn { position: absolute; top: 18px; left: 76px; width: 44px; height: 44px; border-radius: 22px; border: none; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--ink-3); display: flex; align-items: center; justify-content: center; z-index: 860; cursor: pointer; transition: opacity .4s; }
 #app.watch .watchbtn, #app.editing .watchbtn { opacity: 0; pointer-events: none; }
 .watchcatch { position: absolute; inset: 0; z-index: 880; }
 .watchcatch[hidden] { display: none; }
@@ -656,10 +656,18 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <p class="helpline">Live photo: dawn, day, sunset, blue hour or night photo, matching the real sun in Vienna now. With Real weather on, overcast, rain, snow, fog and thunderstorm photos show too.</p>
       </fieldset>
       <fieldset>
+        <legend>Location</legend>
+        <div class="seg">
+          <input type="radio" name="loc" id="loc-fixed" value="fixed"><label for="loc-fixed">Vienna</label>
+          <input type="radio" name="loc" id="loc-gps" value="gps"><label for="loc-gps">My location</label>
+        </div>
+        <p class="helpline" id="locLine">Sun, moon, weather and the Earth follow this place. My location asks the phone once each time the app opens; the city name comes from a list inside the app (GeoNames, 50,000+ people), nothing is sent.</p>
+      </fieldset>
+      <fieldset>
         <legend>Weather</legend>
         <div class="seg">
           <input type="radio" name="weather" id="wx-off" value="off"><label for="wx-off">Off</label>
-          <input type="radio" name="weather" id="wx-real" value="real"><label for="wx-real">Real weather (Vienna)</label>
+          <input type="radio" name="weather" id="wx-real" value="real"><label for="wx-real">Real weather</label>
         </div>
         <p id="wxLine" class="helpline"></p>
       </fieldset>
@@ -667,7 +675,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <legend>Sun position</legend>
         <div class="seg">
           <input type="radio" name="liveSun" id="ls-off" value="off"><label for="ls-off">Fixed</label>
-          <input type="radio" name="liveSun" id="ls-on" value="on"><label for="ls-on">Real sun (Vienna)</label>
+          <input type="radio" name="liveSun" id="ls-on" value="on"><label for="ls-on">Real sun</label>
         </div>
         <p id="liveLine" class="helpline"></p>
       </fieldset>
@@ -802,7 +810,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {} };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -845,6 +853,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (S.liveSun !== 'on') S.liveSun = 'off';
   if (S.sunSet !== 'on') S.sunSet = 'off';  // v45: sun sets behind the hills (H4b)
   if (S.tips !== 'off') S.tips = 'on';  // v46: one-time hints
+  if (S.loc !== 'gps') S.loc = 'fixed';  // v47: Vienna (fixed) or your location
+  if (!S.place || !isFinite(S.place.lat) || !isFinite(S.place.lon)) S.place = null;
   if (!S.hints || typeof S.hints !== 'object') S.hints = {};
   if (S.weather !== 'real') S.weather = 'off';
   if (S.moonPhase !== 'fixed') S.moonPhase = 'real';
@@ -933,7 +943,15 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
 
   /* ---------- Real sunrise and sunset (Vienna, works offline) ---------- */
-  const LAT = 48.2082, LON = 16.3738;
+  // v47 (user, in Varna): the place is Vienna (fixed) or your location (Settings > Sky > Location). CITY = '' when
+  // no big city is near: then no city name is shown anywhere.
+  let LAT = 48.2082, LON = 16.3738, CITY = 'Vienna';
+  function applyPlace() {
+    if (S.loc === 'gps' && S.place) { LAT = S.place.lat; LON = S.place.lon; CITY = S.place.city || ''; }
+    else { LAT = 48.2082; LON = 16.3738; CITY = 'Vienna'; }
+  }
+  applyPlace();
+  const inCity = (pre) => CITY ? pre + CITY : '';
   function sunTimes(date) {
     const rad = Math.PI / 180, dayMs = 86400000, J1970 = 2440588, J2000 = 2451545, e = rad * 23.4397, J0 = 0.0009;
     const toDays = (d) => d.valueOf() / dayMs - 0.5 + J1970 - J2000;
@@ -1083,7 +1101,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   // B: the list of the next sky events, in a sheet
   function openEvents() {
     const ev = skyEvents().filter((e) => !e.minor).slice(0, 8);
-    openSheet('Coming up above Vienna', ev.map((e) => e.icon + '  ' + e.title + ' · ' + evDate(e.date) + '\n      ' + e.sub).join('\n\n'), '', false);
+    openSheet('Coming up in the sky', ev.map((e) => e.icon + '  ' + e.title + ' · ' + evDate(e.date) + '\n      ' + e.sub).join('\n\n'), '', false);
     $('sheetText').style.whiteSpace = 'pre-line';
   }
   // ---- Drawn skies (v32, mockups R1/R2): sky colours from the real sun height in Vienna, soft clouds, hills ----
@@ -1356,16 +1374,51 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     for (; x < W; x += mw) c.drawImage(starImg, x, y, mw, mh);
     c.restore();
   }
+  /* ---------- Location (v47): GPS only when "My location" is picked; nearest city from cities.json (GeoNames) ---------- */
+  let cityList = null;
+  function nearestCity(lat, lon) {
+    const get = cityList ? Promise.resolve(cityList) : fetch('cities.json').then((r) => r.json()).then((j) => (cityList = j));
+    return get.then((list) => {
+      const rad = Math.PI / 180, cl = Math.cos(lat * rad);
+      let best = null, bd = Infinity;
+      list.forEach((c) => { const dx = (c[2] - lon) * cl, dy = c[1] - lat, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = c; } });
+      const km = Math.sqrt(bd) * 111;
+      return best && km < 40 ? best[0] : '';  // more than 40 km from a big city: no name
+    }).catch(() => '');
+  }
+  function locLine() {
+    const el = $('locLine'); if (!el) return;
+    el.textContent = S.loc === 'gps'
+      ? (S.place ? 'Now: ' + (S.place.city || 'no big city nearby') + ' (' + S.place.lat.toFixed(1) + '°, ' + S.place.lon.toFixed(1) + '°). ' : 'Asking the phone for your location… ') + 'Your position stays on this phone (weather: rounded to about 10 km).'
+      : 'Sun, moon, weather and the Earth follow Vienna. Pick My location to use where you are (the phone asks first).';
+  }
+  function locate(ask) {
+    if (S.loc !== 'gps') return;
+    if (!navigator.geolocation) { toast('This browser cannot tell the location.'); return; }
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const lat = Math.round(pos.coords.latitude * 100) / 100, lon = Math.round(pos.coords.longitude * 100) / 100;
+      nearestCity(lat, lon).then((city) => {
+        const moved = !S.place || Math.abs(S.place.lat - lat) > 0.05 || Math.abs(S.place.lon - lon) > 0.05;
+        S.place = { lat: lat, lon: lon, city: city, t: Date.now() };
+        applyPlace(); save(); locLine(); kick();
+        if (moved) { WX = null; wxFetch(true); if (ask) toast(city ? 'Location: ' + city : 'Location found (no big city nearby).'); }
+      });
+    }, () => {
+      if (ask) { toast('Location not allowed: using Vienna.'); S.loc = 'fixed'; applyPlace(); save(); if (typeof fillForm === 'function') fillForm(); locLine(); kick(); }
+    }, { enableHighAccuracy: false, maximumAge: 3600000, timeout: 15000 });
+  }
+
   /* ---------- Weather (Settings > Weather > Real): Open-Meteo, no key, Vienna's fixed position, every 30 min ---------- */
   // Only these fixed coordinates are sent. The last answer is kept, so the sky stays as it was when offline.
-  const WX_URL = 'https://api.open-meteo.com/v1/forecast?latitude=48.21&longitude=16.37&current=temperature_2m,cloud_cover,weather_code&timezone=Europe%2FVienna';
+  // v47: your place, rounded to 0.1° (about 10 km) before it is sent
+  const wxUrl = () => 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT.toFixed(1) + '&longitude=' + LON.toFixed(1) + '&current=temperature_2m,cloud_cover,weather_code&timezone=auto';
   let WX = null, wxBusy = false;
   try { WX = JSON.parse(localStorage.getItem('sun-launcher-wx') || 'null'); } catch (e) {}
   function wxFetch(force) {
     if (S.weather !== 'real' || wxBusy || !navigator.onLine) return;
     if (!force && WX && Date.now() - WX.t < 30 * 60000) return;
     wxBusy = true;
-    fetch(WX_URL, { cache: 'no-store' }).then((r) => r.json()).then((j) => {
+    fetch(wxUrl(), { cache: 'no-store' }).then((r) => r.json()).then((j) => {
       const c = j.current || {};
       if (typeof c.cloud_cover !== 'number') return;
       WX = { t: Date.now(), temp: c.temperature_2m, cloud: c.cloud_cover, code: c.weather_code };
@@ -1381,17 +1434,22 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   try { SOL = JSON.parse(localStorage.getItem('sun-launcher-solar') || 'null'); } catch (e) {}
   const localDay = (iso) => { const d = new Date(iso); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   function solarFetch() {
-    if (solBusy || !navigator.onLine || (SOL && Date.now() - SOL.t < 3 * 3600000)) return;
+    if (solBusy || !navigator.onLine || (SOL && SOL.spots && Date.now() - SOL.t < 3 * 3600000)) return;  // v47: refetch old data without spots
     solBusy = true;
     const get = (p) => fetch(SWPC + p, { cache: 'no-store' }).then((r) => r.json());
-    Promise.all([get('products/noaa-planetary-k-index-forecast.json'), get('json/goes/primary/xray-flares-latest.json'), get('json/solar_probabilities.json'), get('json/solar_regions.json')]).then((a) => {
+    Promise.all([get('products/noaa-planetary-k-index-forecast.json'), get('json/goes/primary/xray-flares-latest.json'), get('json/solar_probabilities.json'), get('json/solar_regions.json'), get('products/alerts.json').catch(() => [])]).then((a) => {
       const kp = {};
       a[0].forEach((e) => { if (e && e.time_tag) { const d = localDay(e.time_tag + 'Z'); kp[d] = Math.max(kp[d] || 0, +e.kp || 0); } });
       const fl = a[1] && a[1][0] ? { cls: a[1][0].max_class || '', day: localDay(a[1][0].max_time || a[1][0].begin_time) } : null;
       const pr = (a[2] || []).slice().sort((x, y) => (x.date < y.date ? 1 : -1))[0] || null;
       const last = (a[3] || []).reduce((m, r) => (r.observed_date > m ? r.observed_date : m), '');
       const regions = (a[3] || []).filter((r) => r.observed_date === last).length;
-      SOL = { t: Date.now(), kp: kp, flare: fl, prob: pr ? [[pr.m_class_1_day, pr.x_class_1_day], [pr.m_class_2_day, pr.x_class_2_day], [pr.m_class_3_day, pr.x_class_3_day]] : null, regions: regions };
+      // v47: the real sunspots seen today: [latitude, longitude (+ = east), area in millionths, number of spots]
+      const spots = (a[3] || []).filter((r) => r.observed_date === last && r.area > 0 && Math.abs(r.longitude) < 88).map((r) => [+r.latitude || 0, +r.longitude || 0, +r.area || 0, +r.number_spots || 1]);
+      // v47: a real coronal mass ejection (CME) in NOAA's alerts of the last 3 days
+      const cmeA = (a[4] || []).filter((x) => /CME|Coronal Mass Ejection|Type II Radio/i.test(x.message || '') && Date.now() - Date.parse((x.issue_datetime || '').replace(' ', 'T') + 'Z') < 3 * 86400000);
+      const cme = cmeA.length ? cmeA.map((x) => x.issue_datetime).sort().pop() : '';
+      SOL = { t: Date.now(), kp: kp, flare: fl, prob: pr ? [[pr.m_class_1_day, pr.x_class_1_day], [pr.m_class_2_day, pr.x_class_2_day], [pr.m_class_3_day, pr.x_class_3_day]] : null, regions: regions, spots: spots, cme: cme };
       try { localStorage.setItem('sun-launcher-solar', JSON.stringify(SOL)); } catch (e) {}
       if (typeof kick === 'function') kick();
     }).catch(() => {}).then(() => { solBusy = false; });
@@ -1408,7 +1466,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       if (k >= 5) tags[i] = ['Storm', '#FF7A5A']; else if ((i === 0 && flareToday) || m >= 40) tags[i] = ['Flares', '#FFB347'];
     }
     const age = Math.round((Date.now() - SOL.t) / 3600000);
-    const line = SOL.regions + ' sunspot groups · M-flare chance ' + m0 + ' %' + (age >= 6 ? ' · ' + age + ' h old' : '');
+    const cmeD = SOL.cme ? new Date(SOL.cme.replace(' ', 'T') + 'Z') : null;
+    const line = SOL.regions + ' sunspot groups · M-flare chance ' + m0 + ' %' + (cmeD ? ' · CME ' + cmeD.getDate() + ' ' + MONTHS[cmeD.getMonth()] : '') + (age >= 6 ? ' · ' + age + ' h old' : '');
     const next = [0, 1, 2].find((i) => SOL.kp[dKey(i)] >= 5);
     return { title: title, line: line, tags: tags, short: title.toLowerCase(), storm: next == null ? 'No magnetic storm in the next 3 days' : 'Magnetic storm ' + (next === 0 ? 'today' : next === 1 ? 'tomorrow' : 'on ' + DAYS_LONG[new Date(today.getTime() + next * 86400000).getDay()]), kpNow: kp0 };
   }
@@ -2167,6 +2226,63 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   let lp = 0;
   function cancelLP() { if (lp) { clearTimeout(lp); lp = 0; } }
 
+  // Loops of hot gas at the sun's edge (v47: back from the old Plasma look, only on the Today sun; after a real
+  // CME there are more and they reach higher). Each loop grows, stays and fades
+  // in 10-20 s, then a new one starts somewhere else. Thin 'lighter' strokes only (no blur: it lags on phones).
+  const proms = [];
+  function newProm(t, spread) {
+    const life = 10000 + Math.random() * 10000, s = [];
+    for (let k = 0; k < 6; k++) s.push([(Math.random() - 0.5) * 0.08, (Math.random() - 0.5) * 0.08, (Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.12, 0.6 + Math.random() * 0.8, 0.5 + Math.random(), 0.4 + Math.random() * 0.6]);
+    return { a: Math.random() * 2 * Math.PI, w: 0.035 + Math.random() * 0.05, h: 0.05 + Math.random() * 0.09, life: life, t0: t - (spread ? Math.random() * life : 0), s: s };
+  }
+  function plasmaLoops(c, bx, by, R, now, light, boost) {
+    const t = reduce ? 0 : now, k0 = R / 74;
+    while (proms.length < (boost ? 7 : 4)) proms.push(newProm(t, true));
+    if (!boost && proms.length > 4) proms.length = 4;
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    c.lineCap = 'round';
+    proms.forEach((p, i) => {
+      let k = (t - p.t0) / p.life;
+      if (k >= 1 || k < 0) { proms[i] = p = newProm(t, false); k = 0; }
+      const env = Math.sin(Math.PI * k), grow = 0.7 + 0.3 * Math.min(1, k * 2);
+      // wide red strands drawn normally (they stay visible on a bright sky), thin hot cores added on top
+      [[225, 55, 18, 2.6, 'source-over', 0.7], [255, 150, 70, 0.8, 'lighter', 0.5]].forEach((pass) => {
+        c.globalCompositeOperation = pass[4];
+        p.s.forEach((s) => {
+          const a1 = p.a - p.w + s[0], a2 = p.a + p.w + s[1], b1 = p.a - p.w * 0.6 + s[2], b2 = p.a + p.w * 0.6 + s[3];
+          const hh = R + p.h * R * s[4] * 2.3 * grow * (boost ? 1.6 : 1), r0 = R * 0.99;
+          c.beginPath();
+          c.moveTo(bx + r0 * Math.cos(a1), by + r0 * Math.sin(a1));
+          c.bezierCurveTo(bx + hh * Math.cos(b1), by + hh * Math.sin(b1), bx + hh * Math.cos(b2), by + hh * Math.sin(b2), bx + r0 * Math.cos(a2), by + r0 * Math.sin(a2));
+          c.strokeStyle = 'rgba(' + pass[0] + ',' + pass[1] + ',' + pass[2] + ',' + (pass[5] * s[6] * env * (0.5 + 0.5 * light)).toFixed(3) + ')';
+          c.lineWidth = pass[3] * s[5] * k0;
+          c.stroke();
+        });
+      });
+    });
+    c.restore();
+  }
+  // v47: the real sunspots (NOAA) on a sun seen face-on: east on the left, north up; flatter towards the edge
+  function drawSunspots(c, cx, cy, r) {
+    if (!SOL || !SOL.spots) return;
+    const rad = Math.PI / 180;
+    c.save(); c.beginPath(); c.arc(cx, cy, r * 0.995, 0, 2 * Math.PI); c.clip();
+    SOL.spots.forEach((sp) => {
+      const la = sp[0] * rad, lo = sp[1] * rad, x = cx - r * Math.cos(la) * Math.sin(lo), y = cy - r * Math.sin(la);
+      const mu = Math.max(0, Math.cos(la) * Math.cos(lo)), size = Math.max(r * 0.014, r * Math.sqrt(2 * sp[2] * 1e-6) * 2.4);
+      const ang = Math.atan2(y - cy, x - cx), a = Math.min(1, mu * 4);
+      const one = (dx, dy, k) => {
+        c.save(); c.translate(x + dx, y + dy); c.rotate(ang);
+        c.fillStyle = 'rgba(110, 40, 8, ' + (0.55 * a).toFixed(3) + ')'; c.beginPath(); c.ellipse(0, 0, size * k * Math.max(0.25, mu), size * k, 0, 0, 2 * Math.PI); c.fill();
+        c.fillStyle = 'rgba(35, 10, 2, ' + (0.85 * a).toFixed(3) + ')'; c.beginPath(); c.ellipse(0, 0, size * k * 0.45 * Math.max(0.25, mu), size * k * 0.45, 0, 0, 2 * Math.PI); c.fill();
+        c.restore();
+      };
+      one(0, 0, 1);
+      if (sp[3] >= 4) { one(size * 1.3, size * 0.4, 0.55); one(-size * 1.1, -size * 0.3, 0.45); }  // a group: a few smaller spots round the big one
+    });
+    c.restore();
+  }
   const parts = [];
   let emitAcc = 0;
   let lastFront = -1;
@@ -2679,13 +2795,16 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const today = new Date();
     const sol = solarInfo();
     // the very big suns use the 4k map once it has loaded (v33); the first time it downloads 3.7 MB, then it is saved
-    const hd = GLB.ok && (v === 'clock' || v === 'edge') && GLB.need('sun4k', 'tex-sun-4k.jpg');
+    const hd = GLB.ok && (v === 'clock' || v === 'edge' || v === 'today' || v === 'minimal') && GLB.need('sun4k', 'tex-sun-4k.jpg');
     if (v === 'today' || v === 'minimal' || v === 'clock') solarFetch();
     if (v === 'today') {
       // like D. Real moon phase: big sun, a short report, the next 7 days, apps as cards below
       const T = tuneOf('sun:today'), r = Math.min(W * 0.31, H * 0.145) * T.size, mx = W / 2 + T.x * W, my = H * (0.25 + T.y);
-      sunAt(mx, my, r, { glow: 1 }); bodyAt.sun = { x: mx, y: my, r: r };
-      txt('Today above Vienna', W / 2, H * 0.43, 12, 600, muted, 'center', true);
+      sunAt(mx, my, r, { glow: 1, tex: 'sun4k', detail: hd ? 0.25 : 0.45 }); bodyAt.sun = { x: mx, y: my, r: r };
+      // v47 (user): only on Today: the real sunspots, and loops of hot gas at the edge (more after a real CME)
+      drawSunspots(c, mx, my, r);
+      if (!reduce) plasmaLoops(c, mx, my, r, now, 1, !!(SOL && SOL.cme));
+      txt(CITY ? 'Today above ' + CITY : 'Today above you', W / 2, H * 0.43, 12, 600, muted, 'center', true);
       txt(sol.title, W / 2, H * 0.47, 28, 600, '#F5EFE3', 'center');
       txt(sol.line, W / 2, H * 0.505, 14, 400, muted, 'center');
       const rowY = H * 0.565, gap = Math.min(52, (W - 32) / 7), tags = sol.tags;
@@ -2704,14 +2823,15 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     } else if (v === 'minimal') {
       // like B. Minimal moon: big date, sun at the top-right edge, three short lines, the day curve, a plain list
       const T = tuneOf('sun:minimal'), R = 128 * k * T.size, bx = W - 30 * k + T.x * W, by = H * (0.215 + T.y);
-      sunAt(bx, by, R, { glow: 0.6, margin: 1.3 }); bodyAt.sun = { x: bx, y: by, r: R };
+      sunAt(bx, by, R, { glow: 0.6, margin: 1.3, tex: 'sun4k', detail: hd ? 0.25 : 0.45 }); bodyAt.sun = { x: bx, y: by, r: R };  // v47: sharper (user)
       txt(DAYS_LONG[today.getDay()], 24, H * 0.125, 12, 600, muted, 'left', true);
       txt(MONTHS_LONG[today.getMonth()], 22, H * 0.175, 50, 300, '#F5EFE3');
       txt(String(today.getDate()), 24, H * 0.245, 50, 600, '#F5EFE3');
       const sn = sunToday();
       ['☀  Sunrise ' + fmtHour(sn.rise) + ' · Sunset ' + fmtHour(sn.set), '☀  ' + sol.title + (SOL ? ' · ' + SOL.regions + ' sunspot groups' : ''), '☀  ' + (SOL ? sol.storm : sol.line)].forEach((s, i) => txt(s, 24, H * 0.3 + i * 22, 13.5, 400, muted));
       // the day curve: the sun above the line between sunrise and sunset, a dot for now
-      const y0 = H * 0.405, w = 170, alt = (h) => h >= sn.rise && h <= sn.set ? Math.sin(Math.PI * (h - sn.rise) / (sn.set - sn.rise)) : -0.35 * Math.sin(Math.PI * (((h - sn.set + 24) % 24) / (24 - (sn.set - sn.rise))));
+      // v47: the day curve keeps >= 28 px under the 3rd line (user: it touched them on a shorter screen)
+      const y0 = Math.max(H * 0.405, H * 0.3 + 2 * 22 + 46), w = 170,  alt = (h) => h >= sn.rise && h <= sn.set ? Math.sin(Math.PI * (h - sn.rise) / (sn.set - sn.rise)) : -0.35 * Math.sin(Math.PI * (((h - sn.set + 24) % 24) / (24 - (sn.set - sn.rise))));
       c.beginPath();
       for (let x = 0; x <= w; x++) { const y = y0 - alt(x / w * 24) * 18; if (x) c.lineTo(24 + x, y); else c.moveTo(24, y); }
       c.strokeStyle = 'rgba(255, 214, 160, 0.6)'; c.lineWidth = 1.2; c.stroke();
@@ -3239,7 +3359,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       bodyAt.moon = { x: mx, y: my, r: r };
       glow(mx, my, r, (0.08 + 0.12 * sm.fraction).toFixed(3));
       if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(sm.phase), rot: -0.2, shine: 0.07, expo: 1.3, glow: 1, margin: 1.25 });
-      txt(sel ? DAYS_LONG[selD.getDay()] + ' night in Vienna' : 'Tonight in Vienna', W / 2, H * 0.365, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      txt(sel ? DAYS_LONG[selD.getDay()] + ' night' + inCity(' in ') : 'Tonight' + inCity(' in '), W / 2, H * 0.365, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
       txt(moonPhaseName(sm.phase).replace(/^./, (s) => s.toUpperCase()), W / 2, H * 0.402, 28, 600, '#F5EFE3', 'center');
       txt(Math.round(sm.fraction * 100) + ' % lit · ' + (sel ? 'tap Today to go back' : fullTxt), W / 2, H * 0.437, 14, 400, 'rgba(195, 204, 221, 0.9)', 'center');
       const nextEv = skyEvents().find((e) => !e.minor), me = $('moonEvent');
@@ -3327,9 +3447,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const sn = sunToday();
       txt('☾  ' + moonPhaseName(mn.phase).replace(/^./, (s) => s.toUpperCase()) + ' · ' + Math.round(mn.fraction * 100) + ' % lit', 24, H * 0.285, 13, 500, 'rgba(195, 204, 221, 0.95)');
       txt('☾  ' + fullTxt.replace(/^./, (s) => s.toUpperCase()), 24, H * 0.315, 13, 500, 'rgba(195, 204, 221, 0.95)');
-      txt('☀  Sunset ' + fmtHour(sn.set) + ' · Vienna', 24, H * 0.345, 13, 500, 'rgba(195, 204, 221, 0.95)');
+      txt('☀  Sunset ' + fmtHour(sn.set) + inCity(' · '), 24, H * 0.345, 13, 500, 'rgba(195, 204, 221, 0.95)');
       // day curve: the sun's real height through today, a dot at the time now
-      const x0 = 24, x1 = W * 0.52, base = H * 0.425, amp = H * 0.03, d0 = new Date(today); d0.setHours(0, 0, 0, 0);
+      // v47: the day curve keeps a gap under the three lines (user)
+      const x0 = 24, x1 = W * 0.52, amp = H * 0.03, base = Math.max(H * 0.425, H * 0.345 + 28 + amp),  d0 = new Date(today); d0.setHours(0, 0, 0, 0);
       c.beginPath();
       for (let k = 0; k <= 48; k++) { const a = sunAltAz(new Date(d0.getTime() + k * 1800000)).alt; const x = x0 + (x1 - x0) * k / 48, y = base - amp * a / 35; if (k) c.lineTo(x, y); else c.moveTo(x, y); }
       c.strokeStyle = 'rgba(245, 239, 227, 0.55)'; c.lineWidth = 1.2; c.stroke();
@@ -3408,6 +3529,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (spin.drag) return true;
     const dt = spin.last ? Math.min(48, now - spin.last) : 16;
     spin.last = now;
+    if (st.watch && planet.on && Math.abs(spin.vel) <= 0.002 && !reduce) { spin.off -= dt * 0.0012; spin.rest = now; return true; }  // v47: slow turn while watching
     if (Math.abs(spin.vel) > 0.002) { spin.off += spin.vel * dt; spin.vel *= Math.exp(-dt / 1400); spin.rest = now; return true; }
     spin.vel = 0;
     const home = Math.round(spin.off / 360) * 360;
@@ -3448,14 +3570,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && planet.calm) keepAwake(true); });
   // 7 (v37): the northern lights band (auroral oval) seen from space: green glow around the north, only on the night
   // side. NOAA's Kp for today makes it brighter and pushes it further south (about 2.5° per Kp step above 3).
-  function drawAuroraSpace(c, cx, cy, R, centerLon, lv, now) {
+  function drawAuroraSpace(c, cx, cy, R, centerLon, lv, now, toView) {
     solarFetch();
     const kp = SOL && SOL.kp ? SOL.kp[localDay(new Date())] || 0 : 2, rad = Math.PI / 180, t = reduce ? 0 : now / 1000;
     const latC = 67 - Math.max(0, kp - 3) * 2.5, a = Math.min(1, 0.3 + kp * 0.1);
     c.save(); c.globalCompositeOperation = 'lighter';
     for (let lon = -180; lon < 180; lon += 2.5) {
       const lat = latC + 1.8 * Math.sin(lon * rad * 3 + t * 0.06), L = (lon - centerLon) * rad, cl = Math.cos(lat * rad);
-      const x3 = cl * Math.sin(L), y3 = Math.sin(lat * rad), z3 = cl * Math.cos(L);
+      const v3 = toView([cl * Math.sin(L), Math.sin(lat * rad), cl * Math.cos(L)]), x3 = v3[0], y3 = v3[1], z3 = v3[2];
       if (z3 < 0.04) continue;
       const night = -(x3 * lv[0] + y3 * lv[1] + z3 * lv[2]);
       if (night < -0.04) continue;
@@ -3486,7 +3608,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const d = st.demo || S.sky !== 'clock' ? new Date(d0.getTime() + hourNow() * 3600000) : new Date();
     // v46 (user): the Earth stays still (the 22 Oct float up and down is gone); only clouds and northern lights move
     // v37: centerLon follows the fidget spin (spin.off); it goes back to 32 (Vienna in front) when the Earth settles
-    const cx = W / 2, cy = H * 1.197, R = 520 * k, centerLon = 32 - spin.off, ss = subsolar(d), rad = Math.PI / 180;
+    // v47: your place in front: the globe turns (centerLon) and tilts (pitch) so the city sits where Vienna always sat
+    // v47: on shorter screens the Earth sits lower, so the moon fits between the time chips and the Earth's air
+    const R = 520 * k, cx = W / 2, cy = Math.max(H * 1.197, H * 0.3 + 18 + 30 * k + 24 + R * 1.07), centerLon = LON + 15.6 - spin.off, ss = subsolar(d), rad = Math.PI / 180;
+    const pitch = (48.2 - LAT) * rad, cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const toView = (b) => [b[0], b[1] * cp + b[2] * sp, -b[1] * sp + b[2] * cp];  // globe -> screen (inverse of the shader's tilt)
     const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
     // v42: sharper 8k day map (NASA 21600 px, made smaller), only where the phone can hold it; the 4k map shows until it arrives
     const dayTex = ok && PG.big() && PG.need('earth8', 'earth-day-8k.jpg') ? 'earth8' : 'earth';
@@ -3495,14 +3621,19 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const mpos = moonAltAz(d), mnNow = moonIllum(d), yTop = cy - R;
     planetMoon = null; planetSun = null;
     if (mpos.alt > 0 && GLB.ok) {
-      const mx = W / 2 + ((mpos.az - 180) / 180) * (W / 2 - 30), my = yTop - 26 - Math.min(mpos.alt, 60) / 60 * (yTop - 26 - H * 0.4), mr = 15 * k;
+      const mx = W / 2 + ((mpos.az - 180) / 180) * (W / 2 - 30), mr = 15 * k;
+      // v47 (user): always a small gap (~10 px) between the moon and the Earth's glowing air
+      const airY = cy - Math.sqrt(Math.max(0, R * R * 1.07 * 1.07 - (mx - cx) * (mx - cx)));
+      // and never on the time chips (H * 0.3, 36 px tall) unless Watch hides them; if there is no room, the gap to the Earth wins
+      const chipLow = st.watch ? H * 0.1 : H * 0.3 + 18 + mr + 8;
+      const my = Math.min(Math.max(yTop - 26 - Math.min(mpos.alt, 60) / 60 * (yTop - 26 - H * 0.4), chipLow), airY - mr - 10);
       const mg = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3.2); mg.addColorStop(0, 'rgba(210, 222, 245, ' + (0.12 + 0.18 * mnNow.fraction).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(210, 222, 245, 0)');
       c.fillStyle = mg; c.fillRect(mx - mr * 3.3, my - mr * 3.3, mr * 6.6, mr * 6.6);
       GLB.draw(c, mx, my, mr, { mode: 'moon', light: realMoonLight(mnNow.phase), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0.6, margin: 1.6 });
       planetMoon = { x: mx, y: my };
     }
     {
-      const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad, lv = [Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)];
+      const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad, lv = toView([Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)]);
       // v41: the far sun, seen from space (user): always on the side the light comes from (lv). Sun in front of us
       // (our side is in day): up in the sky; behind the Earth (night): low behind the edge, only its glow peeks out.
       // Drawn before the Earth, so the Earth covers it.
@@ -3517,7 +3648,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       // v42: until the Earth photos have loaded (slow mobile data), a simple drawn Earth with the real lit side
       if (!ok) drawnEarth(c, cx, cy, R, lv);
       else {
-        PG.draw(c, cx, cy, R, { mode: 'earth', tex: dayTex, tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.012, light: lv, expo: 1.15, margin: 1.06, glow: mnNow.fraction });
+        PG.draw(c, cx, cy, R, { mode: 'earth', tex: dayTex, tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, pitch: pitch, rot2: (reduce ? 0 : now / 1000) * 0.012, light: lv, expo: 1.15, margin: 1.06, glow: mnNow.fraction });
         // 2 (v36): a thin glowing atmosphere along the Earth's edge, brighter on the side the sun shines from
         c.save(); c.globalCompositeOperation = 'lighter';
         const rim = (g) => { c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R * 1.07, 0, 2 * Math.PI); c.arc(cx, cy, R * 0.985, 0, 2 * Math.PI, true); c.fill('evenodd'); };
@@ -3529,16 +3660,16 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         rim(sg);
         c.restore();
         // 7 (v37): northern lights seen from space, a green band around the north on the night side (stronger with high Kp)
-        drawAuroraSpace(c, cx, cy, R, centerLon, lv, now);
-        const vx = cx + R * Math.cos(LAT * rad) * Math.sin((LON - centerLon) * rad), vy = cy - R * Math.sin(LAT * rad);
-        const vz = Math.cos(LAT * rad) * Math.cos((LON - centerLon) * rad);  // < 0: Vienna is on the far side while spinning
+        drawAuroraSpace(c, cx, cy, R, centerLon, lv, now, toView);
+        const vp = toView([Math.cos(LAT * rad) * Math.sin((LON - centerLon) * rad), Math.sin(LAT * rad), Math.cos(LAT * rad) * Math.cos((LON - centerLon) * rad)]);
+        const vx = cx + R * vp[0], vy = cy - R * vp[1], vz = vp[2];  // vz < 0: your place is on the far side while spinning
         planetSpot = vz > 0.1 ? { x: vx, y: vy } : null;
         if (planetSpot) {
           c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = Math.min(1, vz * 4);
           const vg = c.createRadialGradient(vx, vy, 0, vx, vy, 14); vg.addColorStop(0, 'rgba(255, 214, 140, 0.95)'); vg.addColorStop(1, 'rgba(255, 214, 140, 0)');
           c.fillStyle = vg; c.beginPath(); c.arc(vx, vy, 14, 0, 2 * Math.PI); c.fill(); c.restore();
           c.font = '600 11.5px ' + (getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif'); c.fillStyle = 'rgba(255, 236, 200, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle';
-          c.shadowColor = '#000'; c.shadowBlur = 6; c.fillText('Vienna', vx + 12, vy - 2); c.shadowBlur = 0;
+          if (CITY) { c.shadowColor = '#000'; c.shadowBlur = 6; c.fillText(CITY, vx + 12, vy - 2); c.shadowBlur = 0; }
         }
       }
     }
@@ -3592,7 +3723,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       'Moon: ' + moonPhaseName(mn.phase) + ', ' + Math.round(mn.fraction * 100) + ' % lit',
       ev ? 'Next in the sky: ' + ev.title + ' · ' + evDate(ev.date) : '',
       sol && SOL ? 'Sun: ' + sol.title.toLowerCase() + ' · ' + sol.storm : ''].filter(Boolean);
-    openSheet('Vienna', lines.join('\n'), '', false, [{ label: 'Coming up in the sky', run: openEvents }]);
+    openSheet(CITY || 'Your place', lines.join('\n'), '', false, [{ label: 'Coming up in the sky', run: openEvents }]);
     $('sheetText').style.whiteSpace = 'pre-line';
   }
   function showPlanet(fromStart) {
@@ -3883,7 +4014,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const dy = e.clientY - p0.y, dx = e.clientX - p0.x, tap = Math.abs(dx) < 10 && Math.abs(dy) < 10;
       const r = el.getBoundingClientRect(), tx = p0.x - r.left, ty = p0.y - r.top; p0 = null;
       el.classList.remove('dragging'); el.style.transform = '';
-      if (dy < -st.H * 0.12) { setCalm(false); hidePlanet(); }
+      if (st.watch && tap) setWatch(false);  // v47: Watch on the Earth: a tap comes back (a drag still spins it)
+      else if (dy < -st.H * 0.12) { if (st.watch) setWatch(false); setCalm(false); hidePlanet(); }
       // double-tap the clock: charging mode on / off by hand (v37)
       else if (tap && ty > st.H * 0.08 && ty < st.H * 0.27) {
         const tn = performance.now();
@@ -4108,20 +4240,15 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function setWatch(on) {
     st.watch = on;
     app.classList.toggle('watch', on);
-    $('watchCatch').hidden = !on;
+    $('watchCatch').hidden = !on || planet.on;  // on the Earth the Earth itself takes the tap (back) and the drag (spin)
     $('hint').hidden = true;
     if (on) { hapt('press'); pushLayer('watchCatch'); } else dropLayer('watchCatch');
     kick();
   }
   $('watchBtn').addEventListener('click', () => setWatch(true));
   $('watchCatch').addEventListener('pointerdown', (e) => { e.preventDefault(); setWatch(false); });
-  // the button sits in the bottom row, between Recent and the middle handle; on narrow phones above Recent
-  function placeWatch() {
-    const b = $('watchBtn'), ar = app.getBoundingClientRect(), r1 = $('sunRecent').getBoundingClientRect(), r2 = $('toMoon').getBoundingClientRect();
-    const gap = r2.left - r1.right;
-    if (r1.width && r2.width && gap >= 50) { b.style.left = Math.round((r1.right + r2.left) / 2 - 22 - ar.left) + 'px'; b.style.bottom = '28px'; }
-    else { b.style.left = '30px'; b.style.bottom = '104px'; }
-  }
+  // v47: the button sits in the top row next to Search on every screen (the bottom row covered apps, user screenshots)
+  function placeWatch() {}
   // double-tap on empty sky (Sun and Moon screens) also starts Watch
   let lastSkyTap = null;
   ['sunScreen', 'moonScreen'].forEach((id) => $(id).addEventListener('pointerup', (e) => {
@@ -4289,7 +4416,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   function openItem(it) {
     if (it.app) { openApp(BY[it.name]); return; }
-    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain.', '', false); return; }
+    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. City names: GeoNames (geonames.org), CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain.', '', false); return; }
     openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
   }
   $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
@@ -4483,7 +4610,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips'];
+  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc'];
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
@@ -4499,9 +4626,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function wxLine() {
     let s;
     if (S.weather !== 'real') s = 'Off: the drawn sky follows only the time of day.';
-    else if (!WX) s = navigator.onLine ? 'Asking Open-Meteo for Vienna\'s weather…' : 'No weather yet: you are offline. It comes when you are online.';
-    else { const m = Math.round((Date.now() - WX.t) / 60000); s = 'Vienna now: ' + Math.round(WX.temp) + ' °C, ' + wxText(WX.code) + ', ' + WX.cloud + ' % clouds (' + (m < 2 ? 'just now' : m + ' min ago') + ').'; }
-    $('wxLine').textContent = s + (S.weather === 'real' ? ' Updates every 30 min; only Vienna\'s fixed position is sent.' : '');
+    else if (!WX) s = navigator.onLine ? 'Asking Open-Meteo for the weather' + inCity(' in ') + '…' : 'No weather yet: you are offline. It comes when you are online.';
+    else { const m = Math.round((Date.now() - WX.t) / 60000); s = (CITY || 'Here') + ' now: ' + Math.round(WX.temp) + ' °C, ' + wxText(WX.code) + ', ' + WX.cloud + ' % clouds (' + (m < 2 ? 'just now' : m + ' min ago') + ').'; }
+    $('wxLine').textContent = s + (S.weather === 'real' ? ' Updates every 30 min; only ' + (S.loc === 'gps' ? 'your position rounded to about 10 km' : 'Vienna\'s fixed position') + ' is sent.' : '');
   }
   // ---- Screen style pairs (v34): [key, name, sun screen, moon look, tab]. With "Same style on both screens" on,
   // one tap sets both; off: the Sun screen and Moon style lists pick each screen on its own.
@@ -4581,7 +4708,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     $('hourRow').hidden = S.sky !== 'preview';
     $('playDay').textContent = st.demo ? 'Stop the day' : 'Play a day in 20 seconds';
     const s = sunToday();
-    $('sunLine').textContent = 'Today in Vienna: sunrise ' + fmtHour(s.rise) + ', sunset ' + fmtHour(s.set) + '. The sky follows these times.';
+    $('sunLine').textContent = 'Today' + inCity(' in ') + ': sunrise ' + fmtHour(s.rise) + ', sunset ' + fmtHour(s.set) + '. The sky follows these times.';
   }
   $('tipsAgain').addEventListener('click', () => { S.visits = 0; S.hints = {}; S.tips = 'on'; showTips = true; hintsDone = {}; save(); fillForm(); kick(); toast('All tips show again.'); });
   function openSettings() { st.peek = true; st.peekFrom = st.screen; fillForm(); showOverlay($('settings')); updateLift(); }
@@ -4647,7 +4774,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (changed === 'pairLink') { S.pairLink = $('pairLink').checked ? 'on' : 'off'; pairUI(); }
     if (changed === 'pair') {
       const pk = Array.prototype.find.call(form.elements.pair, (r) => r.checked), p = pk && PAIRS.find((x) => x[0] === pk.value);
-      if (p) { S.sunView = p[2]; S.moonLook = p[3]; sunStyleUI(); peekScreen('sun'); }
+      if (p) { S.sunView = p[2]; S.moonLook = p[3]; sunStyleUI(); peekScreen(st.peekFrom === 'moon' ? 'moon' : 'sun'); }  // v47: a pair changes both: stay on the screen you came from
     }
     if (changed === 'moonDial') S.moonLook = 'moondial';  // tapping Glow / Phase switches the moon to Moon dial (like Neon styles)
     if (changed === 'moonLook' || changed === 'moonDial') peekScreen('moon');
@@ -4660,6 +4787,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     $('hourRow').hidden = S.sky !== 'preview';
     liveLine();
     if (changed === 'weather') { wxFetch(true); wxLine(); }
+    if (changed === 'loc') { applyPlace(); WX = null; wxFetch(true); locate(true); }  // v47
+    locLine();
     if (st.demo && S.sky !== 'clock') stopDemo();
     afterChange(prevMode, prevDir);
   }
@@ -4694,6 +4823,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   st.prevRot = st.rot;
   renderFavBar();
   placeWatch(); window.addEventListener('resize', placeWatch);  // v46
+  locate(false); document.addEventListener('visibilitychange', () => { if (!document.hidden) locate(false); });  // v47: your place, each time the app opens
   // home screen shortcuts (long-press the app icon, v32): ./?screen=sun | moon | earth
   const wantScreen = new URLSearchParams(location.search).get('screen');
   if (S.mode === 'two' && nightness(phaseNow()) > 0.5) st.screen = 'moon';
