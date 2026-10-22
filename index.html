@@ -133,19 +133,22 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .lookedit { position: fixed; inset: 0; z-index: 900; }
 .lookedit[hidden] { display: none; }
 .le-catch { position: absolute; inset: 0; touch-action: none; cursor: move; }
-.le-panel { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--panel) 94%, transparent); border-radius: 22px 22px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35); }
+.le-panel { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--panel) 94%, transparent); border-radius: 22px 22px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35); }
 .le-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
 .le-head strong { font-size: 17px; }
 .le-head span { font-size: 12.5px; color: var(--ink-3); text-align: right; }
 .le-styles { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 4px; }
 .le-styles button { flex: 0 0 auto; min-height: 36px; padding: 0 14px; border-radius: 18px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); font-size: 13.5px; cursor: pointer; }
 .le-styles button.on { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); font-weight: 600; }
-.le-row { display: grid; grid-template-columns: 52px 1fr 52px; align-items: center; gap: 8px; min-height: 40px; font-size: 14px; }
+.le-rows { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
+.le-row { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 30px; align-items: center; column-gap: 6px; font-size: 13px; }
+.le-row input { grid-column: 1 / -1; grid-row: 2; }
 .le-row[hidden] { display: none; }
-.le-row input { width: 100%; }
+.le-row input[type="range"] { width: 100%; margin: 0; }
 .le-row output { text-align: right; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .le-note { font-size: 13px; color: var(--ink-3); margin: 6px 0; }
-.le-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+.le-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+.le-btns .btn { min-height: 44px; }
 .looks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 .looks:empty { display: none; }
 .lookchip { min-height: 40px; padding: 0 16px; border-radius: 20px; border: 1.5px solid var(--sun); background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
@@ -2215,6 +2218,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const n = APPS.length, step = 2 * Math.PI / n, rot = st.rot * Math.PI / 180;
     const front = frontIndex(), fa = frontDeg() * Math.PI / 180;
     const coreR = 50 * S.size / 100, cx = G.cx, cy = G.cy;
+    if (!sunViewOn()) bodyAt.sun = { x: cx, y: cy, r: coreR * 1.3 };  // v44: hold the Dial sun to edit
     const af = Math.abs(G.sinT), sg = G.sinT >= 0 ? 1 : -1;
     const depthF = (a) => ((1 - sg * Math.cos(a)) / 2) * af + (1 - af);
     const isBack = (a) => sg * Math.cos(a) > 0;
@@ -2720,8 +2724,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (v === 'today' || v === 'minimal' || v === 'clock') solarFetch();
     if (v === 'today') {
       // like D. Real moon phase: big sun, a short report, the next 7 days, apps as cards below
-      const r = Math.min(W * 0.31, H * 0.145), my = H * 0.25;
-      sunAt(W / 2, my, r, { glow: 1 });
+      const T = tuneOf('sun:today'), r = Math.min(W * 0.31, H * 0.145) * T.size, mx = W / 2 + T.x * W, my = H * (0.25 + T.y);
+      sunAt(mx, my, r, { glow: 1 }); bodyAt.sun = { x: mx, y: my, r: r };
       txt('Today above Vienna', W / 2, H * 0.43, 12, 600, muted, 'center', true);
       txt(sol.title, W / 2, H * 0.47, 28, 600, '#F5EFE3', 'center');
       txt(sol.line, W / 2, H * 0.505, 14, 400, muted, 'center');
@@ -2740,8 +2744,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       place((d) => Math.abs(d) > (bar ? 1.05 : 1.45) ? null : { x: W / 2, y: listY + d * gapY, s: 1 - 0.07 * Math.min(1, Math.abs(d)), o: 1 - 0.4 * Math.min(1, Math.abs(d)) });
     } else if (v === 'minimal') {
       // like B. Minimal moon: big date, sun at the top-right edge, three short lines, the day curve, a plain list
-      const R = 128 * k;
-      sunAt(W - 30 * k, H * 0.215, R, { glow: 0.6, margin: 1.3 });
+      const T = tuneOf('sun:minimal'), R = 128 * k * T.size, bx = W - 30 * k + T.x * W, by = H * (0.215 + T.y);
+      sunAt(bx, by, R, { glow: 0.6, margin: 1.3 }); bodyAt.sun = { x: bx, y: by, r: R };
       txt(DAYS_LONG[today.getDay()], 24, H * 0.125, 12, 600, muted, 'left', true);
       txt(MONTHS_LONG[today.getMonth()], 22, H * 0.175, 50, 300, '#F5EFE3');
       txt(String(today.getDate()), 24, H * 0.245, 50, 600, '#F5EFE3');
@@ -2759,7 +2763,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       place((d) => d < -1.6 || d > 5.4 ? null : { left: true, x: 18, y: H * 0.53 + d * 44, o: d < -0.5 ? 0.35 * Math.min(1, 1.6 + d) : Math.min(1, 5.4 - d) });
     } else if (SUN_LIST.indexOf(v) !== -1) {
       // Sun by a list (was Swap, 22 Oct): a big sun at the right, the apps as pills on an arc of dots next to it
-      const Ri = Math.min(W * 0.385, 150, H * 0.178) * 1.35, bx = W * 0.95, by = H * 0.34, sr = Ri * 1.02, rA = Ri * 1.2, stepA = 14 * Math.PI / 180;
+      const T = tuneOf('sun:' + v), Ri = Math.min(W * 0.385, 150, H * 0.178) * 1.35, bx = W * (0.95 + T.x), by = H * (0.34 + T.y), sr = Ri * 1.02 * T.size, rA = Ri * 1.2 * T.ring, stepA = 14 * Math.PI / 180;
       const halo = (r0, r1, a) => { const hg = c.createRadialGradient(bx, by, r0, bx, by, r1); hg.addColorStop(0, hexA(st.sun, a)); hg.addColorStop(1, hexA(st.sun, 0)); c.fillStyle = hg; c.fillRect(0, 0, W, H); };
       // Eclipse and Glow orb get a dark halo first, so they stand out on bright photos (v32)
       if (v === 'eclipse' || v === 'orb') { const dk = c.createRadialGradient(bx, by, sr * 0.6, bx, by, sr * 1.6); dk.addColorStop(0, 'rgba(6, 8, 18, 0.5)'); dk.addColorStop(1, 'rgba(6, 8, 18, 0)'); c.fillStyle = dk; c.fillRect(0, 0, W, H); }
@@ -2775,12 +2779,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         c.restore();
       } else if (v === 'small') {
         halo(sr * 0.29, sr * 1.2, 0.4);
-        sunAt(W * 0.8, by, sr * 0.36, { glow: 1, margin: 1.9 });
+        sunAt(W * (0.8 + T.x), by, sr * 0.36, { glow: 1, margin: 1.9 }); bodyAt.sun = { x: W * (0.8 + T.x), y: by, r: sr * 0.36 };
       } else {
         // Big edge (reworked 22 Oct): fully lit boiling surface with fine grains, soft halo (the half-dark sun looked strange)
         halo(sr * 0.8, sr * 2.4, 0.22);
         sunAt(bx, by, sr, { tex: 'sun4k', boil: look === 'plasma', detail: hd ? 0.2 : 0.4, glow: 0.8, margin: 1.3 });
       }
+      if (v !== 'small') bodyAt.sun = { x: bx, y: by, r: sr };
       // the arc of dots; the chosen app sits at the left-most point
       if (v === 'arc') {
         // Sun glow arc (v34, partner of the moon's Glow arc): a glowing arc, brighter around the chosen app
@@ -2816,7 +2821,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         c.strokeStyle = 'rgba(255, 238, 220, ' + (frontHalf ? 0.55 : 0.3) + ')'; c.lineWidth = 1.4; c.stroke();
       };
       ringHalf(false);
-      sunAt(sc.sx, sc.sy, sc.R, { glow: 0.9, margin: 1.5 });
+      sunAt(sc.sx, sc.sy, sc.R, { glow: 0.9, margin: 1.5 }); bodyAt.sun = { x: sc.sx, y: sc.sy, r: sc.R };
       ringHalf(true);
       txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
       txt('Apps', W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
@@ -2862,9 +2867,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       });
     } else {
       // like A. Clock-dial moon: a huge sun at the left edge, a ticked dial that turns, the apps along the dial
-      const C0 = -150 * k, C1 = H * 0.53, R = 262 * k;
+      const T = tuneOf('sun:clock'), C0 = -150 * k + T.x * W, C1 = H * (0.53 + T.y), R = 262 * k;
       // boiling surface (user, 22 Oct: the stretched map looked hand-drawn), with finer grains for this big sun
-      sunAt(C0, C1, R, { tex: 'sun4k', glow: 0.9, margin: 1.12, rot: 0.4 + t * 0.02, boil: look === 'plasma', detail: hd ? 0.25 : 0.45 });
+      bodyAt.sun = { x: C0, y: C1, r: R * T.size };
+      sunAt(C0, C1, R * T.size, { tex: 'sun4k', glow: 0.9, margin: 1.12, rot: 0.4 + t * 0.02, boil: look === 'plasma', detail: hd ? 0.25 : 0.45 });
       c.save(); c.lineCap = 'round';
       const turn = pos * 7.2, off = ((turn % 1.8) + 1.8) % 1.8;
       for (let a = -54 + (1.8 - off); a <= 54; a += 1.8) {
@@ -2967,9 +2973,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function moonShape() { const l = currentMoon(); return l === 'orb' || l === 'small' ? 'dots' : l; }
   function moonGeo() {
     const W = st.W, H = st.H, look = moonShape();
-    const Ri = Math.min(W * 0.385, 150, H * 0.178), k = Ri / 150, cy = H * 0.5 - st.liftM;
-    const g = { Ri: Ri, k: k, cy: cy, Ix: W * 0.77, Ox: W * 0.615, rO: 230 * k, rI: 215 * k, Cm: W * 0.692 };
-    g.rA = Ri * 1.2;
+    // v44: size / place / ring from the look editor (only the list looks; the others have their own scenes)
+    const T = ['dots', 'arc', 'crescent'].indexOf(look) !== -1 ? tuneOf('moon:' + currentMoon()) : TUNE0, dx = T.x * W;
+    const Ri = Math.min(W * 0.385, 150, H * 0.178) * T.size, k = Ri / 150, cy = H * (0.5 + T.y) - st.liftM;
+    const g = { Ri: Ri, k: k, cy: cy, Ix: W * 0.77 + dx, Ox: W * 0.615 + dx, rO: 230 * k, rI: 215 * k, Cm: W * 0.692 + dx, dx: dx };
+    g.rA = Ri * 1.2 * T.ring;
     g.rIn = Ri * 1.22; g.rOut = Ri * 1.58;
     g.amax = ({ crescent: 80, arc: 78, ring: 76, dots: 78, rolodex: 78 }[look] || 78) * Math.PI / 180;
     g.span = Math.min(H * 0.3, 250);
@@ -3065,6 +3073,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = ml; c.fillRect(0, 0, W, H); c.restore();
     }
     const look0 = currentMoon();
+    bodyAt.moon = { x: G.Ix + mx, y: cy + my, r: G.Ri };
     if (look0 === 'orb' || look0 === 'small') {
       // v34 partners of the sun's Glow orb, Small and Setting: the same dots list, a different moon
       const bx = G.Ix + mx, by = cy + my, sr = G.Ri * 1.02;
@@ -3076,7 +3085,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         c.fillStyle = core; c.fillRect(bx - sr, by - sr, sr * 2, sr * 2);
         c.restore();
       } else if (look0 === 'small') {
-        const s2 = sr * 0.36, sx2 = W * 0.82 + mx;
+        const s2 = sr * 0.36, sx2 = W * 0.82 + G.dx + mx;
+        bodyAt.moon = { x: sx2, y: by, r: s2 };
         c.save(); c.globalCompositeOperation = 'lighter'; const hg = c.createRadialGradient(sx2, by, s2 * 0.8, sx2, by, s2 * 3.4); hg.addColorStop(0, 'rgba(210, 222, 245, 0.35)'); hg.addColorStop(1, 'rgba(210, 222, 245, 0)'); c.fillStyle = hg; c.fillRect(0, 0, W, H); c.restore();
         if (GLB.ok) GLB.draw(c, sx2, by, s2, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: wob - 0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.4 });
       }
@@ -3245,6 +3255,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   // v43 (look editor E1): your changes to a ring screen, kept per screen (S.tune['sun:ring'], 'moon:dial3d', 'moon:moondial').
   // x / y move it (part of the screen), size = sun/moon size, ring = ring size, tilt / turn in degrees. Nothing saved = as before.
   const TUNE0 = { x: 0, y: 0, size: 1, ring: 1, tilt: 0, turn: 0 };
+  const bodyAt = { sun: null, moon: null };  // v44: the sun / moon on screen now (x, y, r), for "hold to edit"
   function tuneOf(key) { return Object.assign({}, TUNE0, S.tune[key] || {}); }
   function ringPlace(s, th) {
     const X = s.rr * Math.cos(th), Z = s.rr * Math.sin(th), qy = Z * s.sp;
@@ -3270,7 +3281,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const sel = st.moonDay || 0, selD = new Date(today); selD.setDate(selD.getDate() + sel); selD.setHours(21, 0, 0, 0);
       const sm = sel ? moonIllum(selD) : mn;
       // v32: moon a little smaller and higher, so the next sky event fits as a card under the text (mockup A)
-      const r = Math.min(W * 0.27, H * 0.12), mx = W / 2, my = H * 0.215;
+      const T = tuneOf('moon:phase'), r = Math.min(W * 0.27, H * 0.12) * T.size, mx = W / 2 + T.x * W, my = H * (0.215 + T.y);
+      bodyAt.moon = { x: mx, y: my, r: r };
       glow(mx, my, r, (0.08 + 0.12 * sm.fraction).toFixed(3));
       if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(sm.phase), rot: -0.2, shine: 0.07, expo: 1.3, glow: 1, margin: 1.25 });
       txt(sel ? DAYS_LONG[selD.getDay()] + ' night in Vienna' : 'Tonight in Vienna', W / 2, H * 0.365, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
@@ -3296,8 +3308,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       listY = H * 0.8; rowGap = 58; cards = true;
     } else if (look === 'dial') {
       // A: huge moon at the left edge, a ticked dial that turns with the list, items along the dial
-      const k = W / 390, C0 = -150 * k, C1 = H * 0.53, R = 262 * k;
-      if (GLB.ok) GLB.draw(c, C0, C1, R, { mode: 'moon', light: [0.86, 0.12, 0.5], rot: 0.2, shine: 0.05, expo: 1.3, glow: 0.3, margin: 1.05 });
+      const k = W / 390, T = tuneOf('moon:dial'), C0 = -150 * k + T.x * W, C1 = H * (0.53 + T.y), R = 262 * k;
+      bodyAt.moon = { x: C0, y: C1, r: R * T.size };
+      if (GLB.ok) GLB.draw(c, C0, C1, R * T.size, { mode: 'moon', light: [0.86, 0.12, 0.5], rot: 0.2, shine: 0.05, expo: 1.3, glow: 0.3, margin: 1.05 });
       c.save(); c.lineCap = 'round';
       const turn = st.pos * 7.2, off = ((turn % 1.8) + 1.8) % 1.8;
       for (let a = -54 + (1.8 - off); a <= 54; a += 1.8) {
@@ -3325,6 +3338,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         c.strokeStyle = 'rgba(232, 238, 248, ' + (front ? 0.55 : 0.3) + ')'; c.lineWidth = 1.4; c.stroke();
       };
       ringHalf(false);
+      bodyAt.moon = { x: sx, y: sy, r: R };
       glow(sx, sy, R, (0.08 + 0.1 * mn.fraction).toFixed(3));
       if (GLB.ok) {
         if (S.moonDial === 'phase') GLB.draw(c, sx, sy, R, { mode: 'moon', light: realMoonLight(mn.phase), rot: -0.2, shine: 0.12, expo: 1.35, glow: 0.5, margin: 1.2 });
@@ -3349,7 +3363,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
     } else {
       // B: big date on the left, moon at the right edge, phase and sunset lines, a day curve, a plain list
-      const r = H * 0.19, mx = W * 0.9, my = H * 0.25;
+      const T = tuneOf('moon:minimal'), r = H * 0.19 * T.size, mx = W * (0.9 + T.x), my = H * (0.25 + T.y);
+      bodyAt.moon = { x: mx, y: my, r: r };
       glow(mx, my, r, (0.05 + 0.08 * mn.fraction).toFixed(3));
       if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(mn.phase), rot: 0, shine: 0.035, expo: 1.25, glow: 0.6, margin: 1.06 });
       txt(DAYS_LONG[today.getDay()], 24, H * 0.115, 12, 600, 'rgba(195, 204, 221, 0.85)', 'left', true);
@@ -3944,14 +3959,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const LE_SUN_STYLES = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['eclipse', 'Eclipse'], ['blackhole', 'Black hole'], ['neon', 'Neon']];
   const LE_MOON_STYLES = [['glow', 'Glow'], ['phase', 'Real phase']];
   let le = null;  // the screen being edited
+  // v44 (E2): every screen can be edited; rows = the controls that make sense there (t tilt, u turn, s size, r ring)
+  const LE_SUN = { dial: ['Sun dial', 'tusr'], ring: ['Sun ring', 'tusr'], edge: ['Big edge', 'sr'], arc: ['Glow arc', 'sr'], eclipse: ['Eclipse', 'sr'], small: ['Small sun', 'sr'], today: ['Today', 's'], minimal: ['Minimal', 's'], clock: ['Clock', 's'] };
+  const LE_MOON = { dial3d: ['Moon 3D dial', 'tusr'], moondial: ['Moon dial', 'tusr'], dots: ['Dots', 'sr'], arc: ['Glow arc', 'sr'], small: ['Small moon', 'sr'], crescent: ['Crescent', 's'], phase: ['Real phase', 's'], minimal: ['Minimal', 's'], dial: ['Clock dial', 's'] };
   function leTarget() {
-    const kind = S.mode === 'one' || st.screen === 'moon' ? 'moon' : 'sun';
-    if (kind === 'sun') {
-      const v = S.sunView;
-      return { kind: 'sun', key: v === 'dial' || v === 'ring' ? 'sun:' + v : null, dial: v === 'dial', name: v === 'dial' ? 'Sun dial' : v === 'ring' ? 'Sun ring' : 'This sun screen' };
-    }
-    const m = currentMoon();
-    return { kind: 'moon', key: m === 'dial3d' || m === 'moondial' ? 'moon:' + m : null, name: m === 'dial3d' ? 'Moon 3D dial' : m === 'moondial' ? 'Moon dial' : 'This moon screen' };
+    const kind = S.mode === 'one' || st.screen === 'moon' ? 'moon' : 'sun', v = kind === 'sun' ? S.sunView : currentMoon(), d = (kind === 'sun' ? LE_SUN : LE_MOON)[v];
+    if (!d) return { kind: kind, key: null, rows: '', name: 'This ' + kind + ' screen' };
+    return { kind: kind, key: kind + ':' + v, rows: d[1], dial: kind === 'sun' && v === 'dial', name: d[0] };
   }
   // a look change makes the theme "Pick myself", starting from what is shown now (like Settings does)
   function leToCustom() {
@@ -3965,10 +3979,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function leFill() {
     const t = le, on = !!t.key;
     $('leTitle').textContent = 'Edit look · ' + t.name;
-    $('leTip').textContent = on ? 'Drag the ' + t.kind + ' to move it.' : '';
-    ['leRowTilt', 'leRowTurn', 'leRowSize', 'leRowRing'].forEach((id) => { $(id).hidden = !on; });
+    $('leTip').textContent = on ? 'Drag to move · two fingers: pinch = size' + (t.rows.indexOf('u') !== -1 ? ', twist = turn' : '') : '';
+    [['leRowTilt', 't'], ['leRowTurn', 'u'], ['leRowSize', 's'], ['leRowRing', 'r']].forEach(([id, ch]) => { $(id).hidden = !on || t.rows.indexOf(ch) === -1; });
     $('leNote').hidden = on;
-    $('leNote').textContent = 'Tilt, size and place come for this screen in the next update. You can change the style and save it now.';
+    $('leNote').textContent = 'This screen has no size or place to change. You can change the style and save it.';
     if (t.dial) {
       const c = S.dir === 'custom' && S.custom ? S.custom : presetGeo(S.dir);
       leSet('leTilt', 10, 75, Math.round(S.tilt), Math.round(S.tilt) + '°');
@@ -3977,14 +3991,15 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       leSet('leRing', 60, 260, Math.round(c.R), Math.round(c.R / presetGeo('flat').R * 100) + '%');
     } else if (on) {
       const T = tuneOf(t.key);
-      leSet('leTilt', -25, 35, Math.round(T.tilt), (T.tilt > 0 ? '+' : '') + Math.round(T.tilt) + '°');
+      leSet('leTilt', -25, 35, Math.round(T.tilt), (T.tilt > 0 ? '+' : '') + Math.round(T.tilt) + '°');  // only shown on ring screens
       leSet('leTurn', -60, 60, Math.round(T.turn), (T.turn > 0 ? '+' : '') + Math.round(T.turn) + '°');
       leSet('leSize', 60, 160, Math.round(T.size * 100), Math.round(T.size * 100) + '%');
       leSet('leRing', 70, 150, Math.round(T.ring * 100), Math.round(T.ring * 100) + '%');
     }
     $('leSizeName').textContent = t.kind === 'sun' ? 'Sun' : 'Moon';
     const box = $('leStyles'); box.textContent = '';
-    const list = t.kind === 'sun' ? LE_SUN_STYLES.filter((x) => t.dial || VIEW_STYLES.indexOf(x[0]) !== -1) : (t.key ? LE_MOON_STYLES : []);
+    const sideSun = t.kind === 'sun' && SUN_LIST.indexOf(S.sunView) !== -1, ringMoon = t.key === 'moon:dial3d' || t.key === 'moon:moondial';
+    const list = t.kind === 'sun' ? (sideSun ? [] : LE_SUN_STYLES.filter((x) => t.dial || VIEW_STYLES.indexOf(x[0]) !== -1)) : (ringMoon ? LE_MOON_STYLES : []);
     const now = t.kind === 'sun' ? sunPickOf(shownTheme().look) : S.moonDial;
     list.forEach(([v, label]) => {
       const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.className = v === now ? 'on' : '';
@@ -4009,31 +4024,69 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   ['leTilt', 'leTurn', 'leSize', 'leRing'].forEach((id) => $(id).addEventListener('input', leInput));
   // one finger on the screen moves the sun or moon
-  let leDrag = null;
+  let leDrag = null, leTwo = null;
+  const lePts = new Map();
+  const leTwoNow = () => { const a = [...lePts.values()]; return { d: Math.hypot(a[1].x - a[0].x, a[1].y - a[0].y) || 1, ang: Math.atan2(a[1].y - a[0].y, a[1].x - a[0].x), my: (a[0].y + a[1].y) / 2 }; };
   $('leCatch').addEventListener('pointerdown', (e) => {
     if (!le || !le.key) return;
+    lePts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (lePts.size === 2) { leDrag = null; leTwo = { s0: leTwoNow(), v: [+$('leTilt').value, +$('leTurn').value, +$('leSize').value] }; }
+    if (lePts.size !== 1) return;
     try { $('leCatch').setPointerCapture(e.pointerId); } catch (err) {}
     if (le.dial) ensureCustom();
     const T = tuneOf(le.key);
     leDrag = { x: e.clientX, y: e.clientY, a: le.dial ? S.custom.cxf : T.x, b: le.dial ? S.custom.cyf : T.y };
   });
   $('leCatch').addEventListener('pointermove', (e) => {
+    if (lePts.has(e.pointerId)) lePts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (leTwo && lePts.size >= 2) {
+      const n = leTwoNow(), r = le.rows, set = (id, v) => { const el = $(id); el.value = clamp(v, +el.min, +el.max); };
+      set('leSize', leTwo.v[2] * n.d / leTwo.s0.d);
+      if (r.indexOf('u') !== -1) set('leTurn', leTwo.v[1] + (n.ang - leTwo.s0.ang) * 180 / Math.PI);
+      if (r.indexOf('t') !== -1) set('leTilt', leTwo.v[0] - (n.my - leTwo.s0.my) * 0.25);
+      leInput();
+      return;
+    }
     if (!leDrag) return;
     const nx = leDrag.a + (e.clientX - leDrag.x) / st.W, ny = leDrag.b + (e.clientY - leDrag.y) / st.H;
     if (le.dial) { S.custom.cxf = clamp(nx, 0.1, 0.9); S.custom.cyf = clamp(ny, 0.15, 0.8); }
-    else leTune((T) => { T.x = clamp(nx, -0.4, 0.4); T.y = clamp(ny, -0.3, 0.3); });
+    else leTune((T) => { T.x = clamp(nx, -0.45, 0.45); T.y = clamp(ny, -0.3, 0.3); });
     kick();
   });
-  const leUp = () => { if (leDrag) { leDrag = null; save(); } };
+  const leUp = (e) => { lePts.delete(e.pointerId); if (lePts.size < 2) leTwo = null; if (leDrag || !lePts.size) { leDrag = null; save(); } };
   $('leCatch').addEventListener('pointerup', leUp);
   $('leCatch').addEventListener('pointercancel', leUp);
   function openLookEdit(kind) {
+    if (!$('lookEdit').hidden) return;
     hideOverlay($('settings'));
     if (kind === 'moon') goMoon(); else goSun();
-    setTimeout(() => { le = leTarget(); leFill(); showOverlay($('lookEdit')); }, 380);
+    setTimeout(() => { le = leTarget(); leFill(); showOverlay($('lookEdit')); leLift(true); }, 380);
+  }
+  function leLift(on) {
+    const h = on ? $('lookEdit').querySelector('.le-panel').offsetHeight : 0, up = Math.round(Math.max(0, h - st.H * 0.3));
+    ['sunScreen', 'moonScreen'].forEach((id) => { const el = $(id); el.style.transition = 'transform 0.3s ease'; el.style.transform = up ? 'translateY(' + (-up) + 'px)' : ''; });
   }
   document.querySelectorAll('[data-editlook]').forEach((b) => b.addEventListener('click', () => openLookEdit(b.dataset.editlook)));
   $('leDone').addEventListener('click', () => hideOverlay($('lookEdit')));
+  // v44: hold the sun or moon for 0.7 s (without moving) to open the editor straight away (5)
+  let holdT = 0, holdAt = null;
+  const holdCancel = () => { clearTimeout(holdT); holdT = 0; holdAt = null; };
+  ['sunScreen', 'moonScreen'].forEach((id) => $(id).addEventListener('pointerdown', (e) => {
+    holdCancel();
+    const kind = id === 'sunScreen' ? 'sun' : 'moon', b = bodyAt[kind];
+    if (!e.isPrimary || e.target.closest('.facet, .item, button:not(#core)')) return;
+    const onCore = kind === 'sun' && S.sunView === 'dial' && e.target.closest('#core');
+    if (!onCore && !(b && Math.hypot(e.clientX - b.x, e.clientY - b.y) < Math.max(36, b.r * 0.9))) return;
+    holdAt = { x: e.clientX, y: e.clientY };
+    holdT = setTimeout(() => {
+      holdT = 0; if (typeof endDrag === 'function') endDrag();
+      suppressClick = true; setTimeout(() => { suppressClick = false; }, 450);
+      hapt('press'); openLookEdit(kind);
+    }, 700);
+  }, true));
+  window.addEventListener('pointermove', (e) => { if (holdAt && Math.hypot(e.clientX - holdAt.x, e.clientY - holdAt.y) > 10) holdCancel(); });
+  window.addEventListener('pointerup', holdCancel);
+  window.addEventListener('pointercancel', holdCancel);
   $('leReset').addEventListener('click', () => {
     if (le.dial) { const pd = S.dir; S.dir = 'flat'; S.custom = null; S.tilt = 45; S.size = 125; st.tiltEnd = false; afterChange(S.mode, pd); }
     else if (le.key) delete S.tune[le.key];
@@ -4163,6 +4216,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (el.hidden) return;
     el.hidden = true;
     if (el.id === 'settings') { st.peek = false; peekScreen(st.peekFrom); updateLift(); }
+    if (el.id === 'lookEdit') { leLift(false); save(); }
     if (!fromBack) dropLayer(el.id);
     if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
   }
