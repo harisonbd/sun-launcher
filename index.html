@@ -3650,9 +3650,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const d = st.demo || S.sky !== 'clock' ? new Date(d0.getTime() + hourNow() * 3600000) : new Date();
     // v46 (user): the Earth stays still (the 22 Oct float up and down is gone); only clouds and northern lights move
     // v37: centerLon follows the fidget spin (spin.off); it goes back to 32 (Vienna in front) when the Earth settles
-    // v47: your place in front: the globe turns (centerLon) and tilts (pitch) so the city sits where Vienna always sat
+    // v47: your place in front: the globe turns (centerLon) and tilts (pitch) so the city sits at Vienna's old height;
+    // v50 (user): and exactly in the middle left to right (was 15.6° to the left)
     // v47: on shorter screens the Earth sits lower, so the moon fits between the time chips and the Earth's air
-    const R = 520 * k, cx = W / 2, cy = Math.max(H * 1.197, H * 0.3 + 18 + 30 * k + 24 + R * 1.07), centerLon = LON + 15.6 - spin.off, ss = subsolar(d), rad = Math.PI / 180;
+    const R = 520 * k, cx = W / 2, cy = Math.max(H * 1.197, H * 0.3 + 18 + 30 * k + 24 + R * 1.07), centerLon = LON - spin.off, ss = subsolar(d), rad = Math.PI / 180;
     const pitch = (48.2 - LAT) * rad, cp = Math.cos(pitch), sp = Math.sin(pitch);
     const toView = (b) => [b[0], b[1] * cp + b[2] * sp, -b[1] * sp + b[2] * cp];  // globe -> screen (inverse of the shader's tilt)
     const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
