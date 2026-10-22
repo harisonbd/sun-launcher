@@ -119,6 +119,16 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 
 .handle { position: absolute; left: 50%; width: 170px; margin-left: -85px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; border: none; background: transparent; color: var(--ink-3); font-size: 13px; font-weight: 500; cursor: grab; z-index: 600; touch-action: none; }
 .handle.bottom { bottom: 14px; }
+/* v39: favourites bar: up to 5 pinned apps above the bottom buttons, one tap opens */
+.favbar { position: absolute; left: 0; right: 0; bottom: 100px; display: flex; justify-content: center; gap: 8px; z-index: 600; pointer-events: none; }
+.favbar[hidden] { display: none; }
+.fav { pointer-events: auto; width: 62px; border: none; background: none; color: var(--ink); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; cursor: pointer; padding: 0; }
+.fav .ini { width: 50px; height: 50px; border-radius: 25px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 600; background: color-mix(in srgb, var(--panel) 85%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sun) 22%, transparent); }
+.fav .ini img { width: 30px; height: 30px; border-radius: 7px; }
+.fav .nm { max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+#app.fx .fav .ini { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.pin { width: 40px; height: 40px; border-radius: 20px; border: 1.5px solid var(--line); background: transparent; color: var(--ink-3); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.pin.on { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); }
 .handle.top { top: 10px; }
 .handle span { display: flex; align-items: center; gap: 6px; }
 
@@ -334,6 +344,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13 7l4 4"></path></svg>
         <span>Edit dial</span>
       </button>
+      <div class="favbar" id="favBar" aria-label="Pinned apps" hidden></div>
       <button type="button" class="handle bottom" id="toMoon" aria-label="Open the moon menu">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>
         <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M15 4a8 8 0 1 0 5 13A7 7 0 0 1 15 4z"></path></svg>Swipe up · Moon</span>
@@ -408,7 +419,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   <div id="edit" class="overlay" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editTitle">
       <h2 id="editTitle">Edit dial</h2>
-      <p>Change the order. Choose if an app lives on the sun or on the moon. The sun keeps at least 3 apps.</p>
+      <p>Change the order. Choose if an app lives on the sun or on the moon. The sun keeps at least 3 apps. The pin puts an app in the bar at the bottom (up to 5).</p>
       <div id="editRows" class="erows"></div>
       <div class="row">
         <button type="button" class="btn" id="editReset">Reset</button>
@@ -469,7 +480,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           <input type="radio" name="sunView" id="sv-edge" value="edge"><label for="sv-edge">Big edge</label>
           <input type="radio" name="sunView" id="sv-arc" value="arc"><label for="sv-arc">Sun glow arc</label>
           <input type="radio" name="sunView" id="sv-eclipse" value="eclipse"><label for="sv-eclipse">Eclipse</label>
-          <input type="radio" name="sunView" id="sv-orb" value="orb"><label for="sv-orb">Glow orb</label>
           <input type="radio" name="sunView" id="sv-small" value="small"><label for="sv-small">Small</label>
         </div>
         <p class="helpline">Real sun today, Minimal sun and Clock dial match the moon looks. Solar activity: real data from NOAA Space Weather (asked every 3 hours).</p>
@@ -486,7 +496,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
             <input type="radio" name="sunPick" id="sp-glow" value="glow"><label for="sp-glow">Glow</label>
             <input type="radio" name="sunPick" id="sp-corona" value="corona"><label for="sp-corona">Corona</label>
             <input type="radio" name="sunPick" id="sp-flames" value="flames"><label for="sp-flames">Flames</label>
-            <input type="radio" name="sunPick" id="sp-plasma" value="plasma"><label for="sp-plasma">Plasma</label>
           </div>
         </div>
         <div class="tabpane" data-group="sun" data-tab="extra" hidden>
@@ -499,7 +508,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
             <div class="sublg">Neon styles (tap one to switch the sun to Neon)</div>
             <div class="seg">
               <input type="radio" name="neonStyle" id="nz-minimal" value="minimal"><label for="nz-minimal">Minimal</label>
-              <input type="radio" name="neonStyle" id="nz-sign" value="sign"><label for="nz-sign">Sign</label>
               <input type="radio" name="neonStyle" id="nz-synth" value="synth"><label for="nz-synth">Synthwave</label>
             </div>
           </div>
@@ -572,7 +580,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
             <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
             <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
             <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
-            <input type="radio" name="moonLook" id="moon-orb" value="orb"><label for="moon-orb">Moon glow orb</label>
             <input type="radio" name="moonLook" id="moon-small" value="small"><label for="moon-small">Small moon</label>
           </div>
         </div>
@@ -741,7 +748,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     eclipse: { name: 'Eclipse', look: 'eclipse', color: 'time', moon: 'dots' },
     blackhole: { name: 'Black hole', look: 'blackhole', color: '#FF6B3D', moon: 'crescent' },
     neon: { name: 'Neon night', look: 'neon', color: '#7FD3FF', moon: 'arc' },
-    plasma: { name: 'Plasma dawn', look: 'plasma', color: 'time', moon: 'dots' }
+    plasma: { name: 'Dawn', look: 'rays', color: 'time', moon: 'dots' }  // v39: Plasma look removed (user)
   };
   const TIMELINE = [[0, 'neon'], [4.8, 'neon'], [5.5, 'plasma'], [7.6, 'plasma'], [8.4, 'daylight'], [16.4, 'daylight'], [17.2, 'sunset'], [18.4, 'sunset'], [19.0, 'eclipse'], [19.8, 'eclipse'], [20.4, 'blackhole'], [21.6, 'blackhole'], [22.3, 'neon'], [24, 'neon']];
   const KEY = 'sun-launcher-playground-v4';
@@ -752,7 +759,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const FRONT_FX = ['beam', 'lift', 'dim', 'chips', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'sign', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {} };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -788,7 +795,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   S.swap = 'off';
   if (['dial', 'ring', 'today', 'minimal', 'clock', 'edge', 'arc', 'eclipse', 'orb', 'small'].indexOf(S.sunView) === -1) S.sunView = S.sunView === 'rings' ? 'ring' : 'dial';  // v35: Ringed sun out for now
   if (['live', 'sunset', 'stars', 'clear'].indexOf(S.skyPhoto) === -1) S.skyPhoto = 'off';
-  if (NEON_STYLES.indexOf(S.neonStyle) === -1) S.neonStyle = 'minimal';
+  if (NEON_STYLES.indexOf(S.neonStyle) === -1 || S.neonStyle === 'sign') S.neonStyle = 'minimal';  // v39: Sign removed (user)
+  if (S.sunLook === 'plasma') S.sunLook = 'rays';  // v39: Plasma removed (user)
+  if (S.sunView === 'orb') S.sunView = 'small';  // v39: Glow orb pair removed (user)
+  if (S.moonLook === 'orb') S.moonLook = 'small';
+  if (S.sunList === 'orb') S.sunList = 'small';
   if (S.liveSun !== 'on') S.liveSun = 'off';
   if (S.weather !== 'real') S.weather = 'off';
   if (S.moonPhase !== 'fixed') S.moonPhase = 'real';
@@ -800,6 +811,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   S.order = S.order.filter((n) => BY[n]).concat(BASE_APPS.map((a) => a.name).filter((n) => S.order.indexOf(n) === -1));
   S.onMoon = (S.onMoon || []).filter((n) => BY[n]);
   S.recent = (S.recent || []).filter((n) => BY[n]);
+  S.pins = (Array.isArray(S.pins) ? S.pins : []).filter((n) => BY[n]).slice(0, 5);
+  if (!S.useHours || typeof S.useHours !== 'object') S.useHours = {};
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -2666,9 +2679,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         txt(i === 0 ? 'Today' : DAYS[d.getDay()], x, rowY + 28, 12, i === 0 ? 700 : 500, i === 0 ? '#F5EFE3' : muted, 'center');
         if (tags[i]) txt(tags[i][0], x, rowY + 44, 11, 700, tags[i][1], 'center');
       }
-      txt('Solar data: NOAA Space Weather · forecast for 3 days', W / 2, H * 0.645, 11, 500, 'rgba(255, 214, 160, 0.65)', 'center');
-      const listY = H * 0.78;
-      place((d) => Math.abs(d) > 1.45 ? null : { x: W / 2, y: listY + d * 58, s: 1 - 0.07 * Math.min(1, Math.abs(d)), o: 1 - 0.4 * Math.min(1, Math.abs(d)) });
+      // v39: with the favourites bar the cards sit higher and closer (and the source line goes), so the bar does not cover them
+      const bar = S.pins.length > 0, listY = H * (bar ? 0.72 : 0.78), gapY = bar ? 44 : 58;
+      if (!bar) txt('Solar data: NOAA Space Weather · forecast for 3 days', W / 2, H * 0.645, 11, 500, 'rgba(255, 214, 160, 0.65)', 'center');
+      place((d) => Math.abs(d) > (bar ? 1.05 : 1.45) ? null : { x: W / 2, y: listY + d * gapY, s: 1 - 0.07 * Math.min(1, Math.abs(d)), o: 1 - 0.4 * Math.min(1, Math.abs(d)) });
     } else if (v === 'minimal') {
       // like B. Minimal moon: big date, sun at the top-right edge, three short lines, the day curve, a plain list
       const R = 128 * k;
@@ -2750,7 +2764,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       ringHalf(true);
       txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
       txt('Apps', W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
-      txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
+      if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
       const s0 = ringPlace(sc, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
       place((d, isF, el) => {
@@ -2782,7 +2796,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       rings(true);
       txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
       txt(APPS[front].name, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
-      txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
+      if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
       place((d, isF) => {
         const q = ringPlace(sc, Math.PI / 2 + d * (Math.PI * 2 / 12)), f = (q[2] + 1) / 2, ad = Math.abs(d), mA = 6;
         const behind = q[2] < 0 && Math.hypot(q[0] - sx, q[1] - sy) < R * 1.15;
@@ -2807,7 +2821,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       txt('Sun', 24, H * 0.125, 12, 600, muted, 'left', true);
       txt(DAYS[today.getDay()] + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()], 24, H * 0.165, 28, 300, '#F5EFE3');
       txt(sol.title + ' · ' + (front + 1) + ' of ' + n, 24, H * 0.2, 13, 400, muted);
-      txt('Turn the dial · tap to open', W / 2, H * 0.875, 12.5, 400, muted, 'center');
+      if (!S.pins.length) txt('Turn the dial · tap to open', W / 2, H * 0.875, 12.5, 400, muted, 'center');
       place((d, isF) => {
         if (Math.abs(d) > 7.5) return null;
         const rad = d * 7.2 * Math.PI / 180, x = C0 + 318 * k * Math.cos(rad), y = C1 + 318 * k * Math.sin(rad);
@@ -2817,8 +2831,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
 
   function pickApp(i) {
-    if (i === frontIndex()) { if (APPS[i].it) openItem(APPS[i].it); else openApp(APPS[i]); return; }
-    rotateTo(i);
+    // v39: one tap opens any app you can see (it turns to the front as it opens); hold for quick actions.
+    if (i !== frontIndex()) rotateTo(i);
+    if (APPS[i].it) openItem(APPS[i].it); else openApp(APPS[i]);
   }
 
   /* ---------- Moon ---------- */
@@ -3347,8 +3362,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const sc = $('scrub'); sc.style.width = '0px';
   }
   function pickItem(i) {
-    if (i === liveIndex()) { openItem(LIST[i]); return; }
-    tween('pos', i, 420);
+    if (i !== liveIndex()) tween('pos', i, 420);
+    openItem(LIST[i]);
   }
   function snapPos() { tween('pos', clamp(Math.round(st.pos), 0, LIST.length - 1), 320); }
 
@@ -3537,6 +3552,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     el.classList.add('away'); hapt('swipe');
     if (!fromBack) dropLayer('planetScreen');
     setTimeout(() => { if (!planet.on) el.hidden = true; }, 500);
+    if (st.screen === 'sun') setTimeout(smartFront, 350);
     kick();
   }
   function render(now, dtf) {
@@ -3730,7 +3746,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     setTimeout(() => { suppressClick = false; }, 400);
   }
   $('sunScreen').addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.corner, .roundbtn, .handle, .viewbtn, .chips, .to-planet')) return;
+    if (e.target.closest('.corner, .roundbtn, .handle, .viewbtn, .chips, .to-planet, .favbar')) return;
     { const rr = $('sunScreen').getBoundingClientRect(); addRipple('sun', e.clientX - rr.left, e.clientY - rr.top); }
     if (e.target.closest('#core')) { tween('press', 1, 110); const up = () => { tween('press', 0, 420); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); }; window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -3878,6 +3894,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function goSun(fromBack) {
     if (S.mode === 'one') { goMoon(); return; }
     if (st.screen !== 'sun') { hapt('swipe'); sound('whoosh'); if (!fromBack) dropLayer('moon'); }
+    if (st.screen !== 'sun') setTimeout(smartFront, 350);
     st.screen = 'sun'; worlds.style.transform = 'translateY(0)'; kick();
   }
 
@@ -3918,14 +3935,33 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     box.hidden = !(actions && actions.length);
     showOverlay($('sheet'));
   }
+  function countUse(name) {
+    const h = new Date().getHours(), u = S.useHours[name] || (S.useHours[name] = new Array(24).fill(0));
+    u[h] = (u[h] || 0) + 1;
+    save();
+  }
+  // v39: the app opened most around this hour (this hour counts 2, the hours next to it 1) turns to the front.
+  // Counts stay on this phone. Needs 3+ opens; never while a finger is on the dial.
+  function smartFront() {
+    if (S.mode === 'one' || drag || !APPS.length) return;
+    const h = new Date().getHours();
+    let best = -1, top = 0;
+    APPS.forEach((a, i) => {
+      const u = S.useHours[a.name]; if (!u) return;
+      const sc = 2 * (u[h] || 0) + (u[(h + 23) % 24] || 0) + (u[(h + 1) % 24] || 0);
+      if (sc > top) { top = sc; best = i; }
+    });
+    if (best !== -1 && top >= 3 && best !== frontIndex()) rotateTo(best);
+  }
   function pushRecent(name) {
     S.recent = [name].concat(S.recent.filter((n) => n !== name)).slice(0, 3);
     save();
   }
   function openApp(a) {
     pushRecent(a.name);
-    const host = a.href ? a.href.replace('https://', '').replace(/\/$/, '') : '';
-    openSheet(a.name, a.href ? 'Opens ' + host + '. In the real launcher one tap opens it at once.' : 'Link not set yet: [' + a.name + ' address].', a.href, false);
+    countUse(a.name);
+    if (a.href) { hapt('press'); const w = window.open(a.href, '_blank'); if (w) w.opener = null; else location.href = a.href; return; }
+    openSheet(a.name, 'Link not set yet: [' + a.name + ' address].', '', false);
   }
   function openShortcuts(a) {
     openSheet(a.name, 'Quick actions (examples).', a.href, false, (a.short || []).map((t) => ({
@@ -4018,9 +4054,24 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const s1 = document.createElement('span'); s1.textContent = r.name;
       const s2 = document.createElement('small'); s2.textContent = r.where;
       b.appendChild(s1); b.appendChild(s2);
-      b.addEventListener('click', () => { hideOverlay($('search')); setTimeout(() => goTo(r.name), 90); });
+      b.addEventListener('click', () => openResult(r.name));
       box.appendChild(b);
     });
+    // v39: when only one result matches, it opens after a short pause (typing more cancels it)
+    clearTimeout(soloT);
+    if (q && hits.length === 1) soloT = setTimeout(() => openResult(hits[0].name), 600);
+    firstHit = hits[0] ? hits[0].name : '';
+  }
+  let soloT = 0, firstHit = '';
+  function openResult(name) {
+    clearTimeout(soloT);
+    if ($('search').hidden) return;
+    hideOverlay($('search'));
+    setTimeout(() => {
+      goTo(name);
+      if (BY[name]) openApp(BY[name]);
+      else { const it = LIST.find((x) => x.name === name); if (it) openItem(it); }
+    }, 90);
   }
   function goTo(name) {
     const si = APPS.findIndex((a) => a.name === name);
@@ -4034,10 +4085,28 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   $('moonEvent').addEventListener('click', openEvents);
   $('searchClose').addEventListener('click', () => hideOverlay($('search')));
   $('searchInput').addEventListener('input', renderResults);
+  $('searchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && firstHit) { e.preventDefault(); openResult(firstHit); } });
 
   /* ---------- Edit dial ---------- */
   const ICON_UP = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>';
   const ICON_DOWN = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>';
+  const ICON_PIN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 4 4H6l4-4z"></path><path d="M12 14v6"></path></svg>';
+  // v39: favourites bar. Pinned apps (Edit dial) in a fixed row; one tap opens.
+  function renderFavBar() {
+    const box = $('favBar');
+    box.textContent = '';
+    S.pins.forEach((n) => {
+      const a = BY[n]; if (!a) return;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'fav'; b.setAttribute('aria-label', 'Open ' + n);
+      const ini = document.createElement('span'); ini.className = 'ini'; ini.setAttribute('aria-hidden', 'true');
+      if (ICONS[n]) { const im = document.createElement('img'); im.src = ICONS[n]; im.alt = ''; ini.appendChild(im); } else ini.textContent = n.charAt(0);
+      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = n;
+      b.appendChild(ini); b.appendChild(nm);
+      b.addEventListener('click', () => openApp(a));
+      box.appendChild(b);
+    });
+    box.hidden = !S.pins.length;
+  }
   function renderEdit() {
     const box = $('editRows');
     box.textContent = '';
@@ -4060,7 +4129,15 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         } else S.onMoon = S.onMoon.filter((x) => x !== n);
         changed();
       });
-      row.appendChild(nm); row.appendChild(up); row.appendChild(dn); row.appendChild(wh);
+      const pn = document.createElement('button'); pn.type = 'button'; const pinned = S.pins.indexOf(n) !== -1;
+      pn.className = 'pin' + (pinned ? ' on' : ''); pn.innerHTML = ICON_PIN;
+      pn.setAttribute('aria-label', pinned ? 'Unpin ' + n + ' from the bar' : 'Pin ' + n + ' to the bar'); pn.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+      pn.addEventListener('click', () => {
+        if (pinned) S.pins = S.pins.filter((x) => x !== n);
+        else { if (S.pins.length >= 5) { toast('The bar holds 5 apps. Unpin one first.'); return; } S.pins.push(n); }
+        changed();
+      });
+      row.appendChild(nm); row.appendChild(pn); row.appendChild(up); row.appendChild(dn); row.appendChild(wh);
       box.appendChild(row);
     });
   }
@@ -4078,6 +4155,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const k = APPS.findIndex((a) => a.name === keep);
     st.rot = frontDeg() - (k === -1 ? 0 : k) * 360 / APPS.length;
     renderEdit();
+    renderFavBar();
     kick();
   }
   $('sunEdit').addEventListener('click', () => { renderEdit(); showOverlay($('edit')); });
@@ -4112,7 +4190,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const PAIRS = [['dial', 'Dial', 'dial', 'dial3d', 'normal'], ['ring', 'Ring', 'ring', 'moondial', 'normal'], ['dots', 'Dots', 'edge', 'dots', 'normal'],
     ['arc', 'Glow arc', 'arc', 'arc', 'normal'], ['crescent', 'Crescent', 'eclipse', 'crescent', 'normal'],
     ['today', 'Today', 'today', 'phase', 'extra'], ['minimal', 'Minimal', 'minimal', 'minimal', 'extra'], ['clock', 'Clock', 'clock', 'dial', 'extra'],
-    ['orb', 'Glow orb', 'orb', 'orb', 'extra'], ['small', 'Small', 'small', 'small', 'extra']
+    ['small', 'Small', 'small', 'small', 'extra']
+    // v39: Glow orb pair removed (user): ['orb', 'Glow orb', 'orb', 'orb', 'extra']
     // Rings pair (Ringed sun + Saturn rings) taken out for now (user, v35: "add it later"): ['rings', 'Rings', 'rings', 'saturn', 'planets']
   ];
   PAIRS.forEach((p) => {
@@ -4306,6 +4385,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   buildItems();
   st.rot = frontDeg();
   st.prevRot = st.rot;
+  renderFavBar();
   // home screen shortcuts (long-press the app icon, v32): ./?screen=sun | moon | earth
   const wantScreen = new URLSearchParams(location.search).get('screen');
   if (S.mode === 'two' && nightness(phaseNow()) > 0.5) st.screen = 'moon';
@@ -4318,8 +4398,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   resize();
   $('toPlanet').hidden = false;
   if (wantScreen === 'earth' || (!wantScreen && S.startScreen === 'planet')) showPlanet(true);
+  else if (st.screen === 'sun') setTimeout(smartFront, 400);  // v39
   window.addEventListener('resize', resize);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { st.lastFrame = 0; applyLight(); kick(); wxFetch(false); } });
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    st.lastFrame = 0; applyLight(); kick(); wxFetch(false);
+    if (hiddenAt && Date.now() - hiddenAt > 30000 && st.screen === 'sun' && !planet.on) smartFront();  // v39
+  });
   wxFetch(false);
   setInterval(() => wxFetch(false), 5 * 60000);
   setInterval(() => { if (S.sky === 'clock' && !st.demo) { applyLight(); kick(); } }, 60000);
