@@ -130,6 +130,19 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .item.card.app.sel .dot { background: var(--sun); border-color: var(--sun-deep); }
 #app.fx .item.card.sel { text-shadow: none; box-shadow: 0 0 26px color-mix(in srgb, var(--moon) 45%, transparent); }
 .facet.flip { transform-origin: 50% 50%; }
+/* Sun views (22 Oct): the app buttons become cards (Real sun today), a plain list (Minimal sun) or text on a dial (Clock dial) */
+#app.sv #sunInfo, #app.sv #sunChips, #app.sv #clockChip { display: none !important; }
+#app.sv .facet.sv-off { opacity: 0 !important; pointer-events: none; }
+#app.sv-today .facet { width: min(278px, calc(100vw - 96px)); height: 52px; border-radius: 14px; padding: 0 16px; gap: 12px; font-size: 16px; transform-origin: 50% 50%; }
+#app.sv-minimal .facet, #app.sv-clock .facet:not(.front) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7); }
+#app.sv-minimal .facet { height: 40px; gap: 14px; padding: 0 8px; font-size: 17px; font-weight: 400; color: rgba(250, 244, 236, 0.75); transform-origin: 0 50%; }
+#app.sv-minimal .facet .ini { width: 28px; height: 28px; }
+#app.sv-minimal .facet.front { color: #fff; font-weight: 600; }
+#app.sv-minimal .facet.front::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--sun); }
+#app.sv-clock .facet { transform-origin: 0 50%; font-size: 15px; }
+#app.sv-clock .facet:not(.front) { color: rgba(250, 240, 228, 0.9); font-weight: 500; }
+#app.sv-clock .facet:not(.front) .ini { display: none; }
+#app.sv-clock .facet.front { height: 48px; padding: 0 16px 0 8px; font-size: 16px; }
 .item .dot { width: 12px; height: 12px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--muted); flex: none; }
 .item.sel { color: var(--ink); font-weight: 600; }
 .item.sel .dot { width: 16px; height: 16px; background: var(--moon); border-color: var(--moon); }
@@ -191,6 +204,12 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 .swapopts { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--panel-2) 55%, transparent); }
 .swapopts[hidden] { display: none; }
 .sublg { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+/* Settings tabs (Sun style / Moon style): Normal, Extra, Planets */
+.tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.tabs button { flex: 1; min-height: 40px; border-radius: 20px; border: 1.5px solid var(--panel-2); background: transparent; color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.tabs button.on { background: var(--panel-2); color: var(--ink); }
+.tabpane { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.tabpane[hidden] { display: none; }
 details.more > summary { list-style: none; min-height: 48px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #5B6B8C; display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 600; cursor: pointer; }
 details.more > summary::-webkit-details-marker { display: none; }
 details.more > summary::after { content: '\25BE'; }
@@ -397,36 +416,70 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         </div>
         <p id="themeLine" class="helpline"></p>
       </fieldset>
+      <!-- 22 Oct: Sun style and Moon style are picked on their own, each in tabs (Normal / Extra / Planets). -->
       <fieldset>
-        <legend>Sun</legend>
-        <div class="seg">
-          <input type="radio" name="sunPick" id="sp-glow" value="glow"><label for="sp-glow">Glow</label>
-          <input type="radio" name="sunPick" id="sp-corona" value="corona"><label for="sp-corona">Corona</label>
-          <input type="radio" name="sunPick" id="sp-flames" value="flames"><label for="sp-flames">Flames</label>
-          <input type="radio" name="sunPick" id="sp-eclipse" value="eclipse"><label for="sp-eclipse">Eclipse</label>
-          <input type="radio" name="sunPick" id="sp-blackhole" value="blackhole"><label for="sp-blackhole">Black hole</label>
-          <input type="radio" name="sunPick" id="sp-neon" value="neon"><label for="sp-neon">Neon</label>
-          <input type="radio" name="sunPick" id="sp-plasma" value="plasma"><label for="sp-plasma">Plasma</label>
+        <legend>Sun style</legend>
+        <div class="tabs" data-group="sun" role="tablist">
+          <button type="button" data-tab="normal">Normal</button>
+          <button type="button" data-tab="extra">Extra</button>
         </div>
-        <div id="neonOpts" class="swapopts">
-          <div class="sublg">Neon styles (tap one to switch the sun to Neon)</div>
+        <div class="tabpane" data-group="sun" data-tab="normal">
           <div class="seg">
-            <input type="radio" name="neonStyle" id="nz-minimal" value="minimal"><label for="nz-minimal">Minimal</label>
-            <input type="radio" name="neonStyle" id="nz-sign" value="sign"><label for="nz-sign">Sign</label>
-            <input type="radio" name="neonStyle" id="nz-synth" value="synth"><label for="nz-synth">Synthwave</label>
+            <input type="radio" name="sunPick" id="sp-glow" value="glow"><label for="sp-glow">Glow</label>
+            <input type="radio" name="sunPick" id="sp-corona" value="corona"><label for="sp-corona">Corona</label>
+            <input type="radio" name="sunPick" id="sp-flames" value="flames"><label for="sp-flames">Flames</label>
+            <input type="radio" name="sunPick" id="sp-plasma" value="plasma"><label for="sp-plasma">Plasma</label>
           </div>
         </div>
+        <div class="tabpane" data-group="sun" data-tab="extra" hidden>
+          <div class="seg">
+            <input type="radio" name="sunPick" id="sp-eclipse" value="eclipse"><label for="sp-eclipse">Eclipse</label>
+            <input type="radio" name="sunPick" id="sp-blackhole" value="blackhole"><label for="sp-blackhole">Black hole</label>
+            <input type="radio" name="sunPick" id="sp-neon" value="neon"><label for="sp-neon">Neon</label>
+          </div>
+          <div id="neonOpts" class="swapopts">
+            <div class="sublg">Neon styles (tap one to switch the sun to Neon)</div>
+            <div class="seg">
+              <input type="radio" name="neonStyle" id="nz-minimal" value="minimal"><label for="nz-minimal">Minimal</label>
+              <input type="radio" name="neonStyle" id="nz-sign" value="sign"><label for="nz-sign">Sign</label>
+              <input type="radio" name="neonStyle" id="nz-synth" value="synth"><label for="nz-synth">Synthwave</label>
+            </div>
+          </div>
+        </div>
+        <div class="sublg">Sun screen</div>
+        <div class="seg">
+          <input type="radio" name="sunView" id="sv-dial" value="dial"><label for="sv-dial">Sun dial</label>
+          <input type="radio" name="sunView" id="sv-today" value="today"><label for="sv-today">Real sun today</label>
+          <input type="radio" name="sunView" id="sv-minimal" value="minimal"><label for="sv-minimal">Minimal sun</label>
+          <input type="radio" name="sunView" id="sv-clock" value="clock"><label for="sv-clock">Clock dial</label>
+        </div>
+        <p class="helpline">Real sun today, Minimal sun and Clock dial match the moon looks. Solar activity is sample data for now.</p>
       </fieldset>
       <fieldset>
-        <legend>Moon</legend>
-        <div class="seg">
-          <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
-          <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
-          <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
-          <input type="radio" name="moonLook" id="moon-phase" value="phase"><label for="moon-phase">Real moon phase</label>
-          <input type="radio" name="moonLook" id="moon-minimal" value="minimal"><label for="moon-minimal">Minimal moon</label>
-          <input type="radio" name="moonLook" id="moon-dial" value="dial"><label for="moon-dial">Clock dial</label>
-          <input type="radio" name="moonLook" id="moon-saturn" value="saturn"><label for="moon-saturn">Saturn rings</label>
+        <legend>Moon style</legend>
+        <div class="tabs" data-group="moon" role="tablist">
+          <button type="button" data-tab="normal">Normal</button>
+          <button type="button" data-tab="extra">Extra</button>
+          <button type="button" data-tab="planets">Planets</button>
+        </div>
+        <div class="tabpane" data-group="moon" data-tab="normal">
+          <div class="seg">
+            <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
+            <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
+            <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
+          </div>
+        </div>
+        <div class="tabpane" data-group="moon" data-tab="extra" hidden>
+          <div class="seg">
+            <input type="radio" name="moonLook" id="moon-phase" value="phase"><label for="moon-phase">Real moon phase</label>
+            <input type="radio" name="moonLook" id="moon-minimal" value="minimal"><label for="moon-minimal">Minimal moon</label>
+            <input type="radio" name="moonLook" id="moon-dial" value="dial"><label for="moon-dial">Clock dial</label>
+          </div>
+        </div>
+        <div class="tabpane" data-group="moon" data-tab="planets" hidden>
+          <div class="seg">
+            <input type="radio" name="moonLook" id="moon-saturn" value="saturn"><label for="moon-saturn">Saturn rings</label>
+          </div>
         </div>
       </fieldset>
       <fieldset>
@@ -679,6 +732,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (RAY_STYLES.indexOf(S.rayStyle) === -1) S.rayStyle = 'glow';
   S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1);
   if (S.swap !== 'on') S.swap = 'off';
+  if (['dial', 'today', 'minimal', 'clock'].indexOf(S.sunView) === -1) S.sunView = 'dial';
   if (['sunset', 'stars'].indexOf(S.skyPhoto) === -1) S.skyPhoto = 'off';
   if (['glow', 'phase'].indexOf(S.moonDial) === -1) S.moonDial = 'glow';
   if (['edge', 'eclipse', 'orb', 'small', 'setting'].indexOf(S.sunList) === -1) S.sunList = 'edge';
@@ -1095,7 +1149,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       'precision highp float;',
       'varying vec2 vP;',
       'uniform sampler2D uTex;',
-      'uniform float uMode, uScale, uRot, uRoll, uPitch, uTime, uAA, uGlow, uShine, uExpo, uHas, uEdge, uLit;',
+      'uniform float uMode, uScale, uRot, uRoll, uPitch, uTime, uAA, uGlow, uShine, uExpo, uHas, uEdge, uLit, uBoil, uDet;',
       'uniform vec3 uL, uTint, uCB, uCL, uCH;',
       'uniform vec2 uSunP; uniform float uAsp, uCover, uCA;',
       'const float PI = 3.14159265, TAU = 6.2831853;',
@@ -1112,6 +1166,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       '  float u1 = fract(lon / TAU + 0.5), u2 = fract(lon / TAU) - 0.5;',
       '  float u = fwidth(u1) <= fwidth(u2) + 0.00001 ? u1 : u2;',
       '  return texture2D(uTex, vec2(u, 0.5 - lat / PI)).rgb; }',
+      // longitude, latitude of a point on the turned ball (for the boiling surface)
+      'vec2 suv(vec3 n, float rot){',
+      '  float cr = cos(uRoll), sr = sin(uRoll);',
+      '  vec3 b = vec3(n.x * cr + n.y * sr, -n.x * sr + n.y * cr, n.z);',
+      '  float cp = cos(uPitch), sp = sin(uPitch);',
+      '  b = vec3(b.x, b.y * cp - b.z * sp, b.y * sp + b.z * cp);',
+      '  return vec2(atan(b.x, b.z) + rot, asin(clamp(b.y, -1.0, 1.0))); }',
       'void main(){',
       '  if (uMode > 3.5) {', // clouds: altocumulus layer, lit from the sun side
       '    vec2 uv = vec2(vP.x * 0.5 + 0.5, 0.5 - vP.y * 0.5);',
@@ -1145,11 +1206,29 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       '    a = inside; col *= a;',
       '    float halo = exp(-max(r - 1.0, 0.0) * 18.0) * (1.0 - inside) * uGlow * smoothstep(-0.4, 0.6, dot(normalize(vec3(p, 0.0)), normalize(uL)));',
       '    col += vec3(0.85, 0.88, 0.95) * halo * 0.35;',
+      '  } else if (uMode < 1.5 && uBoil > 0.5) {', // Plasma sun (22 Oct): boiling surface (granulation), plain round glow
+      '    float o = max(r - 1.0, 0.0);',
+      '    float glow = (exp(-o * 6.0) * 0.75 + exp(-o * 1.8) * 0.3) * uGlow;',
+      '    vec3 gcol = mix(vec3(1.0, 0.45, 0.12), vec3(1.0, 0.85, 0.6), exp(-o * 12.0) * 0.6) * glow;',
+      '    vec3 c = vec3(0.0);',
+      '    float lumb = dot(uHas > 0.5 ? surf(n, uRot) : vec3(0.8, 0.5, 0.2), vec3(0.3, 0.59, 0.11));', // outside the if: surf uses fwidth
+      '    if (inside > 0.0) {',
+      '      vec2 g = suv(n, uRot) * 38.0;',
+      '      float w1 = fbm(g + vec2(uTime * 0.03, 0.0));',
+      '      float gran = smoothstep(0.35, 0.7, fbm(g * 1.15 + w1 * 2.4 - vec2(0.0, uTime * 0.04)));',
+      '      c = mix(vec3(0.95, 0.42, 0.06), vec3(1.0, 0.93, 0.68), clamp(gran * 0.4 + lumb * 0.6, 0.0, 1.0));',
+      '      c *= 0.3 + 0.7 * pow(zz, 0.5);',
+      '      c = mix(c, c * vec3(1.0, 0.55, 0.3), pow(1.0 - zz, 2.0));',
+      '    }',
+      '    col = c * inside + gcol * (1.0 - inside); a = inside + (1.0 - inside) * glow * 0.25;',
       '  } else if (uMode < 1.5) {', // sun
       '    vec3 t1 = uHas > 0.5 ? surf(n, uRot) : vec3(1.0, 0.6, 0.2);',
       '    vec3 t2 = uHas > 0.5 ? surf(n, uRot + 1.7) : t1;',
       '    vec3 t = mix(t1, t2, 0.5 + 0.5 * sin(uTime * 0.35 + t1.r * 6.0));',
       '    t = pow(t, vec3(0.85)) * 1.15;',
+      // fine surface grain for a very big sun (Clock dial view), so the 1024 map does not look soft
+      '    if (uDet > 0.0) { vec2 g0 = suv(n, uRot); float gr = fbm(g0 * 41.0 + fbm(g0 * 9.5) * 1.5); float sp = fbm(g0 * 6.4 + 7.0);',
+      '      t *= (1.0 + uDet * ((gr - 0.5) * 0.9 + (sp - 0.5) * 0.35)) * (1.0 - 0.22 * uDet * pow(zz, 3.0)); }',
       '    float lum = dot(t, vec3(0.3, 0.59, 0.11));',
       '    vec3 c = mix(t, uTint * (0.6 + lum * 0.9), 0.38);',
       '    c *= 0.5 + 0.5 * pow(zz, 0.55);',  // limb darkening
@@ -1208,7 +1287,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const aP = gl.getAttribLocation(prog, 'aP');
       gl.enableVertexAttribArray(aP);
       gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
-      ['uCB', 'uCL', 'uCH', 'uSunP', 'uAsp', 'uCover', 'uCA', 'uEdge', 'uTex', 'uMode', 'uScale', 'uRot', 'uRoll', 'uPitch', 'uTime', 'uAA', 'uGlow', 'uShine', 'uExpo', 'uHas', 'uL', 'uTint', 'uLit'].forEach((k) => { L[k] = gl.getUniformLocation(prog, k); });
+      ['uCB', 'uCL', 'uCH', 'uSunP', 'uAsp', 'uCover', 'uCA', 'uEdge', 'uTex', 'uMode', 'uScale', 'uRot', 'uRoll', 'uPitch', 'uTime', 'uAA', 'uGlow', 'uShine', 'uExpo', 'uHas', 'uL', 'uTint', 'uLit', 'uBoil', 'uDet'].forEach((k) => { L[k] = gl.getUniformLocation(prog, k); });
       gl.clearColor(0, 0, 0, 0);
       Object.keys(TEXSRC).forEach((k) => {
         if (TEXSRC[k].indexOf('data:') !== 0) return;
@@ -1260,6 +1339,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       gl.uniform3fv(L.uL, o.light || [-0.5, 0.3, 0.8]);
       gl.uniform3fv(L.uTint, hexRgb(o.tint || '#FFC94D'));
       gl.uniform1f(L.uLit, o.lit || 0);
+      gl.uniform1f(L.uBoil, o.boil ? 1 : 0);
+      gl.uniform1f(L.uDet, o.detail || 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       const half = R * k;
       c.save();
@@ -1681,6 +1762,41 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   let lp = 0;
   function cancelLP() { if (lp) { clearTimeout(lp); lp = 0; } }
 
+  // Plasma (22 Oct, mockup P1+P2): small loops of hot gas at the sun's edge. Each loop grows, stays and fades
+  // in 10-20 s, then a new one starts somewhere else. Thin 'lighter' strokes only (no blur: it lags on phones).
+  const proms = [];
+  function newProm(t, spread) {
+    const life = 10000 + Math.random() * 10000, s = [];
+    for (let k = 0; k < 6; k++) s.push([(Math.random() - 0.5) * 0.08, (Math.random() - 0.5) * 0.08, (Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.12, 0.6 + Math.random() * 0.8, 0.5 + Math.random(), 0.4 + Math.random() * 0.6]);
+    return { a: Math.random() * 2 * Math.PI, w: 0.035 + Math.random() * 0.05, h: 0.05 + Math.random() * 0.09, life: life, t0: t - (spread ? Math.random() * life : 0), s: s };
+  }
+  function plasmaLoops(c, bx, by, R, now, light) {
+    const t = reduce ? 0 : now, k0 = R / 74;
+    while (proms.length < 4) proms.push(newProm(t, true));
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    c.lineCap = 'round';
+    proms.forEach((p, i) => {
+      let k = (t - p.t0) / p.life;
+      if (k >= 1 || k < 0) { proms[i] = p = newProm(t, false); k = 0; }
+      const env = Math.sin(Math.PI * k), grow = 0.7 + 0.3 * Math.min(1, k * 2);
+      // wide red strands drawn normally (they stay visible on a bright sky), thin hot cores added on top
+      [[225, 55, 18, 2.6, 'source-over', 0.7], [255, 150, 70, 0.8, 'lighter', 0.5]].forEach((pass) => {
+        c.globalCompositeOperation = pass[4];
+        p.s.forEach((s) => {
+          const a1 = p.a - p.w + s[0], a2 = p.a + p.w + s[1], b1 = p.a - p.w * 0.6 + s[2], b2 = p.a + p.w * 0.6 + s[3];
+          const hh = R + p.h * R * s[4] * 2.3 * grow, r0 = R * 0.99;
+          c.beginPath();
+          c.moveTo(bx + r0 * Math.cos(a1), by + r0 * Math.sin(a1));
+          c.bezierCurveTo(bx + hh * Math.cos(b1), by + hh * Math.sin(b1), bx + hh * Math.cos(b2), by + hh * Math.sin(b2), bx + r0 * Math.cos(a2), by + r0 * Math.sin(a2));
+          c.strokeStyle = 'rgba(' + pass[0] + ',' + pass[1] + ',' + pass[2] + ',' + (pass[5] * s[6] * env * (0.5 + 0.5 * light)).toFixed(3) + ')';
+          c.lineWidth = pass[3] * s[5] * k0;
+          c.stroke();
+        });
+      });
+    });
+    c.restore();
+  }
   const parts = [];
   let emitAcc = 0;
   let lastFront = -1;
@@ -1707,6 +1823,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       GLB.clouds(c, W, H, cl, now);
       c.restore();
     }
+    // Sun views (22 Oct): Real sun today / Minimal sun / Clock dial replace the dial, like the moon looks
+    const svOn = sunViewOn();
+    if (app.classList.contains('sv') !== svOn) lastFront = -1;
+    app.classList.toggle('sv', svOn);
+    ['today', 'minimal', 'clock'].forEach((v) => app.classList.toggle('sv-' + v, svOn && S.sunView === v));
+    if (svOn) { sunScene(c, W, H, S.sunView, now, look); drawWeather(c, W, H, now); drawRipples(c, 'sun', now, st.sun); return; }
     const sun = swapped() ? '#DCE2EE' : st.sun, deep = swapped() ? '#8F9AB3' : st.deep;
     const n = APPS.length, step = 2 * Math.PI / n, rot = st.rot * Math.PI / 180;
     const front = frontIndex(), fa = frontDeg() * Math.PI / 180;
@@ -1780,11 +1902,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         // the neon styles draw their own rays (neonBody / neonBack)
       } else if (look === 'eclipse') {
         // no drawn lines (22 Oct: they looked fake); the shader's corona has its own streamers
-      } else if (look === 'plasma' && isF) {
-        c.save();
-        c.globalCompositeOperation = 'lighter';
-        poly([G.polar(coreR * 0.9, a - 0.1), G.polar(G.R - 10, a), G.polar(coreR * 0.9, a + 0.1)], hexA(sun, 0.7));
-        c.restore();
       }
     }
 
@@ -1968,29 +2085,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       c.restore();
     }
 
-    function plasmaLayers() {
-      const ph = reduce ? 0 : now / 520;
-      c.save();
-      c.globalCompositeOperation = 'lighter';
-      [[0.7, 0.16, 0.38, 1], [0.5, 0.13, 0.5, -1.3], [0.32, 0.09, 0.7, 0.8]].forEach((L) => {
-        const rb = coreR + (G.R - coreR) * L[0], amp = (G.R - coreR) * L[1];
-        c.beginPath();
-        for (let q = 0; q <= 160; q++) {
-          const phi = q / 160 * 2 * Math.PI;
-          const wob = 0.5 * Math.sin(n * phi + ph * L[3]) + 0.3 * Math.sin(2 * n * phi - ph * 1.7 + 1) + 0.2 * Math.sin(5 * phi + ph * 0.6);
-          const pp = G.polar(rb + amp * wob, phi + rot);
-          if (q) c.lineTo(pp[0], pp[1]); else c.moveTo(pp[0], pp[1]);
-        }
-        c.closePath();
-        const gr = c.createRadialGradient(cx, cy, coreR * 0.5, cx, cy, G.R * 1.05);
-        gr.addColorStop(0, hexA(sun, L[2] * light));
-        gr.addColorStop(0.65, hexA(deep, L[2] * 0.55 * light));
-        gr.addColorStop(1, hexA(deep, 0));
-        c.fillStyle = gr;
-        c.fill();
-      });
-      c.restore();
-    }
 
     const idx = [];
     for (let i = 0; i < n; i++) idx.push(i);
@@ -2056,7 +2150,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       return;
     }
     if (GLB.ok && look !== 'neon') {
-      GLB.draw(c, bx, by, coreR * press, { mode: 'sun', tint: sun, rot: (reduce ? 0 : now / 1000 * 0.02) + st.rot * Math.PI / 180 * 0.35, roll: G.roll * Math.PI / 180, pitch: -G.tilt * Math.PI / 180 * 0.3, time: reduce ? 0 : now / 1000, glow: 0.55 + 0.5 * light + 0.3 * (st.press || 0), margin: 1.9 });
+      GLB.draw(c, bx, by, coreR * press, { mode: 'sun', boil: look === 'plasma', tint: sun, rot: (reduce ? 0 : now / 1000 * 0.02) + st.rot * Math.PI / 180 * 0.35, roll: G.roll * Math.PI / 180, pitch: -G.tilt * Math.PI / 180 * 0.3, time: reduce ? 0 : now / 1000, glow: (0.55 + 0.5 * light + 0.3 * (st.press || 0)) * (look === 'plasma' ? 0.7 : 1), margin: 1.9 });
       return;
     }
     if (look === 'blackhole') {
@@ -2110,12 +2204,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     looks.forEach((lk) => {
       c.save();
       c.globalAlpha = lk[1];
-      if (lk[0] === 'plasma') plasmaLayers();
       if (lk[0] === 'blackhole') diskHalf(false);
       if (lk[0] === 'neon') neonBack(S.neonStyle);
       raysBack(lk[0]);
       idx.filter((i) => isBack(i * step + rot)).forEach((i) => drawRay(i, lk[0]));
       body(lk[0]);
+      if (lk[0] === 'plasma') plasmaLoops(c, cx + par.x * 3, cy + par.y * 3, coreR * (1 - 0.06 * (st.press || 0)), now, light);
       if (lk[0] === 'blackhole') diskHalf(true);
       idx.filter((i) => !isBack(i * step + rot)).forEach((i) => drawRay(i, lk[0]));
       raysFront(lk[0]);
@@ -2190,6 +2284,104 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     $('sunTip').textContent = st.view
       ? 'Drag to turn the view · switch this off in Settings to spin again'
       : 'Flick to spin · hold an app for shortcuts · two fingers turn the view';
+  }
+
+  // ---- Sun views: the same apps (APPS, st.rot, frontIndex) shown as cards, a list or a big dial ----
+  function sunViewOn() { return S.sunView !== 'dial' && !swapped(); }
+  // the list area: a drag that starts here scrolls the apps; above or below it swipes to the Earth or the Moon
+  function sunViewGeo() {
+    const H = st.H, v = S.sunView;
+    if (v === 'today') return { top: H * 0.67, bottom: H * 0.9, row: 58 };
+    if (v === 'minimal') return { top: H * 0.45, bottom: H * 0.88, row: 44 };
+    return { top: H * 0.22, bottom: H * 0.86, row: 40 };
+  }
+  function sunScene(c, W, H, v, now, look) {
+    const n = APPS.length, pos = (frontDeg() - st.rot) / (360 / n), front = frontIndex(), k = W / 390;
+    const font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'system-ui, sans-serif';
+    const muted = 'rgba(232, 222, 210, 0.78)';
+    const txt = (s, x, y, size, weight, col, align, caps) => {
+      c.font = weight + ' ' + size + 'px ' + font; c.fillStyle = col; c.textAlign = align || 'left'; c.textBaseline = 'middle';
+      if (caps) { try { c.letterSpacing = '0.12em'; } catch (e) {} }
+      c.fillText(caps ? s.toUpperCase() : s, x, y);
+      if (caps) { try { c.letterSpacing = '0px'; } catch (e) {} }
+    };
+    const t = reduce ? 0 : now / 1000;
+    const sunAt = (x, y, r, o) => { if (GLB.ok) GLB.draw(c, x, y, r, Object.assign({ mode: 'sun', boil: look === 'plasma', tint: st.sun, rot: t * 0.02, time: t, glow: 0.8, margin: 1.6 }, o)); };
+    const dOf = (i) => { let d = (((i - pos) % n) + n) % n; if (d > n / 2) d -= n; return d; };
+    const place = (fn) => facetEls.forEach((el, i) => {
+      el.classList.remove('mini', 'flip');
+      const r = fn(dOf(i), i === front);
+      el.classList.toggle('sv-off', !r);
+      if (!r) return;
+      el.style.transform = 'translate(' + r.x.toFixed(1) + 'px,' + r.y.toFixed(1) + 'px) translate(' + (r.left ? '0' : '-50%') + ',-50%) scale(' + (r.s || 1).toFixed(3) + ')';
+      el.style.opacity = clamp(r.o, 0, 1).toFixed(2);
+      el.style.zIndex = String(i === front ? 520 : 510);
+    });
+    if (front !== lastFront) {
+      facetEls.forEach((el, i) => { el.classList.toggle('front', i === front); el.setAttribute('aria-label', APPS[i].name + (i === front ? ', selected. Tap to open, hold for shortcuts' : '')); });
+      lastFront = front;
+    }
+    const today = new Date();
+    if (v === 'today') {
+      // like D. Real moon phase: big sun, a short report, the next 7 days, apps as cards below
+      const r = Math.min(W * 0.31, H * 0.145), my = H * 0.25;
+      sunAt(W / 2, my, r, { glow: 1 });
+      txt('Today above Vienna', W / 2, H * 0.43, 12, 600, muted, 'center', true);
+      txt('Active sun', W / 2, H * 0.47, 28, 600, '#F5EFE3', 'center');
+      txt('6 sunspot groups · near solar maximum', W / 2, H * 0.505, 14, 400, muted, 'center');
+      const rowY = H * 0.565, gap = Math.min(52, (W - 32) / 7), tags = { 1: ['Flare', '#FFB347'], 3: ['Storm', '#FF7A5A'] };
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(today); d.setDate(d.getDate() + i);
+        const x = W / 2 + (i - 3) * gap;
+        if (i === 0) { c.beginPath(); c.arc(x, rowY, 19, 0, 2 * Math.PI); c.strokeStyle = 'rgba(255, 240, 220, 0.75)'; c.lineWidth = 1.5; c.stroke(); }
+        sunAt(x, rowY, 14, { glow: 0.4, margin: 1.4, rot: t * 0.02 + i * 0.23 });
+        txt(i === 0 ? 'Today' : DAYS[d.getDay()], x, rowY + 28, 12, i === 0 ? 700 : 500, i === 0 ? '#F5EFE3' : muted, 'center');
+        if (tags[i]) txt(tags[i][0], x, rowY + 44, 11, 700, tags[i][1], 'center');
+      }
+      txt('Sample data · real solar data comes later', W / 2, H * 0.645, 11, 500, 'rgba(255, 214, 160, 0.65)', 'center');
+      const listY = H * 0.78;
+      place((d) => Math.abs(d) > 1.45 ? null : { x: W / 2, y: listY + d * 58, s: 1 - 0.07 * Math.min(1, Math.abs(d)), o: 1 - 0.4 * Math.min(1, Math.abs(d)) });
+    } else if (v === 'minimal') {
+      // like B. Minimal moon: big date, sun at the top-right edge, three short lines, the day curve, a plain list
+      const R = 128 * k;
+      sunAt(W - 30 * k, H * 0.215, R, { glow: 0.6, margin: 1.3 });
+      txt(DAYS_LONG[today.getDay()], 24, H * 0.125, 12, 600, muted, 'left', true);
+      txt(MONTHS_LONG[today.getMonth()], 22, H * 0.175, 50, 300, '#F5EFE3');
+      txt(String(today.getDate()), 24, H * 0.245, 50, 600, '#F5EFE3');
+      const sn = sunToday();
+      ['☀  Sunrise ' + fmtHour(sn.rise) + ' · Sunset ' + fmtHour(sn.set), '☀  Active sun (sample data)', '☀  Storm likely on Sunday (sample)'].forEach((s, i) => txt(s, 24, H * 0.3 + i * 22, 13.5, 400, muted));
+      // the day curve: the sun above the line between sunrise and sunset, a dot for now
+      const y0 = H * 0.405, w = 170, alt = (h) => h >= sn.rise && h <= sn.set ? Math.sin(Math.PI * (h - sn.rise) / (sn.set - sn.rise)) : -0.35 * Math.sin(Math.PI * (((h - sn.set + 24) % 24) / (24 - (sn.set - sn.rise))));
+      c.beginPath();
+      for (let x = 0; x <= w; x++) { const y = y0 - alt(x / w * 24) * 18; if (x) c.lineTo(24 + x, y); else c.moveTo(24, y); }
+      c.strokeStyle = 'rgba(255, 214, 160, 0.6)'; c.lineWidth = 1.2; c.stroke();
+      c.beginPath(); c.moveTo(24, y0); c.lineTo(24 + w, y0); c.strokeStyle = 'rgba(255, 230, 200, 0.15)'; c.stroke();
+      const hn = hourNow();
+      c.beginPath(); c.arc(24 + hn / 24 * w, y0 - alt(hn) * 18, 3.4, 0, 2 * Math.PI); c.fillStyle = st.sun; c.fill();
+      place((d) => d < -0.6 || d > 6.4 ? null : { left: true, x: 18, y: H * 0.5 + d * 44, o: d < 0 ? 1 + d * 1.6 : Math.min(1, 6.4 - d) });
+    } else {
+      // like A. Clock-dial moon: a huge sun at the left edge, a ticked dial that turns, the apps along the dial
+      const C0 = -150 * k, C1 = H * 0.53, R = 262 * k;
+      sunAt(C0, C1, R, { glow: 0.9, margin: 1.12, rot: 0.4 + t * 0.02, detail: 1 });
+      c.save(); c.lineCap = 'round';
+      const turn = pos * 7.2, off = ((turn % 1.8) + 1.8) % 1.8;
+      for (let a = -54 + (1.8 - off); a <= 54; a += 1.8) {
+        const rad = a * Math.PI / 180, idx = Math.round((a + turn) / 1.8), major = ((idx % 4) + 4) % 4 === 0;
+        const r1 = (major ? 286 : 292) * k, r2 = 302 * k, fa2 = Math.max(0, 1 - Math.abs(a) / 56);
+        c.beginPath(); c.moveTo(C0 + r1 * Math.cos(rad), C1 + r1 * Math.sin(rad)); c.lineTo(C0 + r2 * Math.cos(rad), C1 + r2 * Math.sin(rad));
+        c.strokeStyle = 'rgba(255, 226, 190, ' + ((major ? 0.8 : 0.35) * fa2).toFixed(3) + ')'; c.lineWidth = major ? 1.6 : 1; c.stroke();
+      }
+      c.restore();
+      txt('Sun', 24, H * 0.125, 12, 600, muted, 'left', true);
+      txt(DAYS[today.getDay()] + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()], 24, H * 0.165, 28, 300, '#F5EFE3');
+      txt('Active sun (sample) · ' + (front + 1) + ' of ' + n, 24, H * 0.2, 13, 400, muted);
+      txt('Turn the dial · tap to open', W / 2, H * 0.875, 12.5, 400, muted, 'center');
+      place((d, isF) => {
+        if (Math.abs(d) > 7.5) return null;
+        const rad = d * 7.2 * Math.PI / 180, x = C0 + 318 * k * Math.cos(rad), y = C1 + 318 * k * Math.sin(rad);
+        return { left: true, x: x + (isF ? -4 : 6), y: y, s: Math.max(0.78, 1 - Math.abs(d) * 0.05), o: Math.max(0.12, 1 - Math.abs(d) * 0.17) };
+      });
+    }
   }
 
   function pickApp(i) {
@@ -2798,11 +2990,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (!drag.moved && dist > 6) { drag.moved = true; cancelLP(); }
     if (!drag.moved) return;
     if (drag.kind === 'dial') {
-      const G = sunGeo(), along = dx * G.cr + dy * G.sr;
+      const G = sunGeo(), sv = sunViewOn(), along = sv ? 0 : dx * G.cr + dy * G.sr;
       if (!drag.decided) {
         if (dist < 12) return;
         drag.decided = true;
-        const straight = Math.abs(dy) > 1.6 * Math.abs(dx) && Math.abs(along) < 0.45 * dist;
+        // sun views: a drag inside the list area scrolls the apps; outside it a straight swipe changes the screen
+        const vg = sv ? sunViewGeo() : null, inList = sv && drag.y0 >= vg.top && drag.y0 <= vg.bottom;
+        const straight = !inList && Math.abs(dy) > 1.6 * Math.abs(dx) && Math.abs(along) < 0.45 * dist;
         if (S.mode === 'two' && dy < 0 && straight) {
           drag.kind = 'toMoon';
           worlds.classList.add('dragging');
@@ -2818,7 +3012,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           return;
         }
       }
-      st.rot = drag.start - along * 0.5 * (G.sinT < 0 ? -1 : 1);
+      // sun views scroll up and down: one row of finger movement = one app
+      st.rot = sv ? drag.start + dy / sunViewGeo().row * (360 / APPS.length) : drag.start - along * 0.5 * (G.sinT < 0 ? -1 : 1);
       drag.samples.push({ t: performance.now(), v: st.rot });
       if (drag.samples.length > 8) drag.samples.shift();
       kick();
@@ -3278,7 +3473,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'fpsMeter', 'startScreen'];
+  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'swap', 'skyPhoto', 'moonDial', 'sunList', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'fpsMeter', 'startScreen', 'sunView'];
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
@@ -3298,6 +3493,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     else { const m = Math.round((Date.now() - WX.t) / 60000); s = 'Vienna now: ' + Math.round(WX.temp) + ' °C, ' + wxText(WX.code) + ', ' + WX.cloud + ' % clouds (' + (m < 2 ? 'just now' : m + ' min ago') + ').'; }
     $('wxLine').textContent = s + (S.weather === 'real' ? ' Updates every 30 min; only Vienna\'s fixed position is sent.' : '');
   }
+  function showTab(g, name) {
+    form.querySelectorAll('.tabs[data-group="' + g + '"] button').forEach((b) => { b.classList.toggle('on', b.dataset.tab === name); b.setAttribute('aria-selected', String(b.dataset.tab === name)); });
+    form.querySelectorAll('.tabpane[data-group="' + g + '"]').forEach((p) => { p.hidden = p.dataset.tab !== name; });
+  }
+  form.querySelectorAll('.tabs').forEach((t) => t.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-tab]');
+    if (b) showTab(t.dataset.group, b.dataset.tab);
+  }));
   function fillForm() {
     const sh = shownTheme();
     RADIOS.forEach((name) => {
@@ -3310,6 +3513,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     $('swapOpts').hidden = S.swap !== 'on';
     // Neon style row always shows (22 Oct: it was hard to find); tapping a style switches the sun to Neon.
     Array.prototype.forEach.call(form.elements.neonStyle, (r) => { r.checked = sh.look === 'neon' && r.value === S.neonStyle; });
+    // open the tab that holds the sun and moon style in use
+    ['sun', 'moon'].forEach((g) => {
+      const on = form.querySelector('.tabpane[data-group="' + g + '"] input[name="' + (g === 'sun' ? 'sunPick' : 'moonLook') + '"]:checked');
+      showTab(g, on ? on.closest('.tabpane').dataset.tab : 'normal');
+    });
     liveLine();
     wxLine();
     const mn = moonNow(), fd = moonEvents().full, d0 = new Date(); d0.setHours(0, 0, 0, 0);
@@ -3393,7 +3601,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (changed === 'color') { S.sunTime = tappedColor[0]; S.color = tappedColor[1]; }
     $('swapOpts').hidden = S.swap !== 'on';
     if (changed === 'moonLook' || changed === 'sunList') peekScreen('moon');
-    else if (['sunPick', 'neonStyle', 'dir', 'tilt', 'size', 'color', 'frontFx', 'swap', 'skyPhoto', 'moonDial', 'liveSun', 'weather'].indexOf(changed) !== -1) peekScreen('sun');
+    else if (['sunPick', 'sunView', 'neonStyle', 'dir', 'tilt', 'size', 'color', 'frontFx', 'swap', 'skyPhoto', 'moonDial', 'liveSun', 'weather'].indexOf(changed) !== -1) peekScreen('sun');
     if (changed === 'moonPhase') peekScreen(swapped() ? 'sun' : 'moon');
     if (changed === 'fpsMeter' && S.fpsMeter !== 'on') $('fpsMeter').hidden = true;
     if (changed === 'theme' || isLook || S.theme !== prevTheme) fillForm();
