@@ -129,6 +129,26 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 #app.fx .fav .ini { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 .pin { width: 40px; height: 40px; border-radius: 20px; border: 1.5px solid var(--line); background: transparent; color: var(--ink-3); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .pin.on { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); }
+/* v43: look editor (E1) and My looks */
+.lookedit { position: fixed; inset: 0; z-index: 900; }
+.lookedit[hidden] { display: none; }
+.le-catch { position: absolute; inset: 0; touch-action: none; cursor: move; }
+.le-panel { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--panel) 94%, transparent); border-radius: 22px 22px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35); }
+.le-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.le-head strong { font-size: 17px; }
+.le-head span { font-size: 12.5px; color: var(--ink-3); text-align: right; }
+.le-styles { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 4px; }
+.le-styles button { flex: 0 0 auto; min-height: 36px; padding: 0 14px; border-radius: 18px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); font-size: 13.5px; cursor: pointer; }
+.le-styles button.on { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); font-weight: 600; }
+.le-row { display: grid; grid-template-columns: 52px 1fr 52px; align-items: center; gap: 8px; min-height: 40px; font-size: 14px; }
+.le-row[hidden] { display: none; }
+.le-row input { width: 100%; }
+.le-row output { text-align: right; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.le-note { font-size: 13px; color: var(--ink-3); margin: 6px 0; }
+.le-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+.looks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.looks:empty { display: none; }
+.lookchip { min-height: 40px; padding: 0 16px; border-radius: 20px; border: 1.5px solid var(--sun); background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
 .handle.top { top: 10px; }
 .handle span { display: flex; align-items: center; gap: 6px; }
 
@@ -398,6 +418,21 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     <div class="cam-hint">Take a photo, then pick an app</div>
   </div>
 
+  <div id="lookEdit" class="lookedit" hidden>
+    <div class="le-catch" id="leCatch" aria-hidden="true"></div>
+    <div class="le-panel" role="dialog" aria-labelledby="leTitle">
+      <div class="le-head"><strong id="leTitle">Edit look</strong><span id="leTip">Drag the sun to move it.</span></div>
+      <div class="le-styles" id="leStyles"></div>
+      <div class="le-rows" id="leRows">
+        <label class="le-row" id="leRowTilt"><span>Tilt</span><input type="range" id="leTilt" step="1"><output id="leTiltOut"></output></label>
+        <label class="le-row" id="leRowTurn"><span>Turn</span><input type="range" id="leTurn" step="1"><output id="leTurnOut"></output></label>
+        <label class="le-row" id="leRowSize"><span id="leSizeName">Size</span><input type="range" id="leSize" step="1"><output id="leSizeOut"></output></label>
+        <label class="le-row" id="leRowRing"><span>Ring</span><input type="range" id="leRing" step="1"><output id="leRingOut"></output></label>
+      </div>
+      <p class="le-note" id="leNote" hidden></p>
+      <div class="le-btns"><button type="button" class="btn" id="leReset">Reset</button><button type="button" class="btn" id="leSave">Save as…</button><button type="button" class="btn primary" id="leDone" data-autofocus>Done</button></div>
+    </div>
+  </div>
   <div id="sheet" class="overlay" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
       <h2 id="sheetTitle"></h2>
@@ -464,6 +499,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       </fieldset>
       <details class="more grp" open>
       <summary>☀ Sun</summary>
+      <fieldset class="mylooks">
+        <legend>My looks</legend>
+        <div class="looks" id="looksSun"></div>
+        <p class="helpline" id="looksSunHelp">Tap Edit look to tilt, turn, size and move the sun, then save it here (up to 5).</p>
+        <button type="button" class="btn" data-editlook="sun">Edit look</button>
+      </fieldset>
       <!-- 22 Oct (v29): pick the screen first; the style list below shows only the styles that change that screen.
            v34: hidden while "Same style on both screens" is on (then Screen style above picks both). -->
       <fieldset id="sunScreenSet">
@@ -569,6 +610,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       </details>
       <details class="more grp">
       <summary>☾ Moon</summary>
+      <fieldset class="mylooks">
+        <legend>My looks</legend>
+        <div class="looks" id="looksMoon"></div>
+        <p class="helpline" id="looksMoonHelp">Tap Edit look to tilt, turn, size and move the moon, then save it here (up to 5).</p>
+        <button type="button" class="btn" data-editlook="moon">Edit look</button>
+      </fieldset>
       <fieldset id="moonStyleSet">
         <legend>Moon style</legend>
         <div class="tabs" data-group="moon" role="tablist">
@@ -759,7 +806,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const FRONT_FX = ['beam', 'lift', 'dim', 'chips', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'sign', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {} };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] } };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -813,6 +860,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   S.recent = (S.recent || []).filter((n) => BY[n]);
   S.pins = (Array.isArray(S.pins) ? S.pins : []).filter((n) => BY[n]).slice(0, 5);
   if (!S.useHours || typeof S.useHours !== 'object') S.useHours = {};
+  if (!S.tune || typeof S.tune !== 'object') S.tune = {};
+  if (!S.looks || typeof S.looks !== 'object') S.looks = { sun: [], moon: [] };
+  ['sun', 'moon'].forEach((kd) => { S.looks[kd] = (Array.isArray(S.looks[kd]) ? S.looks[kd] : []).filter((l) => l && typeof l.name === 'string').slice(0, 5); });
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -2756,8 +2806,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     } else if (v === 'ring') {
       // Sun ring (v35, user: "a 1:1 copy of the Moon dial, with the sun"): the same tilt, ring, pills, title and hint as
       // the Moon dial in moonScene; only the moon is the sun and the colours are warm
-      const sc = { sx: W / 2, sy: H * 0.47, R: 92 * k, sp: Math.sin(-0.45), cr: Math.cos(-0.18), sr: Math.sin(-0.18) };
-      sc.rr = sc.R * 1.75;
+      const T = tuneOf('sun:ring'), rd = Math.PI / 180;
+      const sc = { sx: W / 2 + T.x * W, sy: H * 0.47 + T.y * H, R: 92 * k * T.size, sp: Math.sin(-0.45 - T.tilt * rd), cr: Math.cos(-0.18 + T.turn * rd), sr: Math.sin(-0.18 + T.turn * rd) };
+      sc.rr = 92 * k * 1.75 * T.ring;
       const ringHalf = (frontHalf) => {
         c.beginPath();
         for (let q = 0; q <= 64; q++) { const p = ringPlace(sc, frontHalf ? q / 64 * Math.PI : Math.PI + q / 64 * Math.PI); if (q) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }
@@ -3191,6 +3242,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   const sameDay = (a, b) => !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   // a point on Saturn's ring plane (angle th) on screen: [x, y, depth -1 back ... 1 front]
+  // v43 (look editor E1): your changes to a ring screen, kept per screen (S.tune['sun:ring'], 'moon:dial3d', 'moon:moondial').
+  // x / y move it (part of the screen), size = sun/moon size, ring = ring size, tilt / turn in degrees. Nothing saved = as before.
+  const TUNE0 = { x: 0, y: 0, size: 1, ring: 1, tilt: 0, turn: 0 };
+  function tuneOf(key) { return Object.assign({}, TUNE0, S.tune[key] || {}); }
   function ringPlace(s, th) {
     const X = s.rr * Math.cos(th), Z = s.rr * Math.sin(th), qy = Z * s.sp;
     return [s.sx + X * s.cr - qy * s.sr, s.sy - (X * s.sr + qy * s.cr), Z / s.rr];
@@ -3260,8 +3315,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     } else if (look === 'moondial' || look === 'dial3d') {
       // Moon dial (was Swap, 22 Oct): the moon with a thin glowing ring; the menu items sit on the ring like on Saturn.
       // Moon 3D dial (v34, partner of the Sun dial): flatter tilt like the sun dial, items as round initials, the chosen one a pill
-      const d3 = look === 'dial3d', k = W / 390, sx = W / 2, sy = H * 0.47, R = (d3 ? 66 : 92) * k, roll = d3 ? 0 : -0.18, pitch = d3 ? -0.7 : -0.45;
-      scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R * (d3 ? 2.15 : 1.75), sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll), maxAd: d3 ? 6 : 2.6, step: d3 ? 12 : 12 };
+      const d3 = look === 'dial3d', k = W / 390, T = tuneOf('moon:' + look), rd = Math.PI / 180, sx = W / 2 + T.x * W, sy = H * 0.47 + T.y * H;
+      const R0 = (d3 ? 66 : 92) * k, R = R0 * T.size, roll = (d3 ? 0 : -0.18) + T.turn * rd, pitch = (d3 ? -0.7 : -0.45) - T.tilt * rd;
+      scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R0 * (d3 ? 2.15 : 1.75) * T.ring, sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll), maxAd: d3 ? 6 : 2.6, step: d3 ? 12 : 12 };
       const ringHalf = (front) => {
         c.beginPath();
         for (let q = 0; q <= 64; q++) { const p = ringPlace(scene, front ? q / 64 * Math.PI : Math.PI + q / 64 * Math.PI); if (q) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }
@@ -3882,6 +3938,170 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     afterChange(S.mode, pd);
     toast('View reset: Flat, tilt 45°.');
   });
+
+  /* ---------- Look editor (v43, E1): tilt, turn, size, ring and place for the Dial and Ring screens; Save as… ---------- */
+  // Sun Dial uses its old values (S.tilt, S.size, S.custom = My view). Ring screens use S.tune[key] (tuneOf).
+  const LE_SUN_STYLES = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['eclipse', 'Eclipse'], ['blackhole', 'Black hole'], ['neon', 'Neon']];
+  const LE_MOON_STYLES = [['glow', 'Glow'], ['phase', 'Real phase']];
+  let le = null;  // the screen being edited
+  function leTarget() {
+    const kind = S.mode === 'one' || st.screen === 'moon' ? 'moon' : 'sun';
+    if (kind === 'sun') {
+      const v = S.sunView;
+      return { kind: 'sun', key: v === 'dial' || v === 'ring' ? 'sun:' + v : null, dial: v === 'dial', name: v === 'dial' ? 'Sun dial' : v === 'ring' ? 'Sun ring' : 'This sun screen' };
+    }
+    const m = currentMoon();
+    return { kind: 'moon', key: m === 'dial3d' || m === 'moondial' ? 'moon:' + m : null, name: m === 'dial3d' ? 'Moon 3D dial' : m === 'moondial' ? 'Moon dial' : 'This moon screen' };
+  }
+  // a look change makes the theme "Pick myself", starting from what is shown now (like Settings does)
+  function leToCustom() {
+    if (S.theme === 'custom') return;
+    const sh = shownTheme();
+    S.sunLook = sh.look; S.moonLook = sh.moon;
+    if (sh.color === 'time') S.sunTime = true; else { S.sunTime = false; S.color = sh.color; }
+    S.theme = 'custom';
+  }
+  function leSet(id, min, max, val, out) { const r = $(id); r.min = min; r.max = max; r.value = val; $(id + 'Out').textContent = out; }
+  function leFill() {
+    const t = le, on = !!t.key;
+    $('leTitle').textContent = 'Edit look · ' + t.name;
+    $('leTip').textContent = on ? 'Drag the ' + t.kind + ' to move it.' : '';
+    ['leRowTilt', 'leRowTurn', 'leRowSize', 'leRowRing'].forEach((id) => { $(id).hidden = !on; });
+    $('leNote').hidden = on;
+    $('leNote').textContent = 'Tilt, size and place come for this screen in the next update. You can change the style and save it now.';
+    if (t.dial) {
+      const c = S.dir === 'custom' && S.custom ? S.custom : presetGeo(S.dir);
+      leSet('leTilt', 10, 75, Math.round(S.tilt), Math.round(S.tilt) + '°');
+      leSet('leTurn', -90, 90, Math.round(c.roll), Math.round(c.roll) + '°');
+      leSet('leSize', 80, 160, Math.round(S.size), Math.round(S.size) + '%');
+      leSet('leRing', 60, 260, Math.round(c.R), Math.round(c.R / presetGeo('flat').R * 100) + '%');
+    } else if (on) {
+      const T = tuneOf(t.key);
+      leSet('leTilt', -25, 35, Math.round(T.tilt), (T.tilt > 0 ? '+' : '') + Math.round(T.tilt) + '°');
+      leSet('leTurn', -60, 60, Math.round(T.turn), (T.turn > 0 ? '+' : '') + Math.round(T.turn) + '°');
+      leSet('leSize', 60, 160, Math.round(T.size * 100), Math.round(T.size * 100) + '%');
+      leSet('leRing', 70, 150, Math.round(T.ring * 100), Math.round(T.ring * 100) + '%');
+    }
+    $('leSizeName').textContent = t.kind === 'sun' ? 'Sun' : 'Moon';
+    const box = $('leStyles'); box.textContent = '';
+    const list = t.kind === 'sun' ? LE_SUN_STYLES.filter((x) => t.dial || VIEW_STYLES.indexOf(x[0]) !== -1) : (t.key ? LE_MOON_STYLES : []);
+    const now = t.kind === 'sun' ? sunPickOf(shownTheme().look) : S.moonDial;
+    list.forEach(([v, label]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.className = v === now ? 'on' : '';
+      b.setAttribute('aria-pressed', v === now ? 'true' : 'false');
+      b.addEventListener('click', () => {
+        leToCustom();
+        if (t.kind === 'sun') { if (RAY_STYLES.indexOf(v) !== -1) { S.sunLook = 'rays'; S.rayStyle = v; } else S.sunLook = v; }
+        else S.moonDial = v;
+        hapt('detent'); applyLight(); leFill(); kick();
+      });
+      box.appendChild(b);
+    });
+  }
+  function leTune(fn) { const T = tuneOf(le.key); fn(T); S.tune[le.key] = T; }
+  function leInput() {
+    const t = le, a = +$('leTilt').value, b = +$('leTurn').value, c = +$('leSize').value, d = +$('leRing').value;
+    if (t.dial) {
+      ensureCustom();
+      setTilt(a); S.custom.roll = b; S.size = c; S.custom.R = d;
+    } else if (t.key) leTune((T) => { T.tilt = a; T.turn = b; T.size = c / 100; T.ring = d / 100; });
+    leFill(); kick();
+  }
+  ['leTilt', 'leTurn', 'leSize', 'leRing'].forEach((id) => $(id).addEventListener('input', leInput));
+  // one finger on the screen moves the sun or moon
+  let leDrag = null;
+  $('leCatch').addEventListener('pointerdown', (e) => {
+    if (!le || !le.key) return;
+    try { $('leCatch').setPointerCapture(e.pointerId); } catch (err) {}
+    if (le.dial) ensureCustom();
+    const T = tuneOf(le.key);
+    leDrag = { x: e.clientX, y: e.clientY, a: le.dial ? S.custom.cxf : T.x, b: le.dial ? S.custom.cyf : T.y };
+  });
+  $('leCatch').addEventListener('pointermove', (e) => {
+    if (!leDrag) return;
+    const nx = leDrag.a + (e.clientX - leDrag.x) / st.W, ny = leDrag.b + (e.clientY - leDrag.y) / st.H;
+    if (le.dial) { S.custom.cxf = clamp(nx, 0.1, 0.9); S.custom.cyf = clamp(ny, 0.15, 0.8); }
+    else leTune((T) => { T.x = clamp(nx, -0.4, 0.4); T.y = clamp(ny, -0.3, 0.3); });
+    kick();
+  });
+  const leUp = () => { if (leDrag) { leDrag = null; save(); } };
+  $('leCatch').addEventListener('pointerup', leUp);
+  $('leCatch').addEventListener('pointercancel', leUp);
+  function openLookEdit(kind) {
+    hideOverlay($('settings'));
+    if (kind === 'moon') goMoon(); else goSun();
+    setTimeout(() => { le = leTarget(); leFill(); showOverlay($('lookEdit')); }, 380);
+  }
+  document.querySelectorAll('[data-editlook]').forEach((b) => b.addEventListener('click', () => openLookEdit(b.dataset.editlook)));
+  $('leDone').addEventListener('click', () => hideOverlay($('lookEdit')));
+  $('leReset').addEventListener('click', () => {
+    if (le.dial) { const pd = S.dir; S.dir = 'flat'; S.custom = null; S.tilt = 45; S.size = 125; st.tiltEnd = false; afterChange(S.mode, pd); }
+    else if (le.key) delete S.tune[le.key];
+    save(); leFill(); kick(); toast('Back to the normal look of this screen.');
+  });
+  // Save as…: a snapshot of this screen and its style, up to 5 sun and 5 moon looks
+  function snapLook(kind, name) {
+    const sh = shownTheme();
+    if (kind === 'sun') {
+      const L = { name: name, kind: 'sun', view: S.sunView, sunLook: sh.look, rayStyle: S.rayStyle, neonStyle: S.neonStyle, sunTime: S.sunTime, color: S.color };
+      if (S.sunView === 'dial') Object.assign(L, { dir: S.dir, tilt: S.tilt, size: S.size, custom: S.custom ? Object.assign({}, S.custom) : null });
+      if (S.tune['sun:' + S.sunView]) L.tune = Object.assign({}, S.tune['sun:' + S.sunView]);
+      return L;
+    }
+    const L = { name: name, kind: 'moon', moonLook: sh.moon, moonDial: S.moonDial };
+    if (S.tune['moon:' + sh.moon]) L.tune = Object.assign({}, S.tune['moon:' + sh.moon]);
+    return L;
+  }
+  $('leSave').addEventListener('click', () => {
+    const kind = le.kind, list = S.looks[kind];
+    if (list.length >= 5) { toast('You have 5 ' + kind + ' looks. Delete one in Settings first.'); return; }
+    const name = (window.prompt('Name for this look', 'My ' + kind + ' ' + (list.length + 1)) || '').trim().slice(0, 24);
+    if (!name) return;
+    list.push(snapLook(kind, name)); save(); renderLooks();
+    toast('Saved "' + name + '". It is in Settings, under My looks.');
+  });
+  function applyLook(L) {
+    const pd = S.dir;
+    leToCustom();
+    if (L.kind === 'sun') {
+      S.sunView = L.view; S.rayStyle = L.rayStyle || S.rayStyle; S.neonStyle = L.neonStyle || S.neonStyle; S.sunLook = L.sunLook || S.sunLook;
+      if (typeof L.sunTime === 'boolean') { S.sunTime = L.sunTime; S.color = L.color || S.color; }
+      if (L.view === 'dial') { S.dir = L.dir || 'flat'; S.tilt = L.tilt || 45; S.size = L.size || 125; S.custom = L.custom ? Object.assign({}, L.custom) : null; if (S.dir === 'custom' && !S.custom) S.dir = 'flat'; }
+      if (L.tune) S.tune['sun:' + L.view] = Object.assign({}, L.tune); else delete S.tune['sun:' + L.view];
+      sunStyleUI(); peekScreen('sun');
+    } else {
+      S.moonLook = L.moonLook; S.moonDial = L.moonDial || S.moonDial;
+      if (L.tune) S.tune['moon:' + L.moonLook] = Object.assign({}, L.tune); else delete S.tune['moon:' + L.moonLook];
+      peekScreen('moon');
+    }
+    fillForm(); afterChange(S.mode, pd);
+    toast('Using "' + L.name + '".');
+  }
+  function renderLooks() {
+    [['sun', 'looksSun'], ['moon', 'looksMoon']].forEach(([kind, id]) => {
+      const box = $(id); box.textContent = '';
+      S.looks[kind].forEach((L, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'lookchip'; b.textContent = L.name;
+        b.setAttribute('aria-label', 'Use ' + L.name + '. Hold to rename or delete');
+        let t = 0, held = false;
+        b.addEventListener('pointerdown', () => { held = false; t = setTimeout(() => { held = true; hapt('press'); lookMenu(kind, i); }, 500); });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => b.addEventListener(ev, () => clearTimeout(t)));
+        b.addEventListener('click', () => { if (!held) applyLook(L); });
+        b.addEventListener('contextmenu', (e) => e.preventDefault());
+        box.appendChild(b);
+      });
+      $(id + 'Help').textContent = S.looks[kind].length ? 'Tap a look to use it · hold to rename or delete.' : 'Tap Edit look to tilt, turn, size and move the ' + kind + ', then save it here (up to 5).';
+    });
+  }
+  function lookMenu(kind, i) {
+    const L = S.looks[kind][i];
+    openSheet(L.name, 'Your saved ' + kind + ' look.', '', false, [
+      { label: 'Use it', run: () => applyLook(L) },
+      { label: 'Rename', run: () => { const n = (window.prompt('New name', L.name) || '').trim().slice(0, 24); if (n) { L.name = n; save(); renderLooks(); } } },
+      { label: 'Delete', run: () => { S.looks[kind].splice(i, 1); save(); renderLooks(); toast('Deleted "' + L.name + '".'); } }
+    ]);
+  }
+  renderLooks();
 
   /* ---------- Back button: each open panel (and the moon) is one step back ---------- */
   const layers = [];
