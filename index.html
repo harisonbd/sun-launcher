@@ -219,6 +219,7 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 .tabs button.on { background: var(--panel-2); color: var(--ink); }
 .tabpane { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .tabpane[hidden] { display: none; }
+.sv-hide, .seg label[hidden] { display: none !important; }
 details.more > summary { list-style: none; min-height: 48px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #5B6B8C; display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 600; cursor: pointer; }
 details.more > summary::-webkit-details-marker { display: none; }
 details.more > summary::after { content: '\25BE'; }
@@ -428,8 +429,28 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       </fieldset>
       <details class="more grp" open>
       <summary>☀ Sun</summary>
+      <!-- 22 Oct (v29): pick the screen first; the style list below shows only the styles that change that screen -->
       <fieldset>
+        <legend>Sun screen</legend>
+        <div class="seg">
+          <input type="radio" name="sunView" id="sv-dial" value="dial"><label for="sv-dial">Sun dial</label>
+          <input type="radio" name="sunView" id="sv-today" value="today"><label for="sv-today">Real sun today</label>
+          <input type="radio" name="sunView" id="sv-minimal" value="minimal"><label for="sv-minimal">Minimal sun</label>
+          <input type="radio" name="sunView" id="sv-clock" value="clock"><label for="sv-clock">Clock dial</label>
+        </div>
+        <div class="sublg">Sun by a list (was Swap)</div>
+        <div class="seg">
+          <input type="radio" name="sunView" id="sv-edge" value="edge"><label for="sv-edge">Big edge</label>
+          <input type="radio" name="sunView" id="sv-eclipse" value="eclipse"><label for="sv-eclipse">Eclipse</label>
+          <input type="radio" name="sunView" id="sv-orb" value="orb"><label for="sv-orb">Glow orb</label>
+          <input type="radio" name="sunView" id="sv-small" value="small"><label for="sv-small">Small</label>
+          <input type="radio" name="sunView" id="sv-setting" value="setting"><label for="sv-setting">Setting</label>
+        </div>
+        <p class="helpline">Real sun today, Minimal sun and Clock dial match the moon looks. Solar activity is sample data for now.</p>
+      </fieldset>
+      <fieldset id="sunStyleSet">
         <legend>Sun style</legend>
+        <p id="sunStyleNote" class="helpline" hidden></p>
         <div class="tabs" data-group="sun" role="tablist">
           <button type="button" data-tab="normal">Normal</button>
           <button type="button" data-tab="extra">Extra</button>
@@ -457,22 +478,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
             </div>
           </div>
         </div>
-        <div class="sublg">Sun screen</div>
-        <div class="seg">
-          <input type="radio" name="sunView" id="sv-dial" value="dial"><label for="sv-dial">Sun dial</label>
-          <input type="radio" name="sunView" id="sv-today" value="today"><label for="sv-today">Real sun today</label>
-          <input type="radio" name="sunView" id="sv-minimal" value="minimal"><label for="sv-minimal">Minimal sun</label>
-          <input type="radio" name="sunView" id="sv-clock" value="clock"><label for="sv-clock">Clock dial</label>
-        </div>
-        <div class="sublg">Sun by a list (was Swap)</div>
-        <div class="seg">
-          <input type="radio" name="sunView" id="sv-edge" value="edge"><label for="sv-edge">Big edge</label>
-          <input type="radio" name="sunView" id="sv-eclipse" value="eclipse"><label for="sv-eclipse">Eclipse</label>
-          <input type="radio" name="sunView" id="sv-orb" value="orb"><label for="sv-orb">Glow orb</label>
-          <input type="radio" name="sunView" id="sv-small" value="small"><label for="sv-small">Small</label>
-          <input type="radio" name="sunView" id="sv-setting" value="setting"><label for="sv-setting">Setting</label>
-        </div>
-        <p class="helpline">Real sun today, Minimal sun and Clock dial match the moon looks. Solar activity is sample data for now.</p>
       </fieldset>
       <fieldset>
         <legend>Sun colour</legend>
@@ -2360,7 +2365,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       if (caps) { try { c.letterSpacing = '0px'; } catch (e) {} }
     };
     const t = reduce ? 0 : now / 1000;
-    const sunAt = (x, y, r, o) => { if (GLB.ok) GLB.draw(c, x, y, r, Object.assign({ mode: 'sun', boil: look === 'plasma', tint: st.sun, rot: t * 0.02, time: t, glow: 0.8, margin: 1.6 }, o)); };
+    // the sun style shows on these screens too: Glow and Plasma (boiling) suns, Eclipse and Black hole (22 Oct, v29)
+    const sunAt = (x, y, r, o) => {
+      if (!GLB.ok) return;
+      const opt = Object.assign({ mode: 'sun', boil: look === 'plasma', tint: st.sun, rot: t * 0.02, time: t, glow: 0.8, margin: 1.6 }, o);
+      if (look === 'eclipse') Object.assign(opt, { mode: 'eclipse', rot: 0.25, glow: 1, shine: 0.12, margin: Math.max(opt.margin, 2.4) });
+      else if (look === 'blackhole') Object.assign(opt, { mode: 'blackhole', glow: 1, margin: Math.max(opt.margin, 1.9) });
+      GLB.draw(c, x, y, r, opt);
+    };
     const dOf = (i) => { let d = (((i - pos) % n) + n) % n; if (d > n / 2) d -= n; return d; };
     const place = (fn) => facetEls.forEach((el, i) => {
       el.classList.remove('mini', 'flip');
@@ -3047,11 +3059,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // the time shown follows the app's sky time (also "Pick a time" and "Play a day")
     const d0 = new Date(); d0.setHours(0, 0, 0, 0);
     const d = st.demo || S.sky !== 'clock' ? new Date(d0.getTime() + hourNow() * 3600000) : new Date();
-    const cx = W / 2, cy = H * 1.197, R = 520 * k, centerLon = 32, ss = subsolar(d), rad = Math.PI / 180;
+    // the Earth floats a few pixels up and down; Vienna stays in place on it (user, 22 Oct)
+    const cx = W / 2, cy = H * 1.197 + (reduce ? 0 : Math.sin(now / 1000 * 0.6) * 4), R = 520 * k, centerLon = 32, ss = subsolar(d), rad = Math.PI / 180;
     const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
     if (ok) {
       const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad;
-      PG.draw(c, cx, cy, R, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.0015, light: [Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)], expo: 1.15, margin: 1.06 });
+      PG.draw(c, cx, cy, R, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: centerLon * rad, rot2: (reduce ? 0 : now / 1000) * 0.012, light: [Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)], expo: 1.15, margin: 1.06 });
       const vx = cx + R * Math.cos(LAT * rad) * Math.sin((LON - centerLon) * rad), vy = cy - R * Math.sin(LAT * rad);
       c.save(); c.globalCompositeOperation = 'lighter';
       const vg = c.createRadialGradient(vx, vy, 0, vx, vy, 14); vg.addColorStop(0, 'rgba(255, 214, 140, 0.95)'); vg.addColorStop(1, 'rgba(255, 214, 140, 0)');
@@ -3626,6 +3639,17 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     else { const m = Math.round((Date.now() - WX.t) / 60000); s = 'Vienna now: ' + Math.round(WX.temp) + ' °C, ' + wxText(WX.code) + ', ' + WX.cloud + ' % clouds (' + (m < 2 ? 'just now' : m + ' min ago') + ').'; }
     $('wxLine').textContent = s + (S.weather === 'real' ? ' Updates every 30 min; only Vienna\'s fixed position is sent.' : '');
   }
+  // Sun style list shows only the styles that change the chosen Sun screen (user, 22 Oct)
+  const VIEW_STYLES = ['glow', 'plasma', 'eclipse', 'blackhole'];
+  function sunStyleUI() {
+    const v = S.sunView, list = SUN_LIST.indexOf(v) !== -1, view = v !== 'dial' && !list, set = $('sunStyleSet'), note = $('sunStyleNote');
+    set.querySelectorAll('.tabs, .tabpane').forEach((el) => el.classList.toggle('sv-hide', list));
+    note.hidden = !list && !view;
+    note.textContent = list ? 'This screen has its own sun: pick it in Sun screen above (Big edge, Eclipse, Glow orb, Small, Setting).'
+      : 'On this screen: Glow, Plasma, Eclipse and Black hole. Corona, Flames and Neon work on the Sun dial.';
+    set.querySelectorAll('input[name="sunPick"]').forEach((r) => { set.querySelector('label[for="' + r.id + '"]').hidden = view && VIEW_STYLES.indexOf(r.value) === -1; });
+    $('neonOpts').hidden = view;
+  }
   function showTab(g, name) {
     form.querySelectorAll('.tabs[data-group="' + g + '"] button').forEach((b) => { b.classList.toggle('on', b.dataset.tab === name); b.setAttribute('aria-selected', String(b.dataset.tab === name)); });
     form.querySelectorAll('.tabpane[data-group="' + g + '"]').forEach((p) => { p.hidden = p.dataset.tab !== name; });
@@ -3651,6 +3675,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const on = form.querySelector('.tabpane[data-group="' + g + '"] input[name="' + (g === 'sun' ? 'sunPick' : 'moonLook') + '"]:checked');
       showTab(g, on ? on.closest('.tabpane').dataset.tab : 'normal');
     });
+    sunStyleUI();
     liveLine();
     wxLine();
     const mn = moonNow(), fd = moonEvents().full, d0 = new Date(); d0.setHours(0, 0, 0, 0);
@@ -3732,6 +3757,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (changed === 'neonStyle') S.sunLook = 'neon';
     if (changed === 'moonLook') S.moonLook = tappedMoon;
     if (changed === 'color') { S.sunTime = tappedColor[0]; S.color = tappedColor[1]; }
+    if (changed === 'sunView') sunStyleUI();
     if (changed === 'moonDial') S.moonLook = 'moondial';  // tapping Glow / Phase switches the moon to Moon dial (like Neon styles)
     if (changed === 'moonLook' || changed === 'moonDial') peekScreen('moon');
     else if (['sunPick', 'sunView', 'neonStyle', 'dir', 'tilt', 'size', 'color', 'frontFx', 'skyPhoto', 'liveSun', 'weather'].indexOf(changed) !== -1) peekScreen('sun');
