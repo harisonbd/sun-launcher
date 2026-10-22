@@ -8,6 +8,11 @@
   "orientation": "portrait",
   "background_color": "#0B1430",
   "theme_color": "#0B1430",
+  "shortcuts": [
+    { "name": "Moon menu", "short_name": "Moon", "url": "./?screen=moon", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Earth", "short_name": "Earth", "url": "./?screen=earth", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Sun menu", "short_name": "Sun", "url": "./?screen=sun", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ],
   "icons": [
     {
       "src": "icon-192.png",

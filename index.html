@@ -206,6 +206,11 @@ legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; lett
 .swapopts { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--panel-2) 55%, transparent); }
 .swapopts[hidden] { display: none; }
 .sublg { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.mevent { position: absolute; left: 50%; top: 0; width: min(330px, calc(100% - 48px)); transform: translateX(-50%); display: flex; gap: 12px; align-items: center; padding: 10px 14px; box-sizing: border-box; border-radius: 16px; background: rgba(20, 28, 50, 0.6); border: 1px solid rgba(255, 214, 120, 0.45); color: #F5EFE3; text-align: left; font: inherit; cursor: pointer; z-index: 300; }
+.mevent[hidden] { display: none; }
+.mevent .ic { font-size: 22px; width: 28px; text-align: center; flex: none; }
+.mevent b { display: block; font-size: 15px; font-weight: 600; }
+.mevent small { display: block; font-size: 12.5px; color: rgba(220, 226, 238, 0.8); margin-top: 2px; }
 /* Settings tabs (Sun style / Moon style): Normal, Extra, Planets */
 .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
 .tabs button { flex: 1; min-height: 40px; border-radius: 20px; border: 1.5px solid var(--panel-2); background: transparent; color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -343,6 +348,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       <button type="button" class="roundbtn gear" id="moonSettings" aria-label="Playground settings">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
       </button>
+      <!-- Moon events (v32): the next sky event as a card (Real moon phase look); tap for the Coming up list -->
+      <button type="button" id="moonEvent" class="mevent" hidden><span class="ic" aria-hidden="true"></span><span><b></b><small></small></span></button>
       <div id="moonInfo" class="info">
         <div id="moonName" class="name"></div>
         <div id="moonHint" class="hint"></div>
@@ -573,7 +580,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       <fieldset>
         <legend>Sky</legend>
         <div class="seg">
-          <input type="radio" name="skyPhoto" id="photo-off" value="off"><label for="photo-off">Drawn</label>
+          <input type="radio" name="skyPhoto" id="photo-clear" value="clear"><label for="photo-clear">Drawn: clear</label>
+          <input type="radio" name="skyPhoto" id="photo-off" value="off"><label for="photo-off">Drawn: clouds</label>
           <input type="radio" name="skyPhoto" id="photo-live" value="live"><label for="photo-live">Live photo</label>
           <input type="radio" name="skyPhoto" id="photo-sunset" value="sunset"><label for="photo-sunset">Sunset photo</label>
           <input type="radio" name="skyPhoto" id="photo-stars" value="stars"><label for="photo-stars">Real stars</label>
@@ -743,7 +751,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (S.swap === 'on') { S.sunView = S.sunList; S.moonLook = 'moondial'; S.theme = 'custom'; }
   S.swap = 'off';
   if (['dial', 'today', 'minimal', 'clock', 'edge', 'eclipse', 'orb', 'small', 'setting'].indexOf(S.sunView) === -1) S.sunView = 'dial';
-  if (['live', 'sunset', 'stars'].indexOf(S.skyPhoto) === -1) S.skyPhoto = 'off';
+  if (['live', 'sunset', 'stars', 'clear'].indexOf(S.skyPhoto) === -1) S.skyPhoto = 'off';
   if (NEON_STYLES.indexOf(S.neonStyle) === -1) S.neonStyle = 'minimal';
   if (S.liveSun !== 'on') S.liveSun = 'off';
   if (S.weather !== 'real') S.weather = 'off';
@@ -905,6 +913,136 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     im.onload = () => show(url);
     im.onerror = () => show('sky-' + kind + '.jpg');
     im.src = url;
+  }
+  // ---- Moon events (v32, mockups A + B): full moons and supermoons are calculated here; meteor showers peak on about
+  // the same dates every year; eclipses are a short list checked for Vienna (timeanddate / theskylive, 22 Oct 2026).
+  // moon distance with the main terms from Meeus (Astronomical Algorithms, ch. 47), good to about 1000 km
+  function moonDistKm(date) {
+    const T = (date.valueOf() / 86400000 + 2440587.5 - 2451545) / 36525, r = Math.PI / 180;
+    const D = r * (297.8501921 + 445267.1114034 * T), M = r * (357.5291092 + 35999.0502909 * T), Mp = r * (134.9633964 + 477198.8675055 * T);
+    return 385000.56 - 20905.355 * Math.cos(Mp) - 3699.111 * Math.cos(2 * D - Mp) - 2955.968 * Math.cos(2 * D) - 569.925 * Math.cos(2 * Mp)
+      + 48.888 * Math.cos(M) + 246.158 * Math.cos(2 * D - 2 * Mp) - 152.138 * Math.cos(2 * D - M - Mp) - 170.733 * Math.cos(2 * D + Mp);
+  }
+  const SHOWERS = [ // [month 1-12, day, name, meteors per hour in a dark sky, best time, where to look]
+    [1, 3, 'Quadrantids', 80, 'after midnight', 'north-east'], [4, 22, 'Lyrids', 18, 'after midnight', 'east'],
+    [8, 12, 'Perseids', 100, 'after midnight', 'north-east'], [10, 21, 'Orionids', 20, 'after midnight', 'east'],
+    [11, 17, 'Leonids', 15, 'after midnight', 'east'], [12, 14, 'Geminids', 120, 'from 22:00', 'east, later high in the south']];
+  const ECLIPSES = [
+    ['2027-02-20T20:13:00', '◑', 'Faint moon eclipse', 'Penumbral: the moon dims only a little · all of it visible from Vienna'],
+    ['2027-08-02T11:17:00', '◐', 'Sun eclipse · 47 %', 'Partial over Vienna, deepest at 11:17 · only with eclipse glasses'],
+    ['2028-12-31T17:52:00', '●', 'Total moon eclipse', 'The moon turns red · all of it visible from Vienna']];
+  let evMemo = null;
+  function skyEvents() {
+    const now = new Date(), dayKey = now.toDateString();
+    if (evMemo && evMemo.k === dayKey) return evMemo.v;
+    const out = [], t0 = new Date(now); t0.setHours(0, 0, 0, 0);
+    // full moons in the next 400 days: find where the phase passes 0.5, then narrow it down to the hour
+    let prev = moonIllum(t0).phase;
+    for (let h = 6; h <= 400 * 24; h += 6) {
+      const d = new Date(t0.getTime() + h * 3600000), p = moonIllum(d).phase;
+      if (prev < 0.5 && p >= 0.5) {
+        let a = d.getTime() - 6 * 3600000, b = d.getTime();
+        for (let i = 0; i < 12; i++) { const m = (a + b) / 2; if (moonIllum(new Date(m)).phase < 0.5) a = m; else b = m; }
+        const fd = new Date(b), km = Math.round(moonDistKm(fd));
+        if (km < 362000) out.push({ date: fd, icon: '◉', title: 'Supermoon', sub: 'The full moon is close to Earth (' + km.toLocaleString('en') + ' km): bigger and brighter' });
+        else out.push({ date: fd, icon: '◐', title: 'Full moon', sub: 'Full at ' + String(fd.getHours()).padStart(2, '0') + ':' + String(fd.getMinutes()).padStart(2, '0'), minor: true });
+      }
+      prev = p;
+    }
+    // meteor showers this year and next; a bright moon at the peak hides the faint meteors
+    [now.getFullYear(), now.getFullYear() + 1].forEach((y) => SHOWERS.forEach((s) => {
+      const d = new Date(y, s[0] - 1, s[1], 23, 0);
+      if (d < t0) return;
+      const lit = moonIllum(d).fraction;
+      out.push({ date: d, icon: '☄', title: s[2] + ' meteor shower', sub: 'Peak · up to ' + s[3] + ' per hour ' + s[4] + ' · look ' + s[5] + (lit > 0.6 ? ' · bright moon hides the faint ones' : ''), shower: true });
+    }));
+    ECLIPSES.forEach((e) => { const d = new Date(e[0]); if (d >= t0) out.push({ date: d, icon: e[1], title: e[2], sub: e[3] }); });
+    out.sort((a, b) => a.date - b.date);
+    evMemo = { k: dayKey, v: out.filter((e) => e.date - t0 < 400 * 86400000) };
+    return evMemo.v;
+  }
+  const evDate = (d) => DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '');
+  // B: the list of the next sky events, in a sheet
+  function openEvents() {
+    const ev = skyEvents().filter((e) => !e.minor).slice(0, 8);
+    openSheet('Coming up above Vienna', ev.map((e) => e.icon + '  ' + e.title + ' · ' + evDate(e.date) + '\n      ' + e.sub).join('\n\n'), '', false);
+    $('sheetText').style.whiteSpace = 'pre-line';
+  }
+  // ---- Drawn skies (v32, mockups R1/R2): sky colours from the real sun height in Vienna, soft clouds, hills ----
+  const SKY_KEYS = [ // [sun height in degrees, 5 colours from the top of the screen to the horizon]
+    [-18, ['#02040B', '#040817', '#060C1E', '#0B1530', '#132241']],
+    [-8, ['#0A1030', '#1B2350', '#3A3A6E', '#6A4E80', '#9A6A8C']],
+    [0, ['#1C2550', '#5B3F73', '#C7646A', '#F29A5C', '#FFD08A']],
+    [8, ['#2A5AA0', '#5E86C0', '#B0A9B8', '#F0C090', '#FFE0A8']],
+    [25, ['#1B4F9C', '#3A73BE', '#5E95D6', '#A9CBEB', '#D9E6F2']]];
+  const SKY_POS = [0, 0.35, 0.62, 0.82, 1];
+  function sunNow() { const d = new Date(); d.setHours(0, 0, 0, 0); return sunAltAz(new Date(d.getTime() + hourNow() * 3600000)); }
+  function skyColours(alt) {
+    if (alt <= SKY_KEYS[0][0]) return SKY_KEYS[0][1];
+    for (let i = 0; i < SKY_KEYS.length - 1; i++) {
+      const a = SKY_KEYS[i], b = SKY_KEYS[i + 1];
+      if (alt <= b[0]) { const t = (alt - a[0]) / (b[0] - a[0]); return a[1].map((col, k) => mix(col, b[1][k], t)); }
+    }
+    return SKY_KEYS[SKY_KEYS.length - 1][1];
+  }
+  const skyCv = document.createElement('canvas'), cloudCv2 = document.createElement('canvas'), hillCv = document.createElement('canvas');
+  let skyKey = '', cloudKey2 = '', hillKey = '', skyCols = SKY_KEYS[4][1];
+  function drawnSky(c, W, H, now, withClouds, cover) {
+    const s = sunNow(), dpr = st.dpr || 1;
+    const key = [W, H, Math.round(s.alt * 2), s.az < 180 ? 'am' : 'pm'].join('|');
+    if (key !== skyKey) {
+      skyKey = key; skyCols = skyColours(s.alt);
+      skyCv.width = Math.round(W * dpr / 2); skyCv.height = Math.round(H * dpr / 2);  // half size: a smooth gradient needs no detail
+      const k = skyCv.getContext('2d'), w = skyCv.width, h = skyCv.height, g = k.createLinearGradient(0, 0, 0, h);
+      skyCols.forEach((col, i) => g.addColorStop(SKY_POS[i], col));
+      k.fillStyle = g; k.fillRect(0, 0, w, h);
+      // warm glow low on the side of the sky where the sun is, around sunrise and sunset
+      const gl = Math.max(0, 1 - Math.abs(s.alt - 1) / 11);
+      if (gl > 0) { const gx = w * (s.az < 180 ? 0.28 : 0.72), rg = k.createRadialGradient(gx, h * 0.8, 0, gx, h * 0.8, w * 0.9); rg.addColorStop(0, 'rgba(255, 170, 90, ' + (0.55 * gl).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(255, 170, 90, 0)'); k.fillStyle = rg; k.fillRect(0, 0, w, h); }
+    }
+    c.drawImage(skyCv, 0, 0, W, H);
+    if (!withClouds) return;
+    // soft clouds: puffs with flat bottoms, lit on top, tinted by the sky; more of them when the real weather is cloudy
+    const n = Math.round(4 + 8 * (S.weather === 'real' ? cover : 0.35)), night = s.alt < -6;
+    const ck = [W, H, n, Math.round(s.alt / 3)].join('|');
+    if (ck !== cloudKey2) {
+      cloudKey2 = ck;
+      cloudCv2.width = Math.round(W * 2 * dpr / 2); cloudCv2.height = Math.round(H * 0.7 * dpr / 2);
+      const k = cloudCv2.getContext('2d'), w = cloudCv2.width, h = cloudCv2.height, sc = w / (W * 2);
+      let seed = 7; const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      const top = mix('#FFFFFF', skyCols[3], s.alt < 6 ? 0.55 : 0.1), a = night ? 0.07 : 0.2;
+      const rgb = hexToRgb(top).join(',');
+      for (let q = 0; q < n * 2; q++) {
+        const cx = r() * w, cy = h * (0.15 + r() * 0.75), cw = (50 + r() * 90) * sc;
+        for (let p = 0; p < 9; p++) {
+          const px = cx + (r() - 0.5) * cw, py = cy - Math.abs(r() - 0.5) * cw * 0.35, pr = cw * (0.18 + r() * 0.22);
+          const g = k.createRadialGradient(px, py - pr * 0.3, 0, px, py, pr);
+          g.addColorStop(0, 'rgba(' + rgb + ',' + a + ')'); g.addColorStop(0.6, 'rgba(' + rgb + ',' + (a * 0.6) + ')'); g.addColorStop(1, 'rgba(' + rgb + ',0)');
+          k.fillStyle = g; k.beginPath(); k.arc(px, py, pr, 0, 7); k.fill();
+        }
+      }
+    }
+    // the clouds drift slowly to the right (one screen width in about 7 minutes), wrapping around
+    const off = reduce ? 0 : ((now / 1000) * W / 400) % (W * 2);
+    c.drawImage(cloudCv2, off - W * 2, H * 0.08, W * 2, H * 0.7);
+    c.drawImage(cloudCv2, off, H * 0.08, W * 2, H * 0.7);
+  }
+  // three soft layers of hills (like the Vienna woods), darker in front, coloured from the horizon
+  function drawnHills(c, W, H) {
+    const dpr = st.dpr || 1, key = [W, H, skyCols[4]].join('|');
+    if (key !== hillKey) {
+      hillKey = key;
+      hillCv.width = Math.round(W * dpr); hillCv.height = Math.round(H * 0.3 * dpr);
+      const k = hillCv.getContext('2d'); k.setTransform(dpr, 0, 0, dpr, 0, 0); k.clearRect(0, 0, W, H * 0.3);
+      [0.45, 0.65, 0.85].forEach((dk, i) => {
+        const base = H * (0.06 + i * 0.05), amp = 16 + i * 10;
+        let seed = 40 + i; const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+        k.beginPath(); k.moveTo(0, H * 0.3);
+        for (let x = 0; x <= W; x += 6) k.lineTo(x, base - amp * (0.5 + 0.5 * Math.sin(x * (0.012 + i * 0.004) + i * 2)) - r() * 3);
+        k.lineTo(W, H * 0.3); k.closePath(); k.fillStyle = mix(skyCols[3], '#05070F', dk); k.fill();
+      });
+    }
+    c.drawImage(hillCv, 0, H * 0.7, W, H * 0.3);
   }
   // Real moon phase (SunCalc formulas, checked: full moon 25 Jan 2024 = 99.8 %, new moon 8 Apr 2024 = 0 %, first quarter = 50 %).
   // phase: 0 new, 0.25 first quarter, 0.5 full, 0.75 last quarter.
@@ -1144,6 +1282,52 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const line = SOL.regions + ' sunspot groups · M-flare chance ' + m0 + ' %' + (age >= 6 ? ' · ' + age + ' h old' : '');
     const next = [0, 1, 2].find((i) => SOL.kp[dKey(i)] >= 5);
     return { title: title, line: line, tags: tags, short: title.toLowerCase(), storm: next == null ? 'No magnetic storm in the next 3 days' : 'Magnetic storm ' + (next === 0 ? 'today' : next === 1 ? 'tomorrow' : 'on ' + DAYS_LONG[new Date(today.getTime() + next * 86400000).getDay()]), kpNow: kp0 };
+  }
+  // Northern lights (v32): NOAA's Kp for today. Kp 7+ = possible above Vienna (green and purple curtains + a note),
+  // Kp 5-6 = a faint glow and a hint. Only at night (sun 10 degrees or more below the horizon).
+  function auroraLevel() {
+    if (sunNow().alt > -10) return 0;
+    solarFetch();
+    const k = SOL && SOL.kp ? SOL.kp[localDay(new Date())] || 0 : 0;
+    return k >= 7 ? 1 : k >= 5 ? 0.35 : 0;
+  }
+  const aurCv = document.createElement('canvas');
+  let aurT = 0, aurKey = '';
+  function drawAurora(c, W, H, now, yb, hgt, noteY) {
+    const lvl = auroraLevel();
+    if (!lvl) return;
+    // curtains drawn into a half-size picture, refreshed about 8 times a second (they move slowly)
+    const key = W + '|' + H + '|' + lvl;
+    if (key !== aurKey || (!reduce && now - aurT > 120)) {
+      aurKey = key; aurT = now;
+      const w = Math.round(W / 2), h = Math.round(hgt / 2) + 20, t = reduce ? 0 : now / 1000;
+      aurCv.width = w; aurCv.height = h;
+      const k = aurCv.getContext('2d');
+      for (let x = 0; x < w; x++) {
+        const X = x * 2, wave = Math.sin(X * 0.018 + t * 0.15) * 0.5 + Math.sin(X * 0.047 + 1.3 - t * 0.1) * 0.3 + Math.sin(X * 0.006 + 2) * 0.2;
+        const top = h - 10 - (hgt / 2) * (0.55 + 0.45 * wave) * lvl, bot = h - 10 + 5 * Math.sin(X * 0.03);
+        const s = Math.max(0, 0.6 + 0.4 * Math.sin(X * 0.11 + wave * 3 + t * 0.3));
+        const g = k.createLinearGradient(0, top, 0, bot);
+        g.addColorStop(0, 'rgba(170,80,220,0)'); g.addColorStop(0.35, 'rgba(170,90,235,' + (0.22 * s).toFixed(3) + ')');
+        g.addColorStop(0.75, 'rgba(60,240,150,' + (0.6 * s).toFixed(3) + ')'); g.addColorStop(1, 'rgba(60,240,150,0)');
+        k.fillStyle = g; k.fillRect(x, top, 1, bot - top);
+      }
+    }
+    c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = lvl;
+    c.drawImage(aurCv, 0, yb - hgt - 20 + 10, W, hgt + 20);
+    c.restore();
+    if (noteY) auroraNote(c, W, noteY);
+  }
+  function auroraNote(c, W, noteY) {
+    const lvl = auroraLevel();
+    if (lvl) {
+      const font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'system-ui, sans-serif';
+      const msg = lvl >= 1 ? '✦ Northern lights possible tonight · look north' : '✦ Faint northern lights possible in the far north';
+      c.font = '600 12.5px ' + font; const tw = c.measureText(msg).width + 26;
+      c.fillStyle = 'rgba(10, 30, 28, 0.7)'; c.strokeStyle = 'rgba(80, 240, 160, 0.5)'; c.lineWidth = 1;
+      c.beginPath(); c.roundRect((W - tw) / 2, noteY - 15, tw, 30, 15); c.fill(); c.stroke();
+      c.fillStyle = '#C9FFE4'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(msg, W / 2, noteY);
+    }
   }
   // What the sky shows now, from the WMO weather code (0 clear ... 61 rain ... 71 snow ... 95 storm).
   function wxNow() {
@@ -1886,20 +2070,16 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // Neon styles bring their own background (CSS class nz-*): no drawn clouds, and no stars on the sign's wall.
     const nz = look === 'neon' ? S.neonStyle : '';
     ['sign', 'synth'].forEach((v) => app.classList.toggle('nz-' + v, nz === v));
-    if (S.skyPhoto === 'stars' && nz !== 'sign') drawStarMap(c, W, H, 0.2 + 0.55 * nightness(hour), now, [par.x, par.y], 0);
     const wxCloud = wxNow() ? wxNow().cloud : 0;
+    // drawn skies (v32): clear (R1) or with soft clouds (R2), colours from the real sun height, hills at the bottom
+    const drawn = (S.skyPhoto === 'clear' || S.skyPhoto === 'off') && !(nz && nz !== 'minimal');
+    if (drawn) drawnSky(c, W, H, now, S.skyPhoto === 'off', wxCloud);
+    if (S.skyPhoto === 'stars' && nz !== 'sign') drawStarMap(c, W, H, 0.2 + 0.55 * nightness(hour), now, [par.x, par.y], 0);
     if (nz !== 'sign') drawStars(c, W, H, nightness(hour) * 0.8 * (1 - 0.8 * wxCloud), now, fx, [par.x, par.y]);
+    if (nz !== 'sign') drawAurora(c, W, H, now, H * 0.84, H * 0.42, 0);
+    if (drawn) drawnHills(c, W, H);
+    if (nz !== 'sign' && !sunViewOn()) auroraNote(c, W, H * 0.86);
     const G = sunGeo();
-    if (GLB.ok && !(S.skyPhoto === 'sunset' || S.skyPhoto === 'live') && S.skyPhoto !== 'stars' && !(nz && nz !== 'minimal')) {
-      const cl = cloudAt(hour), twl = Math.min(1, twilight(hour)), wk = wxNow();
-      // real weather: cloud amount from Open-Meteo (0 = clear sky ... 1 = overcast)
-      if (wk) { cl.cover = 0.08 + 0.72 * wk.cloud; cl.alpha = Math.min(1, cl.alpha * (0.35 + 0.9 * wk.cloud)); }
-      cl.sun = [G.cx / W + (0.5 - G.cx / W) * twl, G.cy / H + (1.04 - G.cy / H) * twl];
-      cl.time = reduce ? 0 : now / 1000; cl.moving = fx;
-      c.save(); c.translate(par.x * 2, par.y * 2);
-      GLB.clouds(c, W, H, cl, now);
-      c.restore();
-    }
     // Sun views (22 Oct): Real sun today / Minimal sun / Clock dial replace the dial, like the moon looks
     const svOn = sunViewOn();
     if (app.classList.contains('sv') !== svOn) lastFront = -1;
@@ -2448,6 +2628,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       // Sun by a list (was Swap, 22 Oct): a big sun at the right, the apps as pills on an arc of dots next to it
       const Ri = Math.min(W * 0.385, 150, H * 0.178) * 1.35, bx = W * 0.95, by = H * 0.34, sr = Ri * 1.02, rA = Ri * 1.2, stepA = 14 * Math.PI / 180;
       const halo = (r0, r1, a) => { const hg = c.createRadialGradient(bx, by, r0, bx, by, r1); hg.addColorStop(0, hexA(st.sun, a)); hg.addColorStop(1, hexA(st.sun, 0)); c.fillStyle = hg; c.fillRect(0, 0, W, H); };
+      // Eclipse and Glow orb get a dark halo first, so they stand out on bright photos (v32)
+      if (v === 'eclipse' || v === 'orb') { const dk = c.createRadialGradient(bx, by, sr * 0.6, bx, by, sr * 1.6); dk.addColorStop(0, 'rgba(6, 8, 18, 0.5)'); dk.addColorStop(1, 'rgba(6, 8, 18, 0)'); c.fillStyle = dk; c.fillRect(0, 0, W, H); }
       if (v === 'eclipse') {
         halo(sr * 0.9, sr * 2.2, 0.35);
         if (GLB.ok) GLB.draw(c, bx, by, sr * 0.8, { mode: 'eclipse', tint: st.sun, rot: 0.25, time: t, glow: 1.1, shine: 0.12, margin: 2.7 });
@@ -2643,6 +2825,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (S.skyPhoto === 'stars') drawStarMap(c, W, H, (0.4 + 0.35 * night) * (1 - 0.3 * moonFrSky()), now, [par.x, par.y], 700);
     const moonFr = S.moonPhase === 'real' ? moonNow().fraction : 0;
     drawStars(c, W, H, (0.3 + 0.6 * night) * (1 - 0.45 * moonFr), now, fx, [par.x, par.y]);
+    drawAurora(c, W, H, now, H * 0.99, H * 0.45, H * 0.955);
     if (fx && night > 0.2) {
       c.save();
       c.globalCompositeOperation = 'lighter';
@@ -2684,6 +2867,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // Moon dial uses the Saturn item style (pills on a ring)
     app.classList.toggle('ml-dial', look === 'dial');
     app.classList.toggle('ml-saturn', look === 'saturn' || look === 'moondial');
+    if (look !== 'phase') $('moonEvent').hidden = true;
     if (look === 'phase' || look === 'minimal' || look === 'dial' || look === 'saturn' || look === 'moondial') { moonScene(c, W, H, look, now, live, cur, G, night); return; }
     if (S.moonPhase === 'real') {
       // moonlight: around full moon the night sky gets a soft glow from the moon (none at new moon)
@@ -2876,12 +3060,20 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       // tap a day in the row: the big moon shows that night (st.moonDay 0-6, 0 = now)
       const sel = st.moonDay || 0, selD = new Date(today); selD.setDate(selD.getDate() + sel); selD.setHours(21, 0, 0, 0);
       const sm = sel ? moonIllum(selD) : mn;
-      const r = Math.min(W * 0.31, H * 0.145), mx = W / 2, my = H * 0.27;
+      // v32: moon a little smaller and higher, so the next sky event fits as a card under the text (mockup A)
+      const r = Math.min(W * 0.27, H * 0.12), mx = W / 2, my = H * 0.215;
       glow(mx, my, r, (0.08 + 0.12 * sm.fraction).toFixed(3));
       if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(sm.phase), rot: -0.2, shine: 0.07, expo: 1.3, glow: 1, margin: 1.25 });
-      txt(sel ? DAYS_LONG[selD.getDay()] + ' night in Vienna' : 'Tonight in Vienna', W / 2, H * 0.455, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      txt(moonPhaseName(sm.phase).replace(/^./, (s) => s.toUpperCase()), W / 2, H * 0.495, 28, 600, '#F5EFE3', 'center');
-      txt(Math.round(sm.fraction * 100) + ' % lit · ' + (sel ? 'tap Today to go back' : fullTxt), W / 2, H * 0.533, 14, 400, 'rgba(195, 204, 221, 0.9)', 'center');
+      txt(sel ? DAYS_LONG[selD.getDay()] + ' night in Vienna' : 'Tonight in Vienna', W / 2, H * 0.365, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      txt(moonPhaseName(sm.phase).replace(/^./, (s) => s.toUpperCase()), W / 2, H * 0.402, 28, 600, '#F5EFE3', 'center');
+      txt(Math.round(sm.fraction * 100) + ' % lit · ' + (sel ? 'tap Today to go back' : fullTxt), W / 2, H * 0.437, 14, 400, 'rgba(195, 204, 221, 0.9)', 'center');
+      const nextEv = skyEvents().find((e) => !e.minor), me = $('moonEvent');
+      if (nextEv) {
+        me.hidden = false; me.style.top = Math.round(H * 0.46) + 'px';
+        me.querySelector('.ic').textContent = nextEv.icon;
+        const t1 = nextEv.title + ' · ' + evDate(nextEv.date);
+        if (me.querySelector('b').textContent !== t1) { me.querySelector('b').textContent = t1; me.querySelector('small').textContent = nextEv.sub + ' · tap for more'; }
+      } else me.hidden = true;
       const rowY = H * 0.6, gap = Math.min(52, (W - 32) / 7);
       phaseRow = { y: rowY, gap: gap, cx: W / 2 };
       for (let i = 0; i < 7; i++) {
@@ -2988,6 +3180,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         // on Saturn's ring: 12 places around, the chosen one in front as a white pill under its dot
         const q = ringPlace(scene, Math.PI / 2 + dd * (Math.PI * 2 / 12)), f = (q[2] + 1) / 2, sel = i === live;
         const behind = q[2] < 0 && Math.hypot(q[0] - scene.sx, q[1] - scene.sy) < scene.R * 1.15, vis = ad < 6 && !behind;
+        // keep the pill fully on the screen (v32: items at the ring's far left and right were cut off); widths cached
+        const wk = sel ? '_ws' : '_wn';
+        if (vis && !el[wk]) el[wk] = el.offsetWidth || 0;
+        const half = (el[wk] || 0) / 2 * (sel ? 1 : 0.78 + 0.3 * f);
+        q[0] = clamp(q[0], half + 8, W - half - 8);
         el.style.transform = 'translate(' + q[0].toFixed(1) + 'px,' + (q[1] + (sel ? 34 : 0)).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (sel ? 1 : 0.78 + 0.3 * f).toFixed(3) + ')';
         el.style.opacity = vis ? (sel ? '1' : (0.3 + 0.6 * f).toFixed(2)) : '0';
         el.style.visibility = vis ? 'visible' : 'hidden';
@@ -3298,7 +3495,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   window.addEventListener('pointercancel', dropPointer);
 
   $('moonScreen').addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.handle, .roundbtn, .mini-sun, .scrub')) return;
+    if (e.target.closest('.handle, .roundbtn, .mini-sun, .scrub, .mevent')) return;
     { const rr = $('moonScreen').getBoundingClientRect(); addRipple('moon', e.clientX - rr.left, e.clientY - rr.top); }
     st.spin = null;
     stopTween('pos');
@@ -3414,6 +3611,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function openSheet(title, text, href, send, actions) {
     $('sheetTitle').textContent = title;
     $('sheetText').textContent = text;
+    $('sheetText').style.whiteSpace = '';
     const o = $('sheetOpen');
     if (href) { o.href = href; o.hidden = false; } else { o.hidden = true; o.removeAttribute('href'); }
     $('sheetSend').hidden = !send;
@@ -3543,6 +3741,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function openSearch() { $('searchInput').value = ''; renderResults(); showOverlay($('search')); }
   $('sunSearch').addEventListener('click', openSearch);
   $('moonSearch').addEventListener('click', openSearch);
+  $('moonEvent').addEventListener('click', openEvents);
   $('searchClose').addEventListener('click', () => hideOverlay($('search')));
   $('searchInput').addEventListener('input', renderResults);
 
@@ -3785,7 +3984,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   buildItems();
   st.rot = frontDeg();
   st.prevRot = st.rot;
+  // home screen shortcuts (long-press the app icon, v32): ./?screen=sun | moon | earth
+  const wantScreen = new URLSearchParams(location.search).get('screen');
   if (S.mode === 'two' && nightness(phaseNow()) > 0.5) st.screen = 'moon';
+  if (wantScreen === 'sun' || (wantScreen === 'moon' && S.mode === 'two')) st.screen = wantScreen;
   applyMode();
   if (st.screen === 'moon') {
     worlds.classList.add('dragging'); worlds.style.transform = 'translateY(-50%)'; requestAnimationFrame(() => worlds.classList.remove('dragging'));
@@ -3793,7 +3995,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   resize();
   $('toPlanet').hidden = false;
-  if (S.startScreen === 'planet') showPlanet(true);
+  if (wantScreen === 'earth' || (!wantScreen && S.startScreen === 'planet')) showPlanet(true);
   window.addEventListener('resize', resize);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { st.lastFrame = 0; applyLight(); kick(); wxFetch(false); } });
   wxFetch(false);
