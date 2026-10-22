@@ -86,6 +86,14 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .chips button { min-height: 36px; padding: 0 12px; border-radius: 18px; background: color-mix(in srgb, var(--panel) 80%, transparent); border: 1px solid color-mix(in srgb, var(--sun) 45%, var(--line)); color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer; }
 /* Sky picture and swapped layout (Settings > Sky picture, Layout) */
 #app.photo-sky #sunScreen { background: #2A2236 url('sky-sunset.jpg') center 55% / cover; }
+/* Live photo: dawn / day / sunset / blue hour / night photo, picked by the real sun height in Vienna */
+.skylive { position: absolute; inset: 0; display: none; pointer-events: none; }
+.skylive div { position: absolute; inset: 0; background: center 55% / cover no-repeat; opacity: 0; transition: opacity 2.5s ease; }
+.skylive div.on { opacity: 1; }
+#app.live-sky #sunScreen { background: #1A1626; }
+#app.live-sky .skylive { display: block; }
+/* soft dark fade behind the app name and hint, so text stays readable on the bright day photo */
+.skylive::after { content: ''; position: absolute; left: 0; right: 0; top: 40%; bottom: 0; background: linear-gradient(180deg, rgba(10, 15, 31, 0) 0%, rgba(10, 15, 31, 0.38) 30%, rgba(10, 15, 31, 0.2) 100%); }
 /* Neon style backgrounds (Settings > Sun > Neon style) */
 #app.nz-sign #sunScreen { background: radial-gradient(ellipse at 50% 40%, #2a1a24 0%, #120a10 60%, #070406 100%); }
 #app.nz-synth #sunScreen { background: linear-gradient(180deg, #0d0221 0%, #2b0a4a 38%, #6a1b6e 52%, #1a0533 100%); }
@@ -280,6 +288,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   </div>
   <div id="worlds">
     <section id="sunScreen" class="screen" aria-label="Sun menu: your apps">
+      <!-- Live photo sky (22 Oct): two layers that fade into each other when the photo changes -->
+      <div id="skyLive" class="skylive" aria-hidden="true"><div></div><div></div></div>
       <canvas id="sunCanvas" class="paint" aria-hidden="true"></canvas>
       <div id="facets" class="layer"></div>
       <!-- Camera button hidden for now (user, 22 Oct: "maybe later"); remove hidden to bring it back. -->
@@ -566,9 +576,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <legend>Sky</legend>
         <div class="seg">
           <input type="radio" name="skyPhoto" id="photo-off" value="off"><label for="photo-off">Drawn</label>
+          <input type="radio" name="skyPhoto" id="photo-live" value="live"><label for="photo-live">Live photo</label>
           <input type="radio" name="skyPhoto" id="photo-sunset" value="sunset"><label for="photo-sunset">Sunset photo</label>
           <input type="radio" name="skyPhoto" id="photo-stars" value="stars"><label for="photo-stars">Real stars</label>
         </div>
+        <p class="helpline">Live photo: dawn, day, sunset, blue hour or night photo, matching the real sun in Vienna now.</p>
       </fieldset>
       <fieldset>
         <legend>Weather</legend>
@@ -742,7 +754,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (S.swap === 'on') { S.sunView = S.sunList; S.moonLook = 'moondial'; S.theme = 'custom'; }
   S.swap = 'off';
   if (['dial', 'today', 'minimal', 'clock', 'edge', 'eclipse', 'orb', 'small', 'setting'].indexOf(S.sunView) === -1) S.sunView = 'dial';
-  if (['sunset', 'stars'].indexOf(S.skyPhoto) === -1) S.skyPhoto = 'off';
+  if (['live', 'sunset', 'stars'].indexOf(S.skyPhoto) === -1) S.skyPhoto = 'off';
   if (NEON_STYLES.indexOf(S.neonStyle) === -1) S.neonStyle = 'minimal';
   if (S.liveSun !== 'on') S.liveSun = 'off';
   if (S.weather !== 'real') S.weather = 'off';
@@ -857,6 +869,26 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(Hh));
     const az = Math.atan2(Math.sin(Hh), Math.cos(Hh) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi));
     return { alt: alt / rad, az: az / rad + 180 };
+  }
+  // Live photo sky: which photo fits the sun's height now (follows Pick a time / Play a day too)
+  function liveSkyKey() {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    const s = sunAltAz(new Date(d.getTime() + hourNow() * 3600000));
+    if (s.alt > 8) return 'day';
+    if (s.alt > -4) return s.az < 180 ? 'dawn' : 'sunset';
+    if (s.alt > -12) return 'bluehour';
+    return 'night';
+  }
+  let liveSkyShown = '';
+  function updateLiveSky() {
+    if (S.skyPhoto !== 'live') { liveSkyShown = ''; return; }
+    const key = liveSkyKey();
+    if (key === liveSkyShown) return;
+    const layers = $('skyLive').children, back = layers[0].classList.contains('on') ? layers[1] : layers[0];
+    back.style.backgroundImage = "url('sky-" + key + ".jpg')";
+    back.classList.add('on');
+    (back === layers[0] ? layers[1] : layers[0]).classList.remove('on');
+    liveSkyShown = key;
   }
   // Real moon phase (SunCalc formulas, checked: full moon 25 Jan 2024 = 99.8 %, new moon 8 Apr 2024 = 0 %, first quarter = 50 %).
   // phase: 0 new, 0.25 first quarter, 0.5 full, 0.75 last quarter.
@@ -1009,6 +1041,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     FRONT_FX.forEach((v) => app.classList.toggle('ff-' + v, S.frontFx.indexOf(v) !== -1));
     app.classList.toggle('swap', swapped());
     app.classList.toggle('photo-sky', S.skyPhoto === 'sunset');
+    app.classList.toggle('live-sky', S.skyPhoto === 'live');
     app.classList.toggle('moon-real', S.moonPhase === 'real');
     const ct = clockText();
     $('sunClock').textContent = ct;
@@ -1810,6 +1843,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function renderSun(now, hour, dtf) {
     const c = sunCv.getContext('2d'), W = st.W, H = st.H;
     c.clearRect(0, 0, W, H);
+    updateLiveSky();
     const fx = fancy(), bl = lookBlend(hour), look = bl.t < 0.5 ? bl.a : bl.b, day = daylight(hour), tw = twilight(hour);
     // Swapped layout: the dial shows the moon with only a soft glow (look 'moon').
     const looks = swapped() ? [['moon', 1]] : bl.t <= 0.001 || bl.a === bl.b ? [[bl.a, 1]] : bl.t >= 0.999 ? [[bl.b, 1]] : [[bl.a, 1 - bl.t], [bl.b, bl.t]];
@@ -1820,7 +1854,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const wxCloud = wxNow() ? wxNow().cloud : 0;
     if (nz !== 'sign') drawStars(c, W, H, nightness(hour) * 0.8 * (1 - 0.8 * wxCloud), now, fx, [par.x, par.y]);
     const G = sunGeo();
-    if (GLB.ok && !(S.skyPhoto === 'sunset' && !swapped()) && S.skyPhoto !== 'stars' && !(nz && nz !== 'minimal')) {
+    if (GLB.ok && !((S.skyPhoto === 'sunset' || S.skyPhoto === 'live') && !swapped()) && S.skyPhoto !== 'stars' && !(nz && nz !== 'minimal')) {
       const cl = cloudAt(hour), twl = Math.min(1, twilight(hour)), wk = wxNow();
       // real weather: cloud amount from Open-Meteo (0 = clear sky ... 1 = overcast)
       if (wk) { cl.cover = 0.08 + 0.72 * wk.cloud; cl.alpha = Math.min(1, cl.alpha * (0.35 + 0.9 * wk.cloud)); }
