@@ -50,6 +50,7 @@ body { background: var(--night-deep); color: var(--ink); font-family: var(--font
 .planet { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 850; background: #000; transition: transform .45s cubic-bezier(.2, .8, .2, 1); touch-action: none; }
 .planet.away { transform: translateY(-100%); }
 .planet.dragging { transition: none; }
+#planetScreen.calm .planet-handle { opacity: 0.2; }
 .planet[hidden] { display: none; }
 .planet-handle { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); min-height: 56px; padding: 0 18px; border: none; background: transparent; color: #DCE3F0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 500; cursor: pointer; }
 .to-planet { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); min-height: 44px; padding: 0 14px; border: none; background: transparent; color: var(--ink-3); display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 12px; font-weight: 500; cursor: pointer; z-index: 600; }
@@ -660,6 +661,14 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
           <input type="radio" name="mode" id="mode-one" value="one"><label for="mode-one">One menu</label>
         </div>
       </fieldset>
+      <fieldset>
+        <legend>Charging mode</legend>
+        <div class="seg">
+          <input type="radio" name="chargeMode" id="cm-auto" value="auto"><label for="cm-auto">On when charging</label>
+          <input type="radio" name="chargeMode" id="cm-off" value="off"><label for="cm-off">Off</label>
+        </div>
+        <p class="helpline">The Earth screen becomes a calm clock and the screen stays on. Double-tap the clock to start or stop it by hand (some browsers, like Brave, do not tell if the phone is charging).</p>
+      </fieldset>
       </details>
       <details class="more grp">
       <summary>Feel</summary>
@@ -743,7 +752,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const FRONT_FX = ['beam', 'lift', 'dim', 'chips', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'sign', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -771,6 +780,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   S.frontFx = (Array.isArray(S.frontFx) ? S.frontFx : []).filter((v) => FRONT_FX.indexOf(v) !== -1 && v !== 'chips' && v !== 'beam');
   if (['glow', 'phase'].indexOf(S.moonDial) === -1) S.moonDial = 'glow';
   if (S.pairLink !== 'off') S.pairLink = 'on';  // v34: Same style on both screens, on by default
+  if (S.chargeMode !== 'off') S.chargeMode = 'auto';  // v37: charging mode (calm Earth clock while charging)
   if (['edge', 'eclipse', 'orb', 'small'].indexOf(S.sunList) === -1) S.sunList = 'edge';
   if (S.sunView === 'setting') S.sunView = 'edge';  // v35: Horizon pair removed (user)
   // 22 Oct (v27): the Swap switch is gone; its looks are now a Sun screen (sun by a list) and a Moon style (Moon dial)
@@ -1919,6 +1929,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       if (Math.abs(par.tx - par.x) + Math.abs(par.ty - par.y) > 0.002) active = true;
     }
     if (ripples.length) active = true;
+    if ((planet.on || planet.peek) && spinStep(now)) active = true;
     if (APPS.length) detentAt('sun', (frontDeg() - st.rot) / (360 / APPS.length), 'detent', 'tick');
     if (LIST.length) detentAt('moon', st.pos, 'detentSoft', 'soft');
     st.omega = (st.rot - st.prevRot) / Math.max(1, dtf);
@@ -3345,6 +3356,23 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   // Big clock, today's date, sunrise / sunset / moon chips and the real Earth (NASA maps) with the real sunlight
   // and night lights; Vienna marked. Maps: separate files, cached by sw.js.
   const planet = { on: false, peek: false, t: 0 }, shown = { screen: null, t: 0 };
+  // 4 (v37): fidget-spinner Earth. A sideways flick spins it (off = degrees turned, vel = degrees per ms); it slows
+  // down by itself, and about 2 s after it stops it drifts slowly back until Vienna is in front again.
+  const spin = { off: 0, vel: 0, last: 0, rest: 0, drag: null };
+  function spinStep(now) {
+    if (spin.drag) return true;
+    const dt = spin.last ? Math.min(48, now - spin.last) : 16;
+    spin.last = now;
+    if (Math.abs(spin.vel) > 0.002) { spin.off += spin.vel * dt; spin.vel *= Math.exp(-dt / 1400); spin.rest = now; return true; }
+    spin.vel = 0;
+    const home = Math.round(spin.off / 360) * 360;
+    if (Math.abs(spin.off - home) > 0.05) {
+      if (now - spin.rest > 2000) spin.off += (home - spin.off) * (1 - Math.exp(-dt / 900));
+      return true;
+    }
+    spin.off = 0;
+    return false;
+  }
   function subsolar(date) {
     // the point on Earth where the sun is straight overhead (degrees): lon from the time of day, lat from the season
     const rad = Math.PI / 180, d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545, M = rad * (357.5291 + 0.98560028 * d);
@@ -3352,6 +3380,47 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const dec = Math.asin(Math.sin(rad * 23.4397) * Math.sin(L));
     const utcH = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
     return { lat: dec / rad, lon: ((180 - utcH * 15) + 540) % 360 - 180 };
+  }
+  // 8 (v37): charging mode. While the phone charges (when the browser tells us), or after a double-tap on the clock,
+  // the Earth screen becomes a calm clock: bigger time, no chips, darker at night, and the screen stays on (wake lock).
+  let wake = null, calmByCharge = false, lastClockTap = 0;
+  function keepAwake(on) {
+    if (on && !wake && 'wakeLock' in navigator) navigator.wakeLock.request('screen').then((w) => { wake = w; w.addEventListener('release', () => { wake = null; }); }).catch(() => {});
+    if (!on && wake) { wake.release().catch(() => {}); wake = null; }
+  }
+  function setCalm(on, byCharge) {
+    if (on === !!planet.calm) return;
+    planet.calm = on; calmByCharge = on && !!byCharge;
+    if (on && !planet.on) showPlanet();
+    $('planetScreen').classList.toggle('calm', on);
+    keepAwake(on);
+    kick();
+  }
+  if (navigator.getBattery) navigator.getBattery().then((b) => {
+    const check = () => { if (S.chargeMode !== 'auto') return; if (b.charging) setCalm(true, true); else if (planet.calm && calmByCharge) setCalm(false); };
+    b.addEventListener('chargingchange', check); check();
+  }).catch(() => {});
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && planet.calm) keepAwake(true); });
+  // 7 (v37): the northern lights band (auroral oval) seen from space: green glow around the north, only on the night
+  // side. NOAA's Kp for today makes it brighter and pushes it further south (about 2.5° per Kp step above 3).
+  function drawAuroraSpace(c, cx, cy, R, centerLon, lv, now) {
+    solarFetch();
+    const kp = SOL && SOL.kp ? SOL.kp[localDay(new Date())] || 0 : 2, rad = Math.PI / 180, t = reduce ? 0 : now / 1000;
+    const latC = 67 - Math.max(0, kp - 3) * 2.5, a = Math.min(1, 0.3 + kp * 0.1);
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let lon = -180; lon < 180; lon += 2.5) {
+      const lat = latC + 1.8 * Math.sin(lon * rad * 3 + t * 0.25), L = (lon - centerLon) * rad, cl = Math.cos(lat * rad);
+      const x3 = cl * Math.sin(L), y3 = Math.sin(lat * rad), z3 = cl * Math.cos(L);
+      if (z3 < 0.04) continue;
+      const night = -(x3 * lv[0] + y3 * lv[1] + z3 * lv[2]);
+      if (night < -0.04) continue;
+      const fade = Math.min(1, (night + 0.04) * 6) * Math.min(1, z3 * 4), px = cx + R * x3, py = cy - R * y3;
+      const s = R * 0.03 * (0.7 + 0.3 * Math.sin(lon * 0.37 + t * 0.6));
+      const g = c.createRadialGradient(px, py, 0, px, py, s * 2.4);
+      g.addColorStop(0, 'rgba(70, 255, 160, ' + (0.32 * a * fade).toFixed(3) + ')'); g.addColorStop(0.5, 'rgba(120, 110, 240, ' + (0.08 * a * fade).toFixed(3) + ')'); g.addColorStop(1, 'rgba(120, 110, 240, 0)');
+      c.fillStyle = g; c.fillRect(px - s * 2.4, py - s * 2.4, s * 4.8, s * 4.8);
+    }
+    c.restore();
   }
   function renderPlanet(now) {
     const c = $('planetCanvas').getContext('2d'), W = st.W, H = st.H, k = W / 390;
@@ -3361,7 +3430,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const d0 = new Date(); d0.setHours(0, 0, 0, 0);
     const d = st.demo || S.sky !== 'clock' ? new Date(d0.getTime() + hourNow() * 3600000) : new Date();
     // the Earth floats a few pixels up and down; Vienna stays in place on it (user, 22 Oct)
-    const cx = W / 2, cy = H * 1.197 + (reduce ? 0 : Math.sin(now / 1000 * 0.6) * 4), R = 520 * k, centerLon = 32, ss = subsolar(d), rad = Math.PI / 180;
+    // v37: centerLon follows the fidget spin (spin.off); it goes back to 32 (Vienna in front) when the Earth settles
+    const cx = W / 2, cy = H * 1.197 + (reduce ? 0 : Math.sin(now / 1000 * 0.6) * 4), R = 520 * k, centerLon = 32 - spin.off, ss = subsolar(d), rad = Math.PI / 180;
     const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
     // 1 (v36): the real moon in the sky above the Earth, in its real phase, where it is now as seen from Vienna
     // (left = east, middle = south, right = west; higher = higher in the sky); hidden when it is below the horizon
@@ -3387,18 +3457,32 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       sg.addColorStop(0, 'rgba(160, 210, 255, 0.45)'); sg.addColorStop(1, 'rgba(160, 210, 255, 0)');
       rim(sg);
       c.restore();
+      // 7 (v37): northern lights seen from space, a green band around the north on the night side (stronger with high Kp)
+      drawAuroraSpace(c, cx, cy, R, centerLon, lv, now);
       const vx = cx + R * Math.cos(LAT * rad) * Math.sin((LON - centerLon) * rad), vy = cy - R * Math.sin(LAT * rad);
-      planetSpot = { x: vx, y: vy };
-      c.save(); c.globalCompositeOperation = 'lighter';
-      const vg = c.createRadialGradient(vx, vy, 0, vx, vy, 14); vg.addColorStop(0, 'rgba(255, 214, 140, 0.95)'); vg.addColorStop(1, 'rgba(255, 214, 140, 0)');
-      c.fillStyle = vg; c.beginPath(); c.arc(vx, vy, 14, 0, 2 * Math.PI); c.fill(); c.restore();
-      c.font = '600 11.5px ' + (getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif'); c.fillStyle = 'rgba(255, 236, 200, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle';
-      c.shadowColor = '#000'; c.shadowBlur = 6; c.fillText('Vienna', vx + 12, vy - 2); c.shadowBlur = 0;
+      const vz = Math.cos(LAT * rad) * Math.cos((LON - centerLon) * rad);  // < 0: Vienna is on the far side while spinning
+      planetSpot = vz > 0.1 ? { x: vx, y: vy } : null;
+      if (planetSpot) {
+        c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = Math.min(1, vz * 4);
+        const vg = c.createRadialGradient(vx, vy, 0, vx, vy, 14); vg.addColorStop(0, 'rgba(255, 214, 140, 0.95)'); vg.addColorStop(1, 'rgba(255, 214, 140, 0)');
+        c.fillStyle = vg; c.beginPath(); c.arc(vx, vy, 14, 0, 2 * Math.PI); c.fill(); c.restore();
+        c.font = '600 11.5px ' + (getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif'); c.fillStyle = 'rgba(255, 236, 200, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.shadowColor = '#000'; c.shadowBlur = 6; c.fillText('Vienna', vx + 12, vy - 2); c.shadowBlur = 0;
+      }
     }
     const font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif';
     const T = (s, y, size, weight, col) => { c.font = weight + ' ' + size + 'px ' + font; c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s, W / 2, y); };
+    const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    if (planet.calm) {
+      // charging mode: a bigger, softer clock and no chips; between 22:00 and 6:00 the whole screen is a bit darker
+      T(DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()], H * 0.13, 18, 400, 'rgba(240, 242, 248, 0.7)');
+      T(hm, H * 0.24, Math.round(124 * k), 200, 'rgba(245, 239, 227, 0.92)');
+      const hr = d.getHours();
+      if (hr >= 22 || hr < 6) { c.fillStyle = 'rgba(0, 0, 0, 0.35)'; c.fillRect(0, 0, W, H); }
+      return;
+    }
     T(DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()], H * 0.115, 17, 500, 'rgba(240, 242, 248, 0.85)');
-    T(String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'), H * 0.2, Math.round(96 * k), 200, '#F5EFE3');
+    T(hm, H * 0.2, Math.round(96 * k), 200, '#F5EFE3');
     // chips (v36): bigger, with drawn icons (sunrise, sunset, the moon in its real phase)
     const sn = sunToday(), mn = moonNow();
     const chips = [['rise', fmtHour(sn.rise)], ['set', fmtHour(sn.set)], ['moon', Math.round(mn.fraction * 100) + ' %']];
@@ -3697,14 +3781,40 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   (function () {
     const el = $('planetScreen');
     let p0 = null;
-    el.addEventListener('pointerdown', (e) => { p0 = { x: e.clientX, y: e.clientY, id: e.pointerId }; el.classList.add('dragging'); });
-    window.addEventListener('pointermove', (e) => { if (!p0 || e.pointerId !== p0.id) return; const dy = Math.min(0, e.clientY - p0.y); el.style.transform = 'translateY(' + dy + 'px)'; });
+    el.addEventListener('pointerdown', (e) => { p0 = { x: e.clientX, y: e.clientY, id: e.pointerId, mode: '' }; el.classList.add('dragging'); });
+    window.addEventListener('pointermove', (e) => {
+      if (!p0 || e.pointerId !== p0.id) return;
+      const dx = e.clientX - p0.x, dy0 = e.clientY - p0.y;
+      // v37: decide once: sideways = spin the Earth (fidget spinner), up = swipe to the sun
+      if (!p0.mode && Math.hypot(dx, dy0) > 10) p0.mode = Math.abs(dx) > Math.abs(dy0) * 1.2 ? 'spin' : 'swipe';
+      if (p0.mode === 'spin') {
+        const now = performance.now();
+        if (!spin.drag) { spin.drag = { off0: spin.off - dx * 0.12, samples: [] }; spin.vel = 0; }
+        spin.off = spin.drag.off0 + dx * 0.12;
+        spin.drag.samples.push({ t: now, v: spin.off }); if (spin.drag.samples.length > 6) spin.drag.samples.shift();
+        kick();
+        return;
+      }
+      const dy = Math.min(0, dy0); el.style.transform = 'translateY(' + dy + 'px)';
+    });
     const up = (e) => {
       if (!p0 || e.pointerId !== p0.id) return;
+      if (p0.mode === 'spin') {
+        // let go: keep the speed of the last moves, then it slows down like a fidget spinner
+        const v = velocity(spin.drag ? spin.drag.samples : []);
+        spin.vel = clamp(v, -0.6, 0.6); spin.drag = null; spin.last = performance.now(); spin.rest = spin.last;
+        p0 = null; el.classList.remove('dragging'); hapt('swipe'); kick();
+        return;
+      }
       const dy = e.clientY - p0.y, dx = e.clientX - p0.x, tap = Math.abs(dx) < 10 && Math.abs(dy) < 10;
       const r = el.getBoundingClientRect(), tx = p0.x - r.left, ty = p0.y - r.top; p0 = null;
       el.classList.remove('dragging'); el.style.transform = '';
-      if (dy < -st.H * 0.12) hidePlanet();
+      if (dy < -st.H * 0.12) { setCalm(false); hidePlanet(); }
+      // double-tap the clock: charging mode on / off by hand (v37)
+      else if (tap && ty > st.H * 0.08 && ty < st.H * 0.27) {
+        const tn = performance.now();
+        if (tn - lastClockTap < 380) { setCalm(!planet.calm, false); hapt('press'); lastClockTap = 0; } else lastClockTap = tn;
+      }
       // a tap on Vienna (or on the moon in the sky) opens the Vienna card (v36)
       else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && [planetSpot, planetMoon].some((p) => p && Math.hypot(tx - p.x, ty - p.y) < 44)) { hapt('press'); viennaCard(); }
     };
@@ -3976,7 +4086,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView'];
+  const RADIOS = ['mode', 'theme', 'dir', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode'];
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
