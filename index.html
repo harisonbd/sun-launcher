@@ -3815,8 +3815,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         const tn = performance.now();
         if (tn - lastClockTap < 380) { setCalm(!planet.calm, false); hapt('press'); lastClockTap = 0; } else lastClockTap = tn;
       }
-      // a tap on Vienna (or on the moon in the sky) opens the Vienna card (v36)
-      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && [planetSpot, planetMoon].some((p) => p && Math.hypot(tx - p.x, ty - p.y) < 44)) { hapt('press'); viennaCard(); }
+      // a tap on Vienna opens the Vienna card (v36); a tap on the moon in the sky opens the moon menu (v38, user)
+      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetMoon && Math.hypot(tx - planetMoon.x, ty - planetMoon.y) < 44) { hapt('press'); setCalm(false); hidePlanet(); if (S.mode === 'two') goMoon(); }
+      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSpot && Math.hypot(tx - planetSpot.x, ty - planetSpot.y) < 44) { hapt('press'); viennaCard(); }
     };
     window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     $('planetUp').addEventListener('click', () => hidePlanet());
