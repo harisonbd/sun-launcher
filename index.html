@@ -144,6 +144,9 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .glabel:not(.dark) { text-shadow: 0 0 4px rgba(236, 239, 246, 0.95), 0 0 10px rgba(236, 239, 246, 0.6); }
 .glabel.dark { color: var(--muted); }
 .glabel.dark.cur { color: var(--ink); }
+/* real moon photo: dark shadow behind the names, so light white text (user, 22 Oct) */
+#app.moon-real .glabel, #app.swap .glabel { color: rgba(220, 226, 238, 0.8); }
+#app.moon-real .glabel.cur, #app.swap .glabel.cur { color: #F5EFE3; }
 .marker { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; box-sizing: border-box; border-radius: 50%; background: var(--night-deep); border: 3px solid var(--sun); pointer-events: none; }
 #app.fx .marker { box-shadow: 0 0 16px var(--sun); }
 .bubble { position: absolute; left: 0; top: 0; padding: 10px 16px; border-radius: 16px; background: var(--panel-2); color: var(--ink); font-size: 20px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4); pointer-events: none; z-index: 700; }
@@ -2565,6 +2568,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     return [s.sx + X * s.cr - qy * s.sr, s.sy - (X * s.sr + qy * s.cr), Z / s.rr];
   }
   function realMoonLight(p) { const th = p * 2 * Math.PI; return [Math.sin(th), 0.1, -Math.cos(th)]; }
+  let phaseRow = null;
   function moonScene(c, W, H, look, now, live, cur, G, night) {
     const mn = moonNow(), font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'system-ui, sans-serif';
     const today = new Date(), ev = moonEvents(), fullD = ev.full || new Date(today.getTime() + Math.round(((0.5 - mn.phase + 1) % 1) * 29.53) * 86400000);
@@ -2579,19 +2583,23 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     let listY = 0, rowGap = 0, cards = false, scene = null;
     if (look === 'phase') {
       // D: big real moon, phase name, the next 7 nights, menu as cards below
+      // tap a day in the row: the big moon shows that night (st.moonDay 0-6, 0 = now)
+      const sel = st.moonDay || 0, selD = new Date(today); selD.setDate(selD.getDate() + sel); selD.setHours(21, 0, 0, 0);
+      const sm = sel ? moonIllum(selD) : mn;
       const r = Math.min(W * 0.31, H * 0.145), mx = W / 2, my = H * 0.27;
-      glow(mx, my, r, (0.08 + 0.12 * mn.fraction).toFixed(3));
-      if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(mn.phase), rot: -0.2, shine: 0.07, expo: 1.3, glow: 1, margin: 1.25 });
-      txt('Tonight in Vienna', W / 2, H * 0.455, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      txt(moonPhaseName(mn.phase).replace(/^./, (s) => s.toUpperCase()), W / 2, H * 0.495, 28, 600, '#F5EFE3', 'center');
-      txt(Math.round(mn.fraction * 100) + ' % lit · ' + fullTxt, W / 2, H * 0.533, 14, 400, 'rgba(195, 204, 221, 0.9)', 'center');
+      glow(mx, my, r, (0.08 + 0.12 * sm.fraction).toFixed(3));
+      if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(sm.phase), rot: -0.2, shine: 0.07, expo: 1.3, glow: 1, margin: 1.25 });
+      txt(sel ? DAYS_LONG[selD.getDay()] + ' night in Vienna' : 'Tonight in Vienna', W / 2, H * 0.455, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      txt(moonPhaseName(sm.phase).replace(/^./, (s) => s.toUpperCase()), W / 2, H * 0.495, 28, 600, '#F5EFE3', 'center');
+      txt(Math.round(sm.fraction * 100) + ' % lit · ' + (sel ? 'tap Today to go back' : fullTxt), W / 2, H * 0.533, 14, 400, 'rgba(195, 204, 221, 0.9)', 'center');
       const rowY = H * 0.6, gap = Math.min(52, (W - 32) / 7);
+      phaseRow = { y: rowY, gap: gap, cx: W / 2 };
       for (let i = 0; i < 7; i++) {
         const d = new Date(today); d.setDate(d.getDate() + i); d.setHours(21, 0, 0, 0);
         const x = W / 2 + (i - 3) * gap, p = moonIllum(d).phase;
-        if (i === 0) { c.beginPath(); c.arc(x, rowY, 19, 0, 2 * Math.PI); c.strokeStyle = 'rgba(245, 239, 227, 0.8)'; c.lineWidth = 1.5; c.stroke(); }
+        if (i === sel) { c.beginPath(); c.arc(x, rowY, 19, 0, 2 * Math.PI); c.strokeStyle = 'rgba(245, 239, 227, 0.8)'; c.lineWidth = 1.5; c.stroke(); }
         if (GLB.ok) GLB.draw(c, x, rowY, 14, { mode: 'moon', light: realMoonLight(p), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0, margin: 1.3 });
-        txt(i === 0 ? 'Today' : DAYS[d.getDay()], x, rowY + 28, 12, i === 0 ? 700 : 500, i === 0 ? '#F5EFE3' : 'rgba(195, 204, 221, 0.8)', 'center');
+        txt(i === 0 ? 'Today' : DAYS[d.getDay()], x, rowY + 28, 12, i === sel ? 700 : 500, i === sel ? '#F5EFE3' : 'rgba(195, 204, 221, 0.8)', 'center');
         if (sameDay(d, ev.full) || sameDay(d, ev.nw)) txt(sameDay(d, ev.full) ? 'Full' : 'New', x, rowY + 44, 11, 700, '#FFC94D', 'center');
       }
       listY = H * 0.8; rowGap = 58; cards = true;
@@ -2702,7 +2710,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   /* ---------- Planet start screen (mockup G, 23 Oct) ---------- */
   // Big clock, today's date, sunrise / sunset / moon chips and the real Earth (NASA maps) with the real sunlight
   // and night lights; Vienna marked. Maps: separate files, cached by sw.js.
-  const planet = { on: false, t: 0 }, shown = { screen: null, t: 0 };
+  const planet = { on: false, peek: false, t: 0 }, shown = { screen: null, t: 0 };
   function subsolar(date) {
     // the point on Earth where the sun is straight overhead (degrees): lon from the time of day, lat from the season
     const rad = Math.PI / 180, d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545, M = rad * (357.5291 + 0.98560028 * d);
@@ -2766,7 +2774,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function render(now, dtf) {
     const h = phaseNow();
     const pAnim = performance.now() - planet.t < 600;
-    if (planet.on || pAnim) renderPlanet(now);
+    if (planet.on || planet.peek || pAnim) renderPlanet(now);
     if (planet.on && !pAnim) return;    // the planet covers everything: no need to draw the sun and moon
     // Lag fix (23 Oct): draw only the screen you see. Both are drawn while you swipe between them and for 0.6 s
     // after the screen changes (the slide), so the other one is never stale when it comes into view.
@@ -2794,9 +2802,18 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       if (!drag.decided) {
         if (dist < 12) return;
         drag.decided = true;
-        if (S.mode === 'two' && dy < 0 && Math.abs(dy) > 1.6 * Math.abs(dx) && Math.abs(along) < 0.45 * dist) {
+        const straight = Math.abs(dy) > 1.6 * Math.abs(dx) && Math.abs(along) < 0.45 * dist;
+        if (S.mode === 'two' && dy < 0 && straight) {
           drag.kind = 'toMoon';
           worlds.classList.add('dragging');
+          onMove(e);
+          return;
+        }
+        // Swipe down pulls the Earth screen down after the finger (user, 22 Oct)
+        if (dy > 0 && straight && !planet.on) {
+          drag.kind = 'toPlanet';
+          const pl = $('planetScreen');
+          pl.hidden = false; pl.classList.add('dragging'); planet.peek = true;
           onMove(e);
           return;
         }
@@ -2834,6 +2851,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     } else if (drag.kind === 'toSun') {
       worlds.style.transform = 'translateY(' + (-st.H + clamp(dy, 0, st.H)) + 'px)';
       kick();
+    } else if (drag.kind === 'toPlanet') {
+      $('planetScreen').style.transform = 'translateY(' + (-st.H + clamp(dy, 0, st.H)) + 'px)';
+      kick();
     }
   }
   function endDrag() {
@@ -2870,8 +2890,20 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     } else if (d.kind === 'toMoon') {
       if (d.moved ? dy < -st.H * 0.12 : d.handle) goMoon(); else goSun();
     } else if (d.kind === 'toSun') {
+      // a tap on the 7-night row (Real moon phase) picks that night
+      const rowTap = !d.moved && !d.handle && currentMoon() === 'phase' && phaseRow ? phaseRow : null;
+      if (rowTap) {
+        const y = d.y0 - $('moonScreen').getBoundingClientRect().top, i = Math.round((d.x0 - rowTap.cx) / rowTap.gap) + 3;
+        if (Math.abs(y - rowTap.y - 10) < 36 && i >= 0 && i < 7) { st.moonDay = i; hapt('detentSoft'); kick(); }
+      }
       if (d.moved ? dy > st.H * 0.12 : d.handle) goSun(); else goMoon();
       if (st.pos < 0) snapPos();
+    } else if (d.kind === 'toPlanet') {
+      const pl = $('planetScreen'), go = dy > st.H * 0.12;
+      planet.peek = false;
+      pl.classList.remove('dragging');
+      if (go) { pl.classList.remove('away'); pl.style.transform = ''; showPlanet(); }
+      else { pl.style.transform = ''; setTimeout(() => { if (!planet.on) pl.hidden = true; }, 500); planet.t = performance.now(); kick(); }
     }
     if (d.moved) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 80); }
   }
