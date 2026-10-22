@@ -1756,7 +1756,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       '    col += uTint * halo * 0.5; a += halo * 0.2;',
       '  } else if (uMode < 6.5) {', // Earth: day, night lights, clouds, ocean glint, blue air
       '    vec3 b = toBody(n); vec3 day = texture2D(uTex, uvOf(b, uRot)).rgb, night = texture2D(uTex2, uvOf(b, uRot)).rgb;',
-      '    float cl = texture2D(uTex3, uvOf(b, uRot + uRot2)).r, dayK = smoothstep(-0.08, 0.18, mu0), lit = pow(max(mu0, 0.0), 0.8);',
+      // v39 fix: lit until sunset like outside (the air spreads the light), a dim twilight band to 6 degrees below
+      // the horizon (mu0 -0.105), and city lights only after sunset. Before: lights from sun height 10 degrees.
+      '    float cl = texture2D(uTex3, uvOf(b, uRot + uRot2)).r, dayK = smoothstep(-0.105, 0.0, mu0), lit = smoothstep(-0.105, 0.03, mu0) * (0.45 + 0.55 * pow(max(mu0, 0.0), 0.6));',
       '    float ocean = smoothstep(0.08, 0.02, abs(day.b - day.r * 0.4 - 0.12)) * step(day.r, day.b);',
       '    vec3 h = normalize(Ln + vec3(0.0, 0.0, 1.0)); float glint = pow(max(dot(n, h), 0.0), 60.0) * 0.6 * ocean;',
       '    vec3 c = day * lit * 1.25 + vec3(1.0, 0.9, 0.75) * glint;',
