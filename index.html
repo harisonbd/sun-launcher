@@ -146,7 +146,7 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .le-row input[type="range"] { width: 100%; margin: 0; }
 .le-row output { text-align: right; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .le-note { font-size: 13px; color: var(--ink-3); margin: 6px 0; }
-.le-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+.le-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
 .le-btns .btn { min-height: 44px; }
 .looks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 /* v48: Settings with pictures (mockup settings-v48c) */
@@ -343,8 +343,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .send small { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
 
 /* v46: Watch mode and one-time hints */
-.watchbtn { position: absolute; top: 74px; right: max(20px, calc(env(safe-area-inset-right, 0px) + 4px)); width: 40px; height: 40px; border-radius: 22px; border: none; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--ink-3); display: flex; align-items: center; justify-content: center; z-index: 860; cursor: pointer; transition: opacity .4s; }
+.watchbtn { position: absolute; top: 16px; left: max(16px, env(safe-area-inset-left, 0px)); width: 48px; height: 48px; border-radius: 22px; border: none; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--ink-3); display: flex; align-items: center; justify-content: center; z-index: 860; cursor: pointer; transition: opacity .4s; }
 #app.watch .watchbtn, #app.editing .watchbtn { opacity: 0; pointer-events: none; }
+#app.one-mode .watchbtn { top: 100px; }  /* v55: one-screen mode has the camera sun in the top-left corner */
 .watchcatch { position: absolute; inset: 0; z-index: 880; }
 .watchcatch[hidden] { display: none; }
 #app.watch .screen button, #app.watch .clockchip, #app.watch .facet, #app.watch #items, #app.watch #glabels, #app.watch .marker, #app.watch .scrub, #app.watch .bubble, #app.watch .info, #app.watch .chips, #app.watch .favbar, #app.watch .planet-handle, #app.watch .hintpill { opacity: 0 !important; pointer-events: none !important; transition: opacity .5s; }
@@ -391,16 +392,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <span>Earth</span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>
       </button>
-      <!-- 22 Oct: same round buttons as the moon screen: Search upper left, Settings upper right -->
-      <button type="button" class="roundbtn msearch" id="sunSearch" aria-label="Search apps and functions">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
-      </button>
+      <!-- v55: Settings upper right; the eye (Watch) is upper left; Search is the bottom-left corner -->
       <button type="button" class="roundbtn gear" id="sunSettings" aria-label="Playground settings">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
       </button>
-      <button type="button" class="corner bl" id="sunRecent" aria-label="Recent apps">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
-        <span>Recent</span>
+      <button type="button" class="corner bl" id="sunSearch" aria-label="Search apps and functions; your recent apps are at the top">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
+        <span>Search</span>
       </button>
       <button type="button" class="corner br" id="sunEdit" aria-label="Edit dial: order and place your apps">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13 7l4 4"></path></svg>
@@ -427,8 +425,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       <button type="button" class="mini-sun" id="miniSun" aria-label="Camera: take a photo and send it to an app" hidden>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
       </button>
-      <button type="button" class="roundbtn msearch" id="moonSearch" aria-label="Search apps and functions">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
+      <button type="button" class="corner bl" id="moonSearch" aria-label="Search apps and functions; your recent apps are at the top">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
+        <span>Search</span>
       </button>
       <button type="button" class="roundbtn gear" id="moonSettings" aria-label="Playground settings">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
@@ -479,7 +478,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <label class="le-row" id="leRowRing"><span>Ring</span><input type="range" id="leRing" step="1"><output id="leRingOut"></output></label>
       </div>
       <p class="le-note" id="leNote" hidden></p>
-      <div class="le-btns"><button type="button" class="btn" id="leReset">Reset</button><button type="button" class="btn" id="leSave">Save as…</button><button type="button" class="btn primary" id="leDone" data-autofocus>Done</button></div>
+      <div class="le-btns"><button type="button" class="btn" id="leCancel">Cancel</button><button type="button" class="btn" id="leReset">Reset</button><button type="button" class="btn" id="leSave">Save as…</button><button type="button" class="btn primary" id="leDone" data-autofocus>Done</button></div>
     </div>
   </div>
   <div id="sheet" class="overlay" hidden>
@@ -3707,9 +3706,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // v51 (user): the moon is placed by its real direction from the Earth, the same way as the sun, so it turns with
     // the Earth (spin, Watch) and moves with the time; it shows only while it is on our side (mvz > 0), fading out behind.
     const mdl = (mpos.sub.lon - centerLon) * rad, mdec = mpos.sub.lat * rad;
-    const mv = toView([Math.sin(mdl) * Math.cos(mdec), Math.sin(mdec), Math.cos(mdl) * Math.cos(mdec)]), mSink = clamp((0.05 - mv[2]) / 0.25, 0, 1);
-    if (mSink < 1 && GLB.ok) {  // v53 (mockup C): the moon also sets behind the Earth's edge, its glow fading
-      const mx = cx + clamp(mv[0], -1, 1) * (W / 2 - 34), mr = 15 * k, limbM = cy - Math.sqrt(Math.max(0, R * R - (mx - cx) * (mx - cx)));
+    // v55 (user: it rose straight up, then went sideways): the moon now moves on one smooth curve. Its side position
+    // follows the turn angle (not mv[0], which hardly changes near the edge), and it sinks over a longer stretch
+    // (mv[2] 0.25 -> -0.2, eased), sliding a little past the screen edge while the Earth hides it.
+    const mv = toView([Math.sin(mdl) * Math.cos(mdec), Math.sin(mdec), Math.cos(mdl) * Math.cos(mdec)]);
+    const mt = clamp((0.25 - mv[2]) / 0.45, 0, 1), mSink = mt * mt * (3 - 2 * mt), mSide = Math.atan2(mv[0], mv[2]) / (Math.PI / 2);
+    if (mSink < 0.999 && GLB.ok) {  // v53 (mockup C): the moon also sets behind the Earth's edge, its glow fading
+      const mx = cx + clamp(mSide, -1.2, 1.2) * (W / 2 - 34), mr = 15 * k, limbM = cy - Math.sqrt(Math.max(0, R * R - (mx - cx) * (mx - cx)));
       // v47 (user): always a small gap (~10 px) between the moon and the Earth's glowing air
       const airY = cy - Math.sqrt(Math.max(0, R * R * 1.07 * 1.07 - (mx - cx) * (mx - cx)));
       // and never on the time chips (H * 0.3, 36 px tall) unless Watch hides them; if there is no room, the gap to the Earth wins
@@ -4057,7 +4060,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   window.addEventListener('pointercancel', dropPointer);
 
   $('moonScreen').addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.handle, .roundbtn, .mini-sun, .scrub, .mevent')) return;
+    if (e.target.closest('.handle, .roundbtn, .corner, .mini-sun, .scrub, .mevent')) return;
     { const rr = $('moonScreen').getBoundingClientRect(); addRipple('moon', e.clientX - rr.left, e.clientY - rr.top); }
     st.spin = null;
     stopTween('pos');
@@ -4252,14 +4255,21 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (!$('lookEdit').hidden) return;
     hideOverlay($('settings'));
     if (kind === 'moon') goMoon(); else goSun();
-    setTimeout(() => { le = leTarget(); leFill(); showOverlay($('lookEdit')); leLift(true); app.classList.add('editing'); }, 380);
+    setTimeout(() => { le = leTarget(); leSnap = JSON.stringify(LE_KEEP.map((k) => S[k])); leFill(); showOverlay($('lookEdit')); leLift(true); app.classList.add('editing'); }, 380);
   }
+  // v55: what Cancel puts back (the look only; saved looks, apps and other settings stay as they are)
+  const LE_KEEP = ['theme', 'sunLook', 'rayStyle', 'neonStyle', 'moonDial', 'moonLook', 'sunTime', 'color', 'dir', 'tilt', 'size', 'custom', 'tune'];
+  let leSnap = null;
   function leLift(on) {
     const h = on ? $('lookEdit').querySelector('.le-panel').offsetHeight : 0, up = Math.round(Math.max(0, h - st.H * 0.3));
     ['sunScreen', 'moonScreen'].forEach((id) => { const el = $(id); el.style.transition = 'transform 0.3s ease'; el.style.transform = up ? 'translateY(' + (-up) + 'px)' : ''; });
   }
   document.querySelectorAll('[data-editlook]').forEach((b) => b.addEventListener('click', () => openLookEdit(b.dataset.editlook)));
   $('leDone').addEventListener('click', () => hideOverlay($('lookEdit')));
+  $('leCancel').addEventListener('click', () => {
+    if (leSnap) { const pd = S.dir, v = JSON.parse(leSnap); LE_KEEP.forEach((k, i) => { S[k] = v[i]; }); st.tiltEnd = false; afterChange(S.mode, pd); }
+    hideOverlay($('lookEdit'));
+  });
   // v44: hold the sun or moon for 0.7 s (without moving) to open the editor straight away (5)
   let holdT = 0, holdAt = null;
   const holdCancel = () => { clearTimeout(holdT); holdT = 0; holdAt = null; };
@@ -4540,7 +4550,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     openSheet('Recent', S.recent.length ? 'Your last apps.' : 'No apps opened yet. Open an app from the sun first.', '', false,
       S.recent.map((n) => ({ label: n, run: () => openApp(BY[n]) })));
   }
-  $('sunRecent').addEventListener('click', openRecent);
 
   /* ---------- Camera ---------- */
   let photoUrl = '';
@@ -4599,7 +4608,12 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const q = $('searchInput').value.trim().toLowerCase();
     const box = $('results');
     box.textContent = '';
-    const hits = searchIndex().filter((r) => !q || r.name.toLowerCase().indexOf(q) !== -1 || r.where.toLowerCase().indexOf(q) !== -1).slice(0, 14);
+    let hits = searchIndex().filter((r) => !q || r.name.toLowerCase().indexOf(q) !== -1 || r.where.toLowerCase().indexOf(q) !== -1);
+    if (!q) {  // v55: Recent moved here from its corner: your last apps first
+      const rec = S.recent.map((n) => hits.find((r) => r.name === n)).filter(Boolean).map((r) => ({ name: r.name, where: 'Recent · ' + r.where }));
+      hits = rec.concat(hits.filter((r) => S.recent.indexOf(r.name) === -1));
+    }
+    hits = hits.slice(0, 14);
     if (!hits.length) {
       const p = document.createElement('div');
       p.className = 'empty';
