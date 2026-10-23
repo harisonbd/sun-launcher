@@ -3747,15 +3747,17 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     // follows the turn angle (not mv[0], which hardly changes near the edge), and it sinks over a longer stretch
     // (mv[2] 0.25 -> -0.2, eased), sliding a little past the screen edge while the Earth hides it.
     const mv = toView([Math.sin(mdl) * Math.cos(mdec), Math.sin(mdec), Math.cos(mdl) * Math.cos(mdec)]);
-    const mt = clamp((0.25 - mv[2]) / 0.45, 0, 1), mSink = mt * mt * (3 - 2 * mt), mSide = Math.atan2(mv[0], mv[2]) / (Math.PI / 2);
-    if (mSink < 0.999 && GLB.ok) {  // v53 (mockup C): the moon also sets behind the Earth's edge, its glow fading
+    // v58 (user: it jumped up fast, the sun was fine): its height now follows mv[2] evenly over the whole way, like the
+    // sun (mRise 0 = hidden behind the edge at mv[2] -0.2, 1 = top place when it faces us). Before, the air gap held it
+    // at one height, so all its up and down came in the short sink.
+    const mRise = clamp((mv[2] + 0.2) / 1.2, 0, 1), mt = 1 - clamp((mv[2] + 0.2) / 0.35, 0, 1), mSink = mt * mt * (3 - 2 * mt), mSide = Math.atan2(mv[0], mv[2]) / (Math.PI / 2);
+    if (mRise > 0 && GLB.ok) {  // v53 (mockup C): the moon also sets behind the Earth's edge, its glow fading
       const mx = cx + clamp(mSide, -1.2, 1.2) * (W / 2 - 34), mr = 15 * k, limbM = cy - Math.sqrt(Math.max(0, R * R - (mx - cx) * (mx - cx)));
       // v47 (user): always a small gap (~10 px) between the moon and the Earth's glowing air
       const airY = cy - Math.sqrt(Math.max(0, R * R * 1.07 * 1.07 - (mx - cx) * (mx - cx)));
       // and never on the time chips (H * 0.3, 36 px tall) unless Watch hides them; if there is no room, the gap to the Earth wins
       const chipLow = st.watch ? H * 0.1 : H * 0.3 + 18 + mr + 8;
-      const my0 = Math.min(Math.max(limbM - 8 - Math.max(0, mv[2]) * (limbM - 8 - H * 0.42), chipLow), airY - mr - 10);
-      const my = my0 * (1 - mSink) + (limbM + mr + 6) * mSink;
+      const my0 = Math.min(Math.max(H * 0.42, chipLow), airY - mr - 10), my = (limbM + mr + 6) + (my0 - (limbM + mr + 6)) * mRise;
       c.save(); c.globalAlpha = 1 - mSink;
       const mg = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3.2); mg.addColorStop(0, 'rgba(210, 222, 245, ' + (0.12 + 0.18 * mnNow.fraction).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(210, 222, 245, 0)');
       c.fillStyle = mg; c.fillRect(mx - mr * 3.3, my - mr * 3.3, mr * 6.6, mr * 6.6);
