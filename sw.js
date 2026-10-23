@@ -2,7 +2,7 @@
 // because Docs Reader and Scanner share this web address (harisonbd.github.io).
 // v42: two caches. CACHE (app code, new each version, ~0.3 MB) and MEDIA (photos and maps, kept across
 // versions so an update does not download them again). Change MEDIA only when a picture's content changes.
-const CACHE = 'sun-launcher-v63';
+const CACHE = 'sun-launcher-v64';
 const MEDIA = 'sun-launcher-media-1';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 const PICS = ['./tex-sun.jpg', './tex-moon.jpg', './sky-sunset.jpg', './sky-dawn.jpg', './sky-day.jpg', './sky-bluehour.jpg', './sky-night.jpg', './sky-overcast.jpg', './sky-rain.jpg', './sky-snow.jpg', './sky-snow-night.jpg', './sky-fog.jpg', './sky-storm.jpg', './saturn.jpg', './saturn-ring.png', './earth-day.jpg', './earth-night.jpg', './earth-clouds.jpg'];

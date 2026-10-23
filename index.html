@@ -328,7 +328,27 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
 .erows { display: flex; flex-direction: column; gap: 8px; }
 .erow { display: flex; align-items: center; gap: 4px; min-height: 52px; padding: 0 6px 0 14px; background: var(--panel-2); border-radius: 14px; }
-.ename { flex: 1; min-width: 0; font-size: 16px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ename { flex: 1; min-width: 0; font-size: 16px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; border: none; background: transparent; color: var(--ink); padding: 12px 0; cursor: pointer; }
+.addapp { min-height: 52px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--sun) 70%, transparent); background: color-mix(in srgb, var(--sun) 8%, transparent); color: var(--sun); font-size: 16px; font-weight: 600; cursor: pointer; }
+.afl { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-2); margin: 4px 0 -6px; }
+.ainp { width: 100%; box-sizing: border-box; min-height: 48px; padding: 0 14px; border-radius: 14px; border: 1px solid var(--line); background: color-mix(in srgb, var(--bg, #0b1020) 60%, var(--panel)); color: var(--ink); font: inherit; font-size: 16px; }
+.arow { display: flex; gap: 8px; align-items: center; }
+.arow .ainp { flex: 1; min-width: 0; }
+.apaste { min-height: 48px; padding: 0 14px; border-radius: 14px; border: 1px solid var(--line); background: transparent; color: var(--sun); font-weight: 700; cursor: pointer; }
+.aicon { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: var(--line); color: var(--ink); font-size: 24px; font-weight: 700; flex: none; }
+.aicon img { width: 100%; height: 100%; object-fit: cover; }
+.asw { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; flex: none; }
+.asw.on { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--ink); }
+.asite { min-height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer; }
+.asite.on { background: var(--sun); color: var(--sun-ink); border-color: var(--sun); }
+.awhere { display: flex; gap: 8px; }
+.awhere button { flex: 1; min-height: 44px; border-radius: 22px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 15px; font-weight: 600; cursor: pointer; }
+.awhere button.on { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); }
+.aqa { display: flex; gap: 8px; }
+.aqa .ainp { min-height: 44px; font-size: 15px; }
+.aerr { color: #ff9b8c; font-size: 14px; margin: 0; }
+.aerr:empty { display: none; }
+.btn.danger { color: #ff9b8c; }
 .ibtn { width: 44px; height: 44px; border-radius: 12px; border: none; background: transparent; color: var(--ink); display: grid; place-items: center; cursor: pointer; }
 .ibtn:disabled { color: var(--muted); cursor: default; }
 .where { min-width: 76px; height: 40px; border-radius: 20px; border: 1.5px solid var(--line); background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
@@ -546,11 +566,34 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editTitle">
       <h2 id="editTitle">Edit dial</h2>
       <p>Change the order. Choose if an app lives on the sun or on the moon. The sun keeps at least 3 apps. The pin puts an app in the bar at the bottom (up to 5).</p>
+      <button type="button" class="addapp" id="addApp">＋ Add app</button>
       <div id="editRows" class="erows"></div>
       <div class="row">
         <button type="button" class="btn" id="editReset">Reset</button>
         <button type="button" class="btn primary" id="editDone" data-autofocus>Done</button>
       </div>
+    </div>
+  </div>
+
+  <!-- v64: Add app / Edit app -->
+  <div id="appForm" class="overlay" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="afTitle">
+      <h2 id="afTitle">Add app</h2>
+      <div class="afl">Link</div>
+      <div class="arow"><input class="ainp" id="afLink" type="url" inputmode="url" autocomplete="off" placeholder="https://… or yoursite.com"><button type="button" class="apaste" id="afPaste">Paste</button></div>
+      <div class="afl">Name</div>
+      <input class="ainp" id="afName" type="text" maxlength="30" autocomplete="off" placeholder="Name on the dial">
+      <div class="afl">Icon</div>
+      <div class="arow" id="afIcons"><span class="aicon" id="afIcon"></span><button type="button" class="asite" id="afSite" hidden>Site icon</button></div>
+      <div class="afl" id="afWhereL">Lives on</div>
+      <div class="awhere" id="afWhere"><button type="button" data-w="sun" class="on">☀ Sun</button><button type="button" data-w="moon">☾ Moon</button><button type="button" data-w="pin">📌 Pin</button></div>
+      <div id="afQA"><div class="afl">Quick actions (hold the app) · up to 3</div>
+        <div class="aqa"><input class="ainp" type="text" maxlength="30" placeholder="Name"><input class="ainp" type="url" inputmode="url" placeholder="Link (optional)"></div>
+        <div class="aqa"><input class="ainp" type="text" maxlength="30" placeholder="Name"><input class="ainp" type="url" inputmode="url" placeholder="Link (optional)"></div>
+        <div class="aqa"><input class="ainp" type="text" maxlength="30" placeholder="Name"><input class="ainp" type="url" inputmode="url" placeholder="Link (optional)"></div>
+      </div>
+      <p class="aerr" id="afErr" role="alert"></p>
+      <div class="row"><button type="button" class="btn danger" id="afRemove">Remove</button><button type="button" class="btn" id="afCancel">Cancel</button><button type="button" class="btn primary" id="afSave">Add</button></div>
     </div>
   </div>
 
@@ -867,7 +910,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v63';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v64';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -887,6 +930,39 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   ];
   const BY = Object.create(null);  // v63: no inherited names (a backup with "constructor" is not an app)
   BASE_APPS.forEach((a) => { BY[a.name] = a; });
+  // v64: your apps (Edit dial > Add app). Links must be web links (https/http); anything else is refused.
+  let APP_LIST = BASE_APPS;
+  function webLink(u) {
+    if (typeof u !== 'string' || !u.trim()) return '';
+    let t = u.trim(); if (!/^[a-z][a-z0-9+.-]*:/i.test(t)) t = 'https://' + t;
+    try { const x = new URL(t); return x.protocol === 'https:' || x.protocol === 'http:' ? x.href : ''; } catch (e) { return ''; }
+  }
+  function cleanApp(o) {
+    if (!o || typeof o !== 'object') return null;
+    const name = typeof o.name === 'string' ? o.name.trim().slice(0, 30) : '';
+    if (!name) return null;
+    const short = (Array.isArray(o.short) ? o.short : []).map((q) => typeof q === 'string' ? { label: q, href: '' } : q)
+      .filter((q) => q && typeof q.label === 'string' && q.label.trim()).slice(0, 3).map((q) => ({ label: q.label.trim().slice(0, 30), href: webLink(q.href) }));
+    return { name: name, hint: typeof o.hint === 'string' ? o.hint.slice(0, 60) : '', href: webLink(o.href), icon: webLink(o.icon),
+      color: /^#[0-9a-f]{6}$/i.test(o.color || '') ? o.color : '', short: short };
+  }
+  function loadApps() {
+    let list = Array.isArray(S.apps) ? S.apps.map(cleanApp).filter(Boolean) : BASE_APPS.map(cleanApp);
+    const seen = {}; list = list.filter((a) => { const k = a.name.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; });
+    APP_LIST = list;
+    Object.keys(BY).forEach((k) => { delete BY[k]; });
+    list.forEach((a) => { BY[a.name] = a; });
+  }
+  // the round icon of an app: its own picture (built-in or from its site), else its first letter on its colour
+  function fillIcon(ini, a) {
+    ini.textContent = ''; ini.style.background = a && a.color ? a.color : '';
+    const letter = () => { ini.textContent = (a ? a.name : '?').charAt(0).toUpperCase(); };
+    const src = a && (a.icon || ICONS[a.name]);
+    if (!src) { letter(); return; }
+    const im = document.createElement('img'); im.alt = ''; im.src = src;
+    im.addEventListener('error', () => { im.remove(); letter(); });
+    ini.appendChild(im);
+  }
   const FUNCS = [
     { name: 'Data', items: ['Backup & restore', 'Export all', 'Import', 'Sync', 'Storage', 'Clear cache'] },
     { name: 'Look', items: ['Theme', 'Accent colour', 'Text size', 'Icons', 'Wallpaper', 'Sounds'] },
@@ -910,7 +986,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal' };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -965,7 +1041,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   if (S.tilt === 62) S.tilt = 45;
   S.tilt = Math.max(10, Math.min(75, +S.tilt || 45));
   S.size = Math.max(80, Math.min(160, +S.size || 125));
-  S.order = S.order.filter((n) => BY[n]).concat(BASE_APPS.map((a) => a.name).filter((n) => S.order.indexOf(n) === -1));
+  loadApps();  // v64: your own app list (Edit dial > Add app)
+  S.order = S.order.filter((n) => BY[n]).concat(APP_LIST.map((a) => a.name).filter((n) => S.order.indexOf(n) === -1));
   S.onMoon = (S.onMoon || []).filter((n) => BY[n]);
   S.recent = (S.recent || []).filter((n) => BY[n]);
   S.pins = (Array.isArray(S.pins) ? S.pins : []).filter((n) => BY[n]).slice(0, 5);
@@ -2327,8 +2404,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const ini = document.createElement('span');
       ini.className = 'ini';
       ini.setAttribute('aria-hidden', 'true');
-      if (ICONS[a.name]) { const im = document.createElement('img'); im.src = ICONS[a.name]; im.alt = ''; ini.appendChild(im); }
-      else ini.textContent = a.name.charAt(0);
+      fillIcon(ini, a);
       const nm = document.createElement('span');
       nm.className = 'nm';
       nm.textContent = a.name;
@@ -4575,10 +4651,12 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     openSheet(a.name, 'Link not set yet: [' + a.name + ' address].', '', false);
   }
   function openShortcuts(a) {
-    openSheet(a.name, 'Quick actions (examples).', a.href, false, (a.short || []).map((t) => ({
-      label: t,
-      run: () => { pushRecent(a.name); toast(a.name + ': ' + t + ' (example)'); }
-    })));
+    const acts = (a.short || []).map((q) => ({
+      label: q.label,
+      run: () => { pushRecent(a.name); if (q.href) { hapt('press'); const w = window.open(q.href, '_blank'); if (w) w.opener = null; else location.href = q.href; } else toast(a.name + ': ' + q.label + ' has no link yet (Edit app).'); }
+    }));
+    acts.push({ label: '✎ Edit app', run: () => openAppForm(a.name) }, { label: 'Remove ' + a.name, run: () => askRemove(a.name) });
+    openSheet(a.name, a.short && a.short.length ? 'Quick actions' : 'No quick actions yet: add them in Edit app.', a.href, false, acts);
   }
   // v61: the Moon menu functions (user): Look opens the right part of Settings, Data saves / loads / cleans,
   // Safety and Info explain, Phone opens its setting. Things a web app cannot do say so in one line.
@@ -4621,6 +4699,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         if (k === 'place') { if (v === null || (plain(v) && isFinite(v.lat) && isFinite(v.lon) && typeof v.lat === 'number' && typeof v.lon === 'number')) { S[k] = v ? { lat: v.lat, lon: v.lon, city: typeof v.city === 'string' ? v.city : '' } : null; n++; } return; }
         if (k === 'useHours') { if (plain(v)) { const u = {}; Object.keys(v).forEach((a) => { if (Array.isArray(v[a]) && v[a].length === 24 && v[a].every((x) => typeof x === 'number' && isFinite(x))) u[a] = v[a]; }); S[k] = u; n++; } return; }
         if (k === 'looks') { if (plain(v) && Array.isArray(v.sun) && Array.isArray(v.moon)) { S[k] = { sun: v.sun.filter(plain).slice(0, 5), moon: v.moon.filter(plain).slice(0, 5) }; n++; } return; }
+        if (k === 'apps') { if (v === null || Array.isArray(v)) { S[k] = v ? v.map(cleanApp).filter(Boolean) : null; n++; } return; }  // v64
         if (k === 'tune') { if (plain(v) && Object.keys(v).every((x) => nums(v[x]))) { S[k] = v; n++; } return; }
         if (v === null || Array.isArray(S[k]) !== Array.isArray(v) || (S[k] !== null && typeof S[k] !== typeof v)) return;
         if (Array.isArray(v) && !v.every((x) => typeof x === 'string')) return;
@@ -4632,7 +4711,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   });
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -4770,8 +4849,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       b.className = 'res';
       // v60: the app's round icon (its picture or first letter); functions get a small moon
       const ini = document.createElement('span'); ini.className = 'ini'; ini.setAttribute('aria-hidden', 'true');
-      if (ICONS[r.name]) { const im = document.createElement('img'); im.src = ICONS[r.name]; im.alt = ''; ini.appendChild(im); }
-      else ini.textContent = BY[r.name] ? r.name.charAt(0) : '☾';
+      if (BY[r.name]) fillIcon(ini, BY[r.name]); else ini.textContent = '☾';
       const s1 = document.createElement('span'); s1.className = 'rn'; s1.textContent = r.name;
       const s2 = document.createElement('small'); s2.textContent = r.where;
       b.appendChild(ini); b.appendChild(s1); b.appendChild(s2);
@@ -4820,7 +4898,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const a = BY[n]; if (!a) return;
       const b = document.createElement('button'); b.type = 'button'; b.className = 'fav'; b.setAttribute('aria-label', 'Open ' + n);
       const ini = document.createElement('span'); ini.className = 'ini'; ini.setAttribute('aria-hidden', 'true');
-      if (ICONS[n]) { const im = document.createElement('img'); im.src = ICONS[n]; im.alt = ''; ini.appendChild(im); } else ini.textContent = n.charAt(0);
+      fillIcon(ini, a);
       const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = n;
       b.appendChild(ini); b.appendChild(nm);
       b.addEventListener('click', () => openApp(a));
@@ -4835,7 +4913,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const onSun = S.onMoon.indexOf(n) === -1;
       const row = document.createElement('div');
       row.className = 'erow';
-      const nm = document.createElement('span'); nm.className = 'ename'; nm.textContent = n;
+      // v64: tap the name (✎) to edit the app
+      const nm = document.createElement('button'); nm.type = 'button'; nm.className = 'ename'; nm.textContent = n + '  ✎'; nm.setAttribute('aria-label', 'Edit ' + n);
+      nm.addEventListener('click', () => openAppForm(n));
       const up = document.createElement('button'); up.type = 'button'; up.className = 'ibtn'; up.innerHTML = ICON_UP; up.setAttribute('aria-label', 'Move ' + n + ' up'); up.disabled = i === 0;
       const dn = document.createElement('button'); dn.type = 'button'; dn.className = 'ibtn'; dn.innerHTML = ICON_DOWN; dn.setAttribute('aria-label', 'Move ' + n + ' down'); dn.disabled = i === S.order.length - 1;
       const wh = document.createElement('button'); wh.type = 'button'; wh.className = 'where' + (onSun ? ' on-sun' : '');
@@ -4862,6 +4942,133 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       box.appendChild(row);
     });
   }
+  // v64: Add app / Edit app (Edit dial, or hold an app). editing = the app's name, or null for a new one
+  const AF_COLORS = ['', '#2b2b2b', '#1d6fd6', '#2e9d6a', '#c9542f', '#7a52c7', '#b8862b'];
+  const af = { editing: null, color: '', site: '', useSite: false, where: 'sun', nameTouched: false };
+  function guessName(href) {
+    try {
+      const u = new URL(href), parts = u.pathname.split('/').filter(Boolean);
+      let b = parts.length ? parts[parts.length - 1] : u.hostname.replace(/^www\./, '').split('.')[0];
+      b = b.replace(/\.(html?|php)$/i, '').replace(/[-_]+/g, ' ').trim();
+      return (b.replace(/\b\w/g, (c) => c.toUpperCase()) || u.hostname).slice(0, 30);
+    } catch (e) { return ''; }
+  }
+  function afPreview() {
+    const name = $('afName').value.trim() || '?';
+    fillIcon($('afIcon'), { name: name, color: af.color, icon: af.useSite ? af.site : '' });
+    $('afIcons').querySelectorAll('.asw').forEach((b) => b.classList.toggle('on', !af.useSite && b.dataset.c === af.color));
+    $('afSite').classList.toggle('on', af.useSite);
+  }
+  // the site's own icon, only for apps on this same site (your apps on harisonbd.github.io): the page's safety rules
+  // (CSP img-src 'self') allow no pictures from other sites, so they get the letter. The button shows only if one loads.
+  function afFindIcon(href) {
+    af.site = ''; $('afSite').hidden = true;
+    let u; try { u = new URL(href); } catch (e) { return; }
+    if (u.origin !== location.origin) return;
+    const tries = ['icon-192.png', 'apple-touch-icon.png', 'favicon.ico'].map((f) => new URL(f, u.href).href).concat([u.origin + '/favicon.ico']).filter((x, i, l) => l.indexOf(x) === i);
+    const next = (i) => {
+      if (i >= tries.length || webLink($('afLink').value) !== href) return;
+      const im = new Image();
+      im.onload = () => { if (webLink($('afLink').value) !== href || im.naturalWidth < 8) return next(i + 1); af.site = tries[i]; $('afSite').hidden = false; if (af.useSite || !af.editing) { af.useSite = true; } afPreview(); };
+      im.onerror = () => next(i + 1);
+      im.src = tries[i];
+    };
+    next(0);
+  }
+  function openAppForm(name) {
+    const a = name ? BY[name] : null;
+    af.editing = a ? a.name : null; af.nameTouched = !!a;
+    af.color = a ? a.color : ''; af.useSite = !!(a && a.icon); af.site = a && a.icon ? a.icon : ''; af.where = 'sun';
+    $('afTitle').textContent = a ? 'Edit app' : 'Add app';
+    $('afSave').textContent = a ? 'Save' : 'Add';
+    $('afRemove').hidden = !a; $('afQA').hidden = !a; $('afWhere').hidden = !!a; $('afWhereL').hidden = !!a;
+    $('afLink').value = a ? a.href : ''; $('afName').value = a ? a.name : ''; $('afErr').textContent = '';
+    $('afWhere').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.w === 'sun'));
+    $('afSite').hidden = !af.site;
+    $('afQA').querySelectorAll('.aqa').forEach((r, i) => { const q = a && a.short[i]; r.children[0].value = q ? q.label : ''; r.children[1].value = q ? q.href : ''; });
+    if (!$('afIcons').querySelector('.asw')) AF_COLORS.forEach((c) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'asw'; b.dataset.c = c; b.style.background = c || 'var(--line)';
+      b.setAttribute('aria-label', c ? 'Letter on colour ' + c : 'Letter, plain');
+      b.addEventListener('click', () => { af.color = c; af.useSite = false; afPreview(); });
+      $('afIcons').appendChild(b);
+    });
+    afPreview();
+    if (a && a.href && !a.icon && !ICONS[a.name]) afFindIcon(a.href);
+    $('afRemove').textContent = 'Remove'; af.armed = false;
+    showOverlay($('appForm'));  // on top of Edit dial (Save goes back to the list)
+  }
+  $('afLink').addEventListener('input', () => {
+    const href = webLink($('afLink').value);
+    if (href && !af.nameTouched) $('afName').value = guessName(href);
+    if (href) afFindIcon(href);
+    afPreview();
+  });
+  $('afName').addEventListener('input', () => { af.nameTouched = true; afPreview(); });
+  $('afSite').addEventListener('click', () => { af.useSite = true; afPreview(); });
+  $('afWhere').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; af.where = b.dataset.w; $('afWhere').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); });
+  $('afPaste').addEventListener('click', () => {
+    if (!navigator.clipboard || !navigator.clipboard.readText) { $('afLink').focus(); toast('Long-press the box and choose Paste.'); return; }
+    navigator.clipboard.readText().then((t) => { $('afLink').value = t.trim(); $('afLink').dispatchEvent(new Event('input')); }).catch(() => { $('afLink').focus(); toast('Long-press the box and choose Paste.'); });
+  });
+  $('afCancel').addEventListener('click', () => hideOverlay($('appForm')));
+  $('appForm').addEventListener('click', (e) => { if (e.target === $('appForm')) hideOverlay($('appForm')); });
+  // rename or remove an app everywhere it is remembered
+  function renameEverywhere(from, to) {
+    const sw = (l) => l.map((n) => n === from ? to : n);
+    S.order = sw(S.order); S.onMoon = sw(S.onMoon); S.pins = sw(S.pins); S.recent = sw(S.recent); S.favs = sw(S.favs);
+    if (S.useHours[from]) { S.useHours[to] = S.useHours[from]; delete S.useHours[from]; }
+  }
+  function saveApps(list) { S.apps = list.map((a) => cleanApp(a)); loadApps(); }
+  $('afSave').addEventListener('click', () => {
+    const href = webLink($('afLink').value), name = $('afName').value.trim().slice(0, 30), err = $('afErr');
+    if ($('afLink').value.trim() && !href) { err.textContent = 'This link does not work here. Use a web link (https://…).'; return; }
+    if (!href && !af.editing) { err.textContent = 'Paste the app\'s link first.'; return; }
+    if (!name) { err.textContent = 'Give the app a name.'; return; }
+    if (APP_LIST.some((x) => x.name.toLowerCase() === name.toLowerCase() && x.name !== af.editing)) { err.textContent = 'You already have an app called "' + name + '".'; return; }
+    const icon = af.useSite ? af.site : '', list = APP_LIST.slice();
+    if (af.editing) {
+      const i = list.findIndex((x) => x.name === af.editing), old = list[i];
+      const short = Array.prototype.map.call($('afQA').querySelectorAll('.aqa'), (r) => ({ label: r.children[0].value, href: r.children[1].value }));
+      const bad = short.find((q) => q.label.trim() && q.href.trim() && !webLink(q.href));
+      if (bad) { err.textContent = 'The link of "' + bad.label.trim() + '" is not a web link.'; return; }
+      list[i] = { name: name, hint: old.hint, href: href, icon: icon, color: af.color, short: short };
+      if (ICONS[old.name] && name !== old.name) ICONS[name] = ICONS[old.name];  // a built-in picture follows a rename
+      if (name !== old.name) renameEverywhere(old.name, name);
+      saveApps(list); toast('Saved.');
+    } else {
+      let host = ''; try { host = new URL(href).hostname.replace(/^www\./, ''); } catch (e) {}
+      list.push({ name: name, hint: host, href: href, icon: icon, color: af.color, short: [] });
+      saveApps(list);
+      S.order.push(name);
+      if (af.where === 'moon' && S.mode === 'two') S.onMoon.push(name);
+      if (af.where === 'pin') { if (S.pins.length < 5) S.pins.push(name); else toast('The bar holds 5 apps; ' + name + ' is on the sun.'); }
+      toast(name + ' added' + (af.where === 'moon' ? ' to the moon.' : '.'));
+      if (sunApps().length > 16) setTimeout(() => toast('The sun has ' + sunApps().length + ' apps now. Some could live on the moon (Edit dial).'), 2200);
+    }
+    hideOverlay($('appForm'));
+    changed();
+  });
+  function canRemove(name) {
+    if (S.onMoon.indexOf(name) === -1 && S.mode === 'two' && sunApps().length <= 3) { toast('Keep at least 3 apps on the sun.'); return false; }
+    return true;
+  }
+  function removeApp(name) {
+    const strip = (l) => l.filter((n) => n !== name);
+    S.order = strip(S.order); S.onMoon = strip(S.onMoon); S.pins = strip(S.pins); S.recent = strip(S.recent); S.favs = strip(S.favs); delete S.useHours[name];
+    saveApps(APP_LIST.filter((x) => x.name !== name));
+    changed(); toast(name + ' removed.');
+  }
+  // from the hold menu: a sheet asks once more
+  function askRemove(name) {
+    if (!canRemove(name)) return;
+    openSheet('Remove ' + name + '?', 'It goes from the sun, the moon, the bar and Search. You can add it again any time.', '', false, [{ label: 'Remove ' + name, run: () => removeApp(name) }]);
+  }
+  // in the form: a second tap within 3 s removes (a sheet would open behind Edit dial)
+  $('afRemove').addEventListener('click', () => {
+    const name = af.editing; if (!name || !canRemove(name)) return;
+    if (!af.armed) { af.armed = true; $('afRemove').textContent = 'Tap again'; setTimeout(() => { af.armed = false; $('afRemove').textContent = 'Remove'; }, 3000); return; }
+    hideOverlay($('appForm')); removeApp(name);
+  });
   function move(i, d) {
     const j = i + d;
     if (j < 0 || j >= S.order.length) return;
@@ -4881,7 +5088,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   }
   $('sunEdit').addEventListener('click', () => { renderEdit(); showOverlay($('edit')); });
   $('editDone').addEventListener('click', () => hideOverlay($('edit')));
-  $('editReset').addEventListener('click', () => { S.order = BASE_APPS.map((a) => a.name); S.onMoon = []; changed(); });
+  $('editReset').addEventListener('click', () => { S.order = APP_LIST.map((a) => a.name); S.onMoon = []; changed(); });  // v64: order only (your apps stay)
+  $('addApp').addEventListener('click', () => openAppForm(null));
   $('edit').addEventListener('click', (e) => { if (e.target === $('edit')) hideOverlay($('edit')); });
 
   /* ---------- Settings ---------- */
