@@ -118,6 +118,28 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 
 .handle { position: absolute; left: 50%; width: 170px; margin-left: -85px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; border: none; background: transparent; color: var(--ink-3); font-size: 13px; font-weight: 500; cursor: grab; z-index: 600; touch-action: none; }
 .handle.bottom { bottom: 14px; }
+/* v57: the screen slider (name, dots; hold = pictures) sits between the bottom corners; on the Sun screen it covers
+   the "Swipe up" handle, which stays for keyboards and a swipe up still starts from here */
+.vstrip { position: absolute; left: 50%; bottom: 14px; width: min(230px, calc(100% - 200px)); transform: translateX(-50%); min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px; padding-bottom: 4px; z-index: 610; touch-action: none; user-select: none; -webkit-user-select: none; color: var(--ink); }
+.vstrip[hidden] { display: none; }
+#sunScreen .vstrip ~ .handle.bottom { opacity: 0; }
+.vs-nm { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+.vs-nm button { width: 34px; height: 34px; border: none; background: transparent; color: var(--ink-2); font-size: 20px; line-height: 1; cursor: pointer; border-radius: 17px; }
+.vs-nm button[hidden] { visibility: hidden; display: block; }
+.vs-name { min-width: 72px; text-align: center; white-space: nowrap; }
+.vs-dots { display: flex; gap: 6px; height: 7px; }
+.vs-dots b { width: 7px; height: 7px; border-radius: 4px; background: color-mix(in srgb, var(--ink) 40%, transparent); transition: width .15s, background .15s; }
+.vs-dots b.on { width: 18px; background: var(--sun); }
+.vs-sub { font-size: 11px; color: var(--ink-3); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); }
+.vs-sub:empty { display: none; }
+.vs-peek { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 8px; border-radius: 16px; background: color-mix(in srgb, var(--panel) 92%, transparent); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+#app.fx .vs-peek { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.vs-peek[hidden] { display: none; }
+.vs-peek div { width: 58px; text-align: center; font-size: 10px; color: var(--ink-2); }
+.vs-peek img { width: 58px; height: 78px; object-fit: cover; border-radius: 10px; display: block; border: 2px solid transparent; margin-bottom: 3px; }
+.vs-peek .on img { border-color: var(--sun); }
+.vs-peek .on { color: var(--ink); font-weight: 600; }
+#app.editing .vstrip { opacity: 0; pointer-events: none; }
 /* v39: favourites bar: up to 5 pinned apps above the bottom buttons, one tap opens */
 .favbar { position: absolute; left: 0; right: 0; bottom: 100px; display: flex; justify-content: center; gap: 8px; z-index: 600; pointer-events: none; }
 .favbar[hidden] { display: none; }
@@ -348,7 +370,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 #app.one-mode .watchbtn { top: 100px; }  /* v55: one-screen mode has the camera sun in the top-left corner */
 .watchcatch { position: absolute; inset: 0; z-index: 880; }
 .watchcatch[hidden] { display: none; }
-#app.watch .screen button, #app.watch .clockchip, #app.watch .facet, #app.watch #items, #app.watch #glabels, #app.watch .marker, #app.watch .scrub, #app.watch .bubble, #app.watch .info, #app.watch .chips, #app.watch .favbar, #app.watch .planet-handle, #app.watch .hintpill { opacity: 0 !important; pointer-events: none !important; transition: opacity .5s; }
+#app.watch .screen button, #app.watch .clockchip, #app.watch .facet, #app.watch #items, #app.watch #glabels, #app.watch .marker, #app.watch .scrub, #app.watch .bubble, #app.watch .info, #app.watch .vstrip, #app.watch .chips, #app.watch .favbar, #app.watch .planet-handle, #app.watch .hintpill { opacity: 0 !important; pointer-events: none !important; transition: opacity .5s; }
 .hintpill { position: absolute; transform: translate(-50%, -50%); max-width: 80%; padding: 9px 16px; border-radius: 20px; background: color-mix(in srgb, var(--panel-2) 92%, transparent); color: var(--ink); font-size: 14px; text-align: center; z-index: 700; pointer-events: none; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3); animation: hintIn .4s ease; }
 .hintpill[hidden] { display: none; }
 .speedmeter { position: absolute; left: 10px; top: 70px; z-index: 950; background: rgba(0, 0, 0, 0.72); color: #9effc0; font: 600 12px/1.35 ui-monospace, monospace; padding: 6px 9px; border-radius: 8px; pointer-events: none; white-space: pre; }
@@ -405,6 +427,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <span>Edit dial</span>
       </button>
       <div class="favbar" id="favBar" aria-label="Pinned apps" hidden></div>
+      <div class="vstrip" id="sunStrip" role="group" aria-label="Sun screen: slide sideways to change it"><div class="vs-peek" hidden></div><div class="vs-nm"><button type="button" class="vs-prev" aria-label="Previous screen">‹</button><span class="vs-name"></span><button type="button" class="vs-next" aria-label="Next screen">›</button></div><div class="vs-dots" aria-hidden="true"></div><div class="vs-sub">swipe up · Moon</div></div>
       <button type="button" class="handle bottom" id="toMoon" aria-label="Open the moon menu">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>
         <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M15 4a8 8 0 1 0 5 13A7 7 0 0 1 15 4z"></path></svg>Swipe up · Moon</span>
@@ -434,6 +457,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       </button>
       <!-- Moon events (v32): the next sky event as a card (Real moon phase look); tap for the Coming up list -->
       <button type="button" id="moonEvent" class="mevent" hidden><span class="ic" aria-hidden="true"></span><span><b></b><small></small></span></button>
+      <div class="vstrip" id="moonStrip" role="group" aria-label="Moon screen: slide sideways to change it"><div class="vs-peek" hidden></div><div class="vs-nm"><button type="button" class="vs-prev" aria-label="Previous screen">‹</button><span class="vs-name"></span><button type="button" class="vs-next" aria-label="Next screen">›</button></div><div class="vs-dots" aria-hidden="true"></div><div class="vs-sub"></div></div>
       <div id="moonInfo" class="info">
         <div id="moonName" class="name"></div>
         <div id="moonHint" class="hint"></div>
@@ -3372,7 +3396,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       $('moonHint').textContent = cur.app ? cur.hint : cur.group + ' · ' + (live + 1) + ' of ' + N;
       lastLive = live;
     }
-    $('moonInfo').style.top = Math.round(G.bottom + 18) + 'px';
+    // v57: never closer than 14 px to the screen slider at the bottom
+    $('moonInfo').style.top = Math.round(Math.min(G.bottom + 18, H - 92 - $('moonInfo').offsetHeight)) + 'px';
     $('moonTip').textContent = rolo ? 'Flick the cards like a Rolodex, or slide along the left edge to jump' : 'Flick the list, or slide along the ' + ({ crescent: 'moon', arc: 'arc', ring: 'ring', dots: 'dots' }[look]) + ' to jump';
     const sc = $('scrub');
     sc.style.top = Math.round(G.top) + 'px';
@@ -4047,7 +4072,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     setTimeout(() => { suppressClick = false; }, 400);
   }
   $('sunScreen').addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.corner, .roundbtn, .handle, .viewbtn, .chips, .to-planet, .favbar')) return;
+    if (e.target.closest('.corner, .roundbtn, .handle, .viewbtn, .chips, .to-planet, .favbar, .vstrip')) return;
     { const rr = $('sunScreen').getBoundingClientRect(); addRipple('sun', e.clientX - rr.left, e.clientY - rr.top); }
     if (e.target.closest('#core')) { tween('press', 1, 110); const up = () => { tween('press', 0, 420); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); }; window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -4072,7 +4097,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   window.addEventListener('pointercancel', dropPointer);
 
   $('moonScreen').addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.handle, .roundbtn, .corner, .mini-sun, .scrub, .mevent')) return;
+    if (e.target.closest('.handle, .roundbtn, .corner, .mini-sun, .scrub, .mevent, .vstrip')) return;
     { const rr = $('moonScreen').getBoundingClientRect(); addRipple('moon', e.clientX - rr.left, e.clientY - rr.top); }
     st.spin = null;
     stopTween('pos');
@@ -4468,13 +4493,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
   function goMoon() {
     if (st.screen !== 'moon') { hapt('swipe'); sound('whoosh'); if (S.mode === 'two') pushLayer('moon'); }
-    st.screen = 'moon'; worlds.style.transform = 'translateY(-50%)'; kick();
+    st.screen = 'moon'; worlds.style.transform = 'translateY(-50%)'; vsRender(); kick();
   }
   function goSun(fromBack) {
     if (S.mode === 'one') { goMoon(); return; }
     if (st.screen !== 'sun') { hapt('swipe'); sound('whoosh'); if (!fromBack) dropLayer('moon'); }
     if (st.screen !== 'sun') setTimeout(smartFront, 350);
-    st.screen = 'sun'; worlds.style.transform = 'translateY(0)'; kick();
+    st.screen = 'sun'; worlds.style.transform = 'translateY(0)'; vsRender(); kick();
   }
 
   /* ---------- Sheets ---------- */
@@ -4818,6 +4843,79 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const PV_STY = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['blackhole', 'Black hole'], ['neon', 'Neon'], ['synth', 'Synthwave']];
   const pvImg = (src, pos) => { const im = document.createElement('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; if (pos) im.style.objectPosition = pos; return im; };
   const pvPos = (v) => ({ edge: '100% 30%', arc: '100% 30%', small: '100% 40%', clock: '0% 50%', dial: '50% 42%', ring: '50% 45%', today: '50% 15%', minimal: '100% 15%' }[v] || '50% 40%');
+  // v57 (user picked C): the screen slider at the bottom of the Sun and Moon screens. Slide sideways = the next
+  // screen of the same group; hold = the group's pictures, slide over them, lift to keep. A swipe up still opens the Moon.
+  const VS_MOON = [['dial3d', 'moondial'], ['dial'], ['phase', 'minimal'], ['dots', 'arc', 'crescent', 'small']];
+  const vsGroup = (kind) => kind === 'sun' ? (PV_FAM.find((f) => f[3].indexOf(S.sunView) !== -1) || PV_FAM[0])[3] : (VS_MOON.find((g) => g.indexOf(currentMoon()) !== -1) || VS_MOON[3]);
+  const vsCur = (kind) => kind === 'sun' ? S.sunView : currentMoon();
+  const vsName = (kind, v) => kind === 'sun' ? PV_NAME[v] : (PV_MOON.find((m) => m[0] === v) || [v, v])[1];
+  function vsApply(kind, v) {
+    if (v === vsCur(kind)) return;
+    const pd = S.dir;
+    if (S.pairLink !== 'off') {  // "Same style on both screens": the matching pair changes both, like Settings
+      const pr = PAIRS.find((x) => (kind === 'sun' ? x[2] : x[3]) === v);
+      if (pr) { leToCustom(); S.sunView = pr[2]; S.moonLook = pr[3]; }
+    } else if (kind === 'sun') S.sunView = v;
+    else { leToCustom(); S.moonLook = v; }
+    hapt('detent'); sunStyleUI(); fillForm(); afterChange(S.mode, pd); vsRender();
+  }
+  function vsRender() {
+    ['sun', 'moon'].forEach((kind) => {
+      const el = $(kind + 'Strip'), g = vsGroup(kind), cur = vsCur(kind), i = g.indexOf(cur), many = g.length > 1;
+      el.querySelector('.vs-name').textContent = vsName(kind, cur);
+      el.querySelector('.vs-prev').hidden = !many; el.querySelector('.vs-next').hidden = !many;
+      const dots = el.querySelector('.vs-dots'); dots.textContent = '';
+      if (many) g.forEach((v, k) => { const b = document.createElement('b'); if (k === i) b.className = 'on'; dots.appendChild(b); });
+      el.querySelectorAll('.vs-peek > div').forEach((d) => d.classList.toggle('on', d.dataset.v === cur));
+    });
+  }
+  ['sun', 'moon'].forEach((kind) => {
+    const el = $(kind + 'Strip'), peek = el.querySelector('.vs-peek');
+    const step = (d) => { const g = vsGroup(kind), i = g.indexOf(vsCur(kind)); if (g.length > 1) vsApply(kind, g[(i + d + g.length) % g.length]); };
+    el.querySelector('.vs-prev').addEventListener('click', () => step(-1));
+    el.querySelector('.vs-next').addEventListener('click', () => step(1));
+    let p0 = null, holdT = 0;
+    const showPeek = () => {
+      const g = vsGroup(kind); if (g.length < 2) return;
+      peek.textContent = '';
+      g.forEach((v) => {
+        const d = document.createElement('div'); d.dataset.v = v;
+        d.appendChild(pvImg((kind === 'sun' ? 'pv-sun-' : 'pv-moon-') + v + '.jpg', kind === 'sun' ? pvPos(v) : pvMoonPos(v)));
+        d.appendChild(document.createTextNode(vsName(kind, v)));
+        peek.appendChild(d);
+      });
+      peek.hidden = false; p0.mode = 'peek'; hapt('press'); vsRender();
+    };
+    el.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button')) return;  // the arrows are plain taps
+      p0 = { x: e.clientX, y: e.clientY, last: e.clientX, mode: '', down: e };
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      clearTimeout(holdT); holdT = setTimeout(() => { if (p0 && !p0.mode) showPeek(); }, 350);
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!p0) return;
+      const dx = e.clientX - p0.x, dy = e.clientY - p0.y;
+      if (!p0.mode && Math.hypot(dx, dy) > 10) {
+        clearTimeout(holdT);
+        if (Math.abs(dx) >= Math.abs(dy)) p0.mode = 'slide';
+        else if (kind === 'sun' && dy < 0 && S.mode === 'two') {  // a swipe up from here still opens the Moon
+          const down = p0.down; p0 = null;
+          try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+          worlds.classList.add('dragging'); startDrag('toMoon', down, 0, true); onMove(e);
+          return;
+        } else { p0.mode = 'none'; }
+      }
+      if (p0.mode === 'slide' && Math.abs(e.clientX - p0.last) > 34) { step(e.clientX < p0.last ? 1 : -1); p0.last = e.clientX; }
+      if (p0.mode === 'peek') {
+        const cell = Array.prototype.find.call(peek.children, (d) => { const r = d.getBoundingClientRect(); return e.clientX >= r.left - 4 && e.clientX <= r.right + 4; });
+        if (cell) vsApply(kind, cell.dataset.v);
+      }
+    });
+    const end = () => { clearTimeout(holdT); if (p0 && p0.mode === 'peek') setTimeout(() => { peek.hidden = true; }, 250); p0 = null; };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+  });
+  setTimeout(vsRender, 0);  // first fill, once the app has started
   const pvMoonPos = (m) => ({ dots: '100% 50%', arc: '100% 50%', crescent: '30% 50%', small: '100% 50%', dial: '0% 50%', phase: '50% 15%', minimal: '100% 20%', dial3d: '50% 50%', moondial: '50% 50%' }[m] || '50% 45%');
   function pvTap(name, value) {
     const r = Array.prototype.find.call(form.elements[name], (x) => x.value === value);
@@ -4839,6 +4937,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   [['pvars', 'pvarsDots'], ['pmoons', 'pmoonsDots'], ['pstyles', 'pstylesDots']].forEach(([r, d]) => $(r).addEventListener('scroll', () => pvDots(r, d), { passive: true }));
   function renderPicks() {
+    vsRender();  // v57: the bottom slider shows the same picks
     const sh = shownTheme(), view = S.sunView, fam = PV_FAM.find((f) => f[3].indexOf(view) !== -1) || PV_FAM[0], link = S.pairLink === 'on';
     const moonOf = (v) => { const pk = PAIRS.find((x) => x[2] === v); return pk ? pk[3] : 'dots'; };
     // the 4 cards
