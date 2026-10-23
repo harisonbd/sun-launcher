@@ -339,7 +339,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .search-bar input { flex: 1; min-width: 0; min-height: 48px; padding: 0 18px; border-radius: 24px; border: 1.5px solid var(--line); background: var(--panel-2); color: var(--ink); font-size: 16px; user-select: text; -webkit-user-select: text; }
 .search-bar input::placeholder { color: var(--muted); }
 .results { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; touch-action: pan-y; }
-.res { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 0 16px; border: none; border-radius: 14px; background: var(--panel-2); color: var(--ink); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; }
+.res { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; padding: 0 16px 0 10px; border: none; border-radius: 14px; background: var(--panel-2); color: var(--ink); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; }
+.res .ini { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; overflow: hidden; background: var(--line); color: var(--ink); font-size: 16px; font-weight: 700; }
+.res .ini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.res .rn { flex: 1; min-width: 0; font-size: 17px; }
 .res small { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
 .empty { color: var(--ink-2); font-size: 15px; padding: 8px 4px; }
 
@@ -375,6 +378,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .hintpill[hidden] { display: none; }
 .speedmeter { position: absolute; left: 10px; top: 70px; z-index: 950; background: rgba(0, 0, 0, 0.72); color: #9effc0; font: 600 12px/1.35 ui-monospace, monospace; padding: 6px 9px; border-radius: 8px; pointer-events: none; white-space: pre; }
 .speedmeter[hidden] { display: none; }
+.updatebar { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 960; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 22px; background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--ink); font-size: 14px; font-weight: 500; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45); white-space: nowrap; }
+.updatebar[hidden] { display: none; }
+.updatebar button { min-height: 36px; padding: 0 16px; border: none; border-radius: 18px; background: var(--sun); color: var(--sun-ink); font-weight: 700; font-size: 14px; cursor: pointer; }
+#app.watch ~ .updatebar, #app.watch .updatebar { opacity: 0; pointer-events: none; }
 .hintpill .arr { display: inline-block; animation: nudge 1.2s ease-in-out infinite; }
 .hintpill .arr.r { animation-direction: reverse; }
 @keyframes hintIn { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
@@ -473,6 +480,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   <div id="watchCatch" class="watchcatch" hidden></div>
   <div id="hint" class="hintpill" role="status" hidden></div>
   <div id="speedMeter" class="speedmeter" aria-live="off" hidden></div>
+  <div id="updateBar" class="updatebar" role="status" hidden><span>New version ready</span><button type="button" id="updateBtn">Update</button></div>
   <div id="camera" class="camera" hidden>
     <div class="cam-bar">
       <button type="button" class="back" id="camBack" aria-label="Back" data-autofocus>
@@ -1306,6 +1314,18 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   // moonlight washes out faint stars: 0 at new moon ... 1 at full moon (only with the real phase)
   function moonFrSky() { return S.moonPhase === 'real' ? moonNow().fraction : 0; }
+  // v60: moonrise and moonset for one day (10-minute steps, then in between; null when it does not rise or set that day)
+  function moonRiseSet(day) {
+    const d0 = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime(), h0 = 0.125;
+    let rise = null, set = null, prev = moonAltAz(new Date(d0)).alt - h0;
+    for (let m = 10; m <= 1440; m += 10) {
+      const a = moonAltAz(new Date(d0 + m * 60000)).alt - h0;
+      if (prev < 0 && a >= 0 && rise == null) rise = (m - 10 + 10 * (-prev / (a - prev))) / 60;
+      if (prev >= 0 && a < 0 && set == null) set = (m - 10 + 10 * (prev / (prev - a))) / 60;
+      prev = a;
+    }
+    return { rise: rise, set: set };
+  }
   function moonPhaseName(p) {
     return p < 0.03 || p > 0.97 ? 'new moon' : p < 0.22 ? 'waxing crescent' : p < 0.28 ? 'first quarter' : p < 0.47 ? 'waxing gibbous'
       : p < 0.53 ? 'full moon' : p < 0.72 ? 'waning gibbous' : p < 0.78 ? 'last quarter' : 'waning crescent';
@@ -3781,7 +3801,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     T(hm, H * 0.2, Math.round(96 * k), 200, '#F5EFE3');
     // chips (v36): bigger, with drawn icons (sunrise, sunset, the moon in its real phase)
     const sn = sunToday(), mn = moonNow();
-    const chips = [['rise', fmtHour(sn.rise)], ['set', fmtHour(sn.set)], ['moon', Math.round(mn.fraction * 100) + ' %']];
+    // v60: in the last hour before sunrise or sunset the chip counts down ("in 25 min")
+    const nowH = d.getHours() + d.getMinutes() / 60, soon = (h) => { const m = Math.ceil((h - nowH) * 60); return m > 0 && m <= 60 ? 'in ' + m + ' min' : fmtHour(h); };
+    const chips = [['rise', soon(sn.rise)], ['set', soon(sn.set)], ['moon', Math.round(mn.fraction * 100) + ' %']];
     c.font = '600 14px ' + font;
     const ws = chips.map((s) => c.measureText(s[1]).width + 52), gap = 10, total = ws.reduce((a, b) => a + b, 0) + gap * 2;
     let x = (W - total) / 2; const y = H * 0.3;
@@ -3803,6 +3825,19 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       c.fillStyle = 'rgba(244, 246, 250, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(s[1], x + 36, y);
       x += ws[i] + gap;
     });
+  }
+  // v60: tap the moon on the Earth = a small card (phase, light, rise and set, next full moon) with a way to the Moon menu
+  function moonCard() {
+    const mn = moonNow(), today = new Date(), rs = moonRiseSet(today), ev = moonEvents();
+    const fullD = ev.full || new Date(today.getTime() + Math.round(((0.5 - mn.phase + 1) % 1) * 29.53) * 86400000);
+    const name = moonPhaseName(mn.phase), t = (h) => h == null ? 'not today' : fmtHour(h);
+    // the next moonset: today's when it is still to come, else tomorrow's
+    const nowH = today.getHours() + today.getMinutes() / 60, setT = rs.set != null && rs.set > nowH ? fmtHour(rs.set)
+      : (() => { const n = moonRiseSet(new Date(today.getTime() + 86400000)).set; return n == null ? 'not today' : fmtHour(n) + ' tomorrow'; })();
+    const full = sameDay(fullD, today) ? 'today' : DAYS_LONG[fullD.getDay()] + ' ' + fullD.getDate() + ' ' + MONTHS[fullD.getMonth()];
+    openSheet(name.charAt(0).toUpperCase() + name.slice(1), Math.round(mn.fraction * 100) + ' % lit' + inCity(' · seen from ') + '\nMoonrise ' + t(rs.rise) + ' · Moonset ' + setT + '\nNext full moon: ' + full, '', false,
+      [{ label: 'Open the Moon menu', run: () => { setCalm(false); hidePlanet(); if (S.mode === 'two') goMoon(); } }]);
+    $('sheetText').style.whiteSpace = 'pre-line';
   }
   // 3 (v36): tap Vienna on the Earth (or the moon in the sky) for a short card
   let planetSpot = null, planetMoon = null, planetSun = null;
@@ -4093,7 +4128,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         if (tn - lastClockTap < 380) { setCalm(!planet.calm, false); hapt('press'); lastClockTap = 0; } else lastClockTap = tn;
       }
       // a tap on Vienna opens the Vienna card (v36); a tap on the moon in the sky opens the moon menu (v38, user)
-      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetMoon && Math.hypot(tx - planetMoon.x, ty - planetMoon.y) < 44) { hapt('press'); setCalm(false); hidePlanet(); if (S.mode === 'two') goMoon(); }
+      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetMoon && Math.hypot(tx - planetMoon.x, ty - planetMoon.y) < 44) { hapt('press'); moonCard(); }
       else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSun && Math.hypot(tx - planetSun.x, ty - planetSun.y) < 44) { hapt('press'); setCalm(false); hidePlanet(); goSun(); }
       else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSpot && Math.hypot(tx - planetSpot.x, ty - planetSpot.y) < 44) { hapt('press'); viennaCard(); }
       // v53: double-tap the empty sky or Earth = Watch (the clock keeps its own double-tap for the night clock)
@@ -4344,6 +4379,21 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     lastSkyTap = { t: now, x: e.clientX, y: e.clientY };
   }));
 
+  // v60: "New version ready · Update". sw.js activates a new version at once; when it takes over this page (and an
+  // older one ran before), the bar shows. The app also asks for a new version when it comes back to the front
+  // (at most every 30 min).
+  if ('serviceWorker' in navigator) {
+    const hadSW = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadSW) $('updateBar').hidden = false; });
+    let swAsked = Date.now();
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden || Date.now() - swAsked < 30 * 60000) return;
+      swAsked = Date.now();
+      navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {});
+    });
+  }
+  $('updateBtn').addEventListener('click', () => { hapt('press'); location.reload(); });
+
   /* ---------- One-time hints (v46): each at most twice, never over the front app; Settings > More > Tips ---------- */
   let hintsDone = {}, hintT = 0;
   function showHint(key, html, x, y) {
@@ -4583,9 +4633,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'res';
-      const s1 = document.createElement('span'); s1.textContent = r.name;
+      // v60: the app's round icon (its picture or first letter); functions get a small moon
+      const ini = document.createElement('span'); ini.className = 'ini'; ini.setAttribute('aria-hidden', 'true');
+      if (ICONS[r.name]) { const im = document.createElement('img'); im.src = ICONS[r.name]; im.alt = ''; ini.appendChild(im); }
+      else ini.textContent = BY[r.name] ? r.name.charAt(0) : '☾';
+      const s1 = document.createElement('span'); s1.className = 'rn'; s1.textContent = r.name;
       const s2 = document.createElement('small'); s2.textContent = r.where;
-      b.appendChild(s1); b.appendChild(s2);
+      b.appendChild(ini); b.appendChild(s1); b.appendChild(s2);
       b.addEventListener('click', () => openResult(r.name));
       box.appendChild(b);
     });
