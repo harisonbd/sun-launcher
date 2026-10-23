@@ -378,11 +378,16 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .hintpill[hidden] { display: none; }
 .speedmeter { position: absolute; left: 10px; top: 70px; z-index: 950; background: rgba(0, 0, 0, 0.72); color: #9effc0; font: 600 12px/1.35 ui-monospace, monospace; padding: 6px 9px; border-radius: 8px; pointer-events: none; white-space: pre; }
 .speedmeter[hidden] { display: none; }
-.updatebar { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 960; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 22px; background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--ink); font-size: 14px; font-weight: 500; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45); white-space: nowrap; }
+.updatebar { position: absolute; left: 50%; bottom: 190px; transform: translateX(-50%); z-index: 960; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 22px; background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--ink); font-size: 14px; font-weight: 500; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45); white-space: nowrap; }
 .updatebar[hidden] { display: none; }
+.updatebar .ux { min-height: 36px; min-width: 36px; padding: 0; background: transparent; color: var(--ink-2); font-weight: 500; }
+#app:has(.overlay:not([hidden])) .updatebar { display: none; }
 /* v61: Text size (Moon menu > Look). Panels and texts scale; the drawn clock, dial and chips stay as they are */
-#app.ts-large .sheet, #app.ts-large .search-panel, #app.ts-large .le-panel, #app.ts-large .info, #app.ts-large .vstrip, #app.ts-large .toast { zoom: 1.15; }
-#app.ts-small .sheet, #app.ts-small .search-panel, #app.ts-small .le-panel, #app.ts-small .info, #app.ts-small .vstrip, #app.ts-small .toast { zoom: 0.9; }
+#app.ts-large .sheet, #app.ts-large .search-panel, #app.ts-large .le-panel, #app.ts-large .vstrip, #app.ts-large .toast { zoom: 1.15; }
+#app.ts-small .sheet, #app.ts-small .search-panel, #app.ts-small .le-panel, #app.ts-small .vstrip, #app.ts-small .toast { zoom: 0.9; }
+/* v63: .info is placed in pixels by the code, so it gets bigger letters, not zoom (zoom also moved it) */
+#app.ts-large .info .name { font-size: 34px; } #app.ts-large .info .hint { font-size: 17px; } #app.ts-large .info .tip, #app.ts-large .info .clock { font-size: 15px; }
+#app.ts-small .info .name { font-size: 27px; } #app.ts-small .info .hint { font-size: 13.5px; } #app.ts-small .info .tip, #app.ts-small .info .clock { font-size: 12px; }
 fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 @keyframes flash { 0%, 40% { box-shadow: 0 0 0 2px var(--sun); } 100% { box-shadow: 0 0 0 2px transparent; } }
 .updatebar button { min-height: 36px; padding: 0 16px; border: none; border-radius: 18px; background: var(--sun); color: var(--sun-ink); font-weight: 700; font-size: 14px; cursor: pointer; }
@@ -485,7 +490,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   <div id="watchCatch" class="watchcatch" hidden></div>
   <div id="hint" class="hintpill" role="status" hidden></div>
   <div id="speedMeter" class="speedmeter" aria-live="off" hidden></div>
-  <div id="updateBar" class="updatebar" role="status" hidden><span>New version ready</span><button type="button" id="updateBtn">Update</button></div>
+  <div id="updateBar" class="updatebar" role="status" hidden><span>New version ready</span><button type="button" id="updateBtn">Update</button><button type="button" id="updateX" class="ux" aria-label="Close the update note">✕</button></div>
   <div id="camera" class="camera" hidden>
     <div class="cam-bar">
       <button type="button" class="back" id="camBack" aria-label="Back" data-autofocus>
@@ -862,7 +867,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v62';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v63';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -880,7 +885,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     { name: 'Timer', hint: 'Example app: countdown and stopwatch', href: '', short: ['5-minute timer', 'Stopwatch'] },
     { name: 'Translator', hint: 'Example app: text and camera translation', href: '', short: ['Translate text', 'Translate with the camera'] }
   ];
-  const BY = {};
+  const BY = Object.create(null);  // v63: no inherited names (a backup with "constructor" is not an app)
   BASE_APPS.forEach((a) => { BY[a.name] = a; });
   const FUNCS = [
     { name: 'Data', items: ['Backup & restore', 'Export all', 'Import', 'Sync', 'Storage', 'Clear cache'] },
@@ -1328,8 +1333,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     let rise = null, set = null, prev = moonAltAz(new Date(d0)).alt - h0;
     for (let m = 10; m <= 1440; m += 10) {
       const a = moonAltAz(new Date(d0 + m * 60000)).alt - h0;
-      if (prev < 0 && a >= 0 && rise == null) rise = (m - 10 + 10 * (-prev / (a - prev))) / 60;
-      if (prev >= 0 && a < 0 && set == null) set = (m - 10 + 10 * (prev / (prev - a))) / 60;
+      const at = (f) => { const t = new Date(d0 + (m - 10 + 10 * f) * 60000); return t.getHours() + t.getMinutes() / 60; };  // v63: clock time
+      if (prev < 0 && a >= 0 && rise == null) rise = at(-prev / (a - prev));
+      if (prev >= 0 && a < 0 && set == null) set = at(prev / (prev - a));
       prev = a;
     }
     return { rise: rise, set: set };
@@ -3661,7 +3667,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     };
     b.addEventListener('chargingchange', () => chargeCheck()); chargeCheck();
   }).catch(() => {});
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && planet.calm) keepAwake(true); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) return; chargeCheck(); if (planet.calm) keepAwake(true); });  // v63: unplugged while away
   // 7 (v37): the northern lights band (auroral oval) seen from space: green glow around the north, only on the night
   // side. NOAA's Kp for today makes it brighter and pushes it further south (about 2.5° per Kp step above 3).
   // v53 (battery): the band is drawn into a cached picture, redrawn every 0.5 s or when the Earth turned 0.3°
@@ -3847,7 +3853,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const name = moonPhaseName(mn.phase), t = (h) => h == null ? 'not today' : fmtHour(h);
     // the next moonset: today's when it is still to come, else tomorrow's
     const nowH = today.getHours() + today.getMinutes() / 60, setT = rs.set != null && rs.set > nowH ? fmtHour(rs.set)
-      : (() => { const n = moonRiseSet(new Date(today.getTime() + 86400000)).set; return n == null ? 'not today' : fmtHour(n) + ' tomorrow'; })();
+      : (() => { const n = moonRiseSet(new Date(today.getTime() + 86400000)).set; return n == null ? 'none tomorrow' : fmtHour(n) + ' tomorrow'; })();
     const full = sameDay(fullD, today) ? 'today' : DAYS_LONG[fullD.getDay()] + ' ' + fullD.getDate() + ' ' + MONTHS[fullD.getMonth()];
     openSheet(name.charAt(0).toUpperCase() + name.slice(1), Math.round(mn.fraction * 100) + ' % lit' + inCity(' · seen from ') + '\nMoonrise ' + t(rs.rise) + ' · Moonset ' + setT + '\nNext full moon: ' + full, '', false,
       [{ label: 'Open the Moon menu', run: () => { setCalm(false); hidePlanet(); if (S.mode === 'two') goMoon(); } }]);
@@ -4397,8 +4403,15 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   // older one ran before), the bar shows. The app also asks for a new version when it comes back to the front
   // (at most every 30 min).
   if ('serviceWorker' in navigator) {
-    const hadSW = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadSW) $('updateBar').hidden = false; });
+    // v63: the page asks the offline part for its version; the note shows only when that one is newer than this page
+    // (a new sw.js can take over a page that already came new from the network)
+    const vnum = (v) => parseInt(String(v).replace(/\D+/g, ''), 10) || 0;
+    const askVersion = () => { const c = navigator.serviceWorker.controller; if (c) c.postMessage('version'); };
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data && e.data.version && vnum(e.data.version) > vnum(APP_VERSION) && !updateClosed) $('updateBar').hidden = false;
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', askVersion);
+    askVersion();
     let swAsked = Date.now();
     document.addEventListener('visibilitychange', () => {
       if (document.hidden || Date.now() - swAsked < 30 * 60000) return;
@@ -4406,7 +4419,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {});
     });
   }
+  let updateClosed = false;
   $('updateBtn').addEventListener('click', () => { hapt('press'); location.reload(); });
+  $('updateX').addEventListener('click', () => { updateClosed = true; $('updateBar').hidden = true; });
 
   /* ---------- One-time hints (v46): each at most twice, never over the front app; Settings > More > Tips ---------- */
   let hintsDone = {}, hintT = 0;
@@ -4574,8 +4589,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       if (!lg) return;
       const fs = lg.closest('fieldset'), dt = fs.closest('details'), sh = $('settings').querySelector('.sheet');
       if (dt) dt.open = true;
-      // scroll only the sheet (scrollIntoView would also scroll #app, see Traps)
-      sh.scrollTop += fs.getBoundingClientRect().top - sh.getBoundingClientRect().top - 12;
+      // v63: scrollIntoView is right with any text size; it also scrolls #app (see Traps), so #app goes back to 0
+      fs.scrollIntoView({ block: 'start' }); app.scrollTop = 0; sh.scrollTop = Math.max(0, sh.scrollTop - 12);
       fs.classList.remove('flash'); void fs.offsetWidth; fs.classList.add('flash');
       setTimeout(() => fs.classList.remove('flash'), 1700);
     }, 120);
@@ -4596,23 +4611,34 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const d = JSON.parse(t), src = d && d.app === 'sun-launcher' && d.settings;
       if (!src || typeof src !== 'object') throw new Error('not a backup');
       let n = 0;
+      const plain = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
+      const nums = (o) => plain(o) && Object.keys(o).every((x) => typeof o[x] === 'number' && isFinite(o[x]));
       Object.keys(S).forEach((k) => {
-        if (!(k in src) || src[k] === null && S[k] !== null) return;
-        if (Array.isArray(S[k]) !== Array.isArray(src[k]) || (S[k] !== null && typeof S[k] !== typeof src[k])) return;
-        S[k] = src[k]; n++;
+        if (!(k in src)) return;
+        const v = src[k];
+        // v63: the settings that start empty (null) take only the right shape; the rest must match the type
+        if (k === 'custom') { if (v === null || nums(v)) { S[k] = v; n++; } return; }
+        if (k === 'place') { if (v === null || (plain(v) && isFinite(v.lat) && isFinite(v.lon) && typeof v.lat === 'number' && typeof v.lon === 'number')) { S[k] = v ? { lat: v.lat, lon: v.lon, city: typeof v.city === 'string' ? v.city : '' } : null; n++; } return; }
+        if (k === 'useHours') { if (plain(v)) { const u = {}; Object.keys(v).forEach((a) => { if (Array.isArray(v[a]) && v[a].length === 24 && v[a].every((x) => typeof x === 'number' && isFinite(x))) u[a] = v[a]; }); S[k] = u; n++; } return; }
+        if (k === 'looks') { if (plain(v) && Array.isArray(v.sun) && Array.isArray(v.moon)) { S[k] = { sun: v.sun.filter(plain).slice(0, 5), moon: v.moon.filter(plain).slice(0, 5) }; n++; } return; }
+        if (k === 'tune') { if (plain(v) && Object.keys(v).every((x) => nums(v[x]))) { S[k] = v; n++; } return; }
+        if (v === null || Array.isArray(S[k]) !== Array.isArray(v) || (S[k] !== null && typeof S[k] !== typeof v)) return;
+        if (Array.isArray(v) && !v.every((x) => typeof x === 'string')) return;
+        if (typeof v === 'number' && !isFinite(v)) return;
+        S[k] = v; n++;
       });
       save(); toast('Backup loaded (' + n + ' settings). Restarting…'); setTimeout(() => location.reload(), 900);
     }).catch(() => toast('This file is not a Sun Launcher backup.'));
   });
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v62 · Turning Charging mode off or on works at once.\nv61 ·The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
     'Accent colour': () => openSettingsAt('Sun colour'),
     'Wallpaper': () => openSettingsAt('Sky'),
-    'Icons': () => openSettingsAt('Screen'),
+    'Icons': () => sheetInfo('Icons', 'Each app brings its own icon (or its first letter). How the screens look is in Settings > Screen.', [{ label: 'Open Screen settings', run: () => openSettingsAt('Screen') }]),
     'Sounds': () => openSettingsAt('Sound'),
     'Text size': () => sheetInfo('Text size', 'For menus, Settings, Search and the names on the screens. Now: ' + S.textSize + '.',
       ['small', 'normal', 'large'].map((v) => ({ label: v.charAt(0).toUpperCase() + v.slice(1) + (v === S.textSize ? '  ✓' : ''), run: () => { S.textSize = v; save(); applyTextSize(); toast('Text size: ' + v + '.'); } }))),
@@ -4640,7 +4666,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     'Privacy': () => sheetInfo('Privacy', 'Your settings, looks and app list stay on this phone.\nOnly these leave it: the weather request to Open-Meteo (with GPS: your place rounded to about 10 km; fixed city: that city) and the solar activity data from NOAA (nothing about you).\nNo accounts, no tracking, no ads.'),
     'Permissions': () => {
       const q = (n) => navigator.permissions && navigator.permissions.query ? navigator.permissions.query({ name: n }).then((r) => r.state).catch(() => 'unknown') : Promise.resolve('unknown');
-      Promise.all([q('geolocation'), q('camera')]).then(([g, cam]) => sheetInfo('Permissions', 'Location: ' + g + (S.loc === 'gps' ? ' (used: Location is set to GPS)' : ' (not used: fixed city)') + '\nCamera: ' + cam + ' (only when you take a photo for an app)\nChange them in the browser: site settings.'));
+      q('geolocation').then((g) => sheetInfo('Permissions', 'Location: ' + g + (S.loc === 'gps' ? ' (used: Location is set to GPS)' : ' (not used: fixed city)') + '\nCamera: not needed. A photo opens your phone\'s own camera.\nChange permissions in the browser: site settings.'));
     },
     'Clear history': () => sheetInfo('Clear history', 'Forget your recent apps and when you use each app (the dial uses this to put the right app in front).',
       [{ label: 'Clear history', run: () => { S.recent = []; S.useHours = {}; save(); toast('History cleared.'); } }]),
@@ -4653,7 +4679,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     'Feedback': () => sheetInfo('Feedback', 'There is no server to send feedback to. Tell me (Claude) in our chat, with a screenshot.'),
     // Phone
     'Location': () => openSettingsAt('Location'),
-    'Battery saver': () => openSettingsAt('Charging mode'),
+    'Battery saver': () => openSettingsAt('Effects'),  // v63: fewer effects = less battery (Charging mode keeps the screen on)
     'Camera access': () => openCamera(),
     'Shortcuts': () => sheetInfo('Shortcuts', 'Hold an app on the sun for its quick actions. In Edit dial you can pin up to 5 apps to the bar.'),
     'Language': () => sheetInfo('Language', 'English only for now.'),
@@ -4754,7 +4780,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     });
     // v39: when only one result matches, it opens after a short pause (typing more cancels it)
     clearTimeout(soloT);
-    if (q && hits.length === 1) soloT = setTimeout(() => openResult(hits[0].name), 600);
+    if (q && hits.length === 1 && BY[hits[0].name]) soloT = setTimeout(() => openResult(hits[0].name), 600);  // v63: apps only
     firstHit = hits[0] ? hits[0].name : '';
   }
   let soloT = 0, firstHit = '';
