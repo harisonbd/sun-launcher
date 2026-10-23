@@ -380,6 +380,11 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .speedmeter[hidden] { display: none; }
 .updatebar { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 960; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 22px; background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--ink); font-size: 14px; font-weight: 500; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45); white-space: nowrap; }
 .updatebar[hidden] { display: none; }
+/* v61: Text size (Moon menu > Look). Panels and texts scale; the drawn clock, dial and chips stay as they are */
+#app.ts-large .sheet, #app.ts-large .search-panel, #app.ts-large .le-panel, #app.ts-large .info, #app.ts-large .vstrip, #app.ts-large .toast { zoom: 1.15; }
+#app.ts-small .sheet, #app.ts-small .search-panel, #app.ts-small .le-panel, #app.ts-small .info, #app.ts-small .vstrip, #app.ts-small .toast { zoom: 0.9; }
+fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
+@keyframes flash { 0%, 40% { box-shadow: 0 0 0 2px var(--sun); } 100% { box-shadow: 0 0 0 2px transparent; } }
 .updatebar button { min-height: 36px; padding: 0 16px; border: none; border-radius: 18px; background: var(--sun); color: var(--sun-ink); font-weight: 700; font-size: 14px; cursor: pointer; }
 #app.watch ~ .updatebar, #app.watch .updatebar { opacity: 0; pointer-events: none; }
 .hintpill .arr { display: inline-block; animation: nudge 1.2s ease-in-out infinite; }
@@ -494,7 +499,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       <div id="camEmpty" class="cam-empty">Tap the button below. Your phone camera opens.</div>
     </div>
     <button type="button" class="shutter" id="shutter" aria-label="Take a photo"><span></span></button>
-    <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+    <input type="file" id="importInput" accept=".json,application/json" hidden>
+      <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
     <div class="cam-hint">Take a photo, then pick an app</div>
   </div>
 
@@ -856,6 +862,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  const APP_VERSION = 'v61';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -898,7 +905,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal' };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -918,6 +925,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   if (['flat', 'diagonal', 'custom'].indexOf(S.dir) === -1) S.dir = 'flat';  // v46: Sideways and Rolodex left Settings (the look editor tilts and turns)
   S.favs = (S.favs || []).filter((n) => typeof n === 'string').slice(0, 5);
+  if (['small', 'normal', 'large'].indexOf(S.textSize) === -1) S.textSize = 'normal';
   S.visits = (S.visits || 0) + 1;
   let showTips = S.visits <= 3 && S.tips === 'on';
   // 23 Oct: Rolodex moon removed (user); Real moon phase and Minimal moon added from the early mockups.
@@ -4551,8 +4559,103 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       run: () => { pushRecent(a.name); toast(a.name + ': ' + t + ' (example)'); }
     })));
   }
+  // v61: the Moon menu functions (user): Look opens the right part of Settings, Data saves / loads / cleans,
+  // Safety and Info explain, Phone opens its setting. Things a web app cannot do say so in one line.
+  function openSettingsAt(legend) {
+    openSettings();
+    setTimeout(() => {
+      const lg = Array.prototype.find.call(document.querySelectorAll('#settings legend'), (l) => l.textContent.indexOf(legend) === 0 && !l.closest('#oldPickers'));
+      if (!lg) return;
+      const fs = lg.closest('fieldset'), dt = fs.closest('details'), sh = $('settings').querySelector('.sheet');
+      if (dt) dt.open = true;
+      // scroll only the sheet (scrollIntoView would also scroll #app, see Traps)
+      sh.scrollTop += fs.getBoundingClientRect().top - sh.getBoundingClientRect().top - 12;
+      fs.classList.remove('flash'); void fs.offsetWidth; fs.classList.add('flash');
+      setTimeout(() => fs.classList.remove('flash'), 1700);
+    }, 120);
+  }
+  function applyTextSize() { app.classList.toggle('ts-large', S.textSize === 'large'); app.classList.toggle('ts-small', S.textSize === 'small'); }
+  function saveBackup() {
+    const data = { app: 'sun-launcher', version: APP_VERSION, saved: new Date().toISOString(), settings: S };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'sun-launcher-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast('Backup saved to your Downloads.');
+  }
+  // load a backup: only known settings of the same kind are taken; anything else in the file is ignored
+  $('importInput').addEventListener('change', function () {
+    const f = this.files && this.files[0]; this.value = '';
+    if (!f) return;
+    f.text().then((t) => {
+      const d = JSON.parse(t), src = d && d.app === 'sun-launcher' && d.settings;
+      if (!src || typeof src !== 'object') throw new Error('not a backup');
+      let n = 0;
+      Object.keys(S).forEach((k) => {
+        if (!(k in src) || src[k] === null && S[k] !== null) return;
+        if (Array.isArray(S[k]) !== Array.isArray(src[k]) || (S[k] !== null && typeof S[k] !== typeof src[k])) return;
+        S[k] = src[k]; n++;
+      });
+      save(); toast('Backup loaded (' + n + ' settings). Restarting…'); setTimeout(() => location.reload(), 900);
+    }).catch(() => toast('This file is not a Sun Launcher backup.'));
+  });
+  function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
+  function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
+  const NEWS = 'v61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const FUNC_RUN = {
+    // Look
+    'Theme': () => openSettingsAt('Look follows the time of day'),
+    'Accent colour': () => openSettingsAt('Sun colour'),
+    'Wallpaper': () => openSettingsAt('Sky'),
+    'Icons': () => openSettingsAt('Screen'),
+    'Sounds': () => openSettingsAt('Sound'),
+    'Text size': () => sheetInfo('Text size', 'For menus, Settings, Search and the names on the screens. Now: ' + S.textSize + '.',
+      ['small', 'normal', 'large'].map((v) => ({ label: v.charAt(0).toUpperCase() + v.slice(1) + (v === S.textSize ? '  ✓' : ''), run: () => { S.textSize = v; save(); applyTextSize(); toast('Text size: ' + v + '.'); } }))),
+    // Data
+    'Backup & restore': () => sheetInfo('Backup & restore', 'Save all your settings and looks to a file, or load such a file (for example on a new phone).',
+      [{ label: 'Save a backup file', run: saveBackup }, { label: 'Load a backup file', run: () => $('importInput').click() }]),
+    'Export all': () => saveBackup(),
+    'Import': () => $('importInput').click(),
+    'Storage': () => {
+      const ls = (localStorage.getItem(KEY) || '').length;
+      (navigator.storage && navigator.storage.estimate ? navigator.storage.estimate() : Promise.resolve({})).then((e) =>
+        (window.caches ? caches.keys() : Promise.resolve([])).then((keys) => sheetInfo('Storage',
+          'This app keeps ' + (e.usage != null ? mb(e.usage) : 'an unknown amount') + ' on this phone' + (e.quota ? ' (room for ' + mb(e.quota) + ')' : '') + '.\n'
+          + 'Saved for offline use: ' + keys.filter((k) => k.indexOf('sun-launcher-') === 0).length + ' stores (app, pictures).\nYour settings: ' + (ls / 1024).toFixed(1) + ' KB.')));
+    },
+    'Clear cache': () => sheetInfo('Clear cache', 'Deletes the saved pictures (sun, moon, Earth, sky photos). They download again when shown, up to about 12 MB: best on Wi-Fi. Your settings stay.',
+      [{ label: 'Delete saved pictures', run: () => (window.caches ? caches.keys() : Promise.resolve([])).then((keys) => Promise.all(keys.filter((k) => k.indexOf('sun-launcher-media') === 0).map((k) => caches.delete(k)))).then(() => toast('Saved pictures deleted.')) }]),
+    'Sync': () => sheetInfo('Sync', 'Sync between phones needs an account and a server, which this app does not have (nothing about you leaves the phone). Use Backup & restore to move your settings.'),
+    // Safety
+    'Offline status': () => (window.caches ? caches.keys() : Promise.resolve([])).then((keys) => sheetInfo('Offline status',
+      (navigator.onLine ? 'Online now.' : 'Offline now.') + '\n' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'The app is saved on this phone and opens without internet.' : 'The app is not saved for offline use yet (open it once more while online).')
+      + '\n' + (keys.some((k) => k.indexOf('sun-launcher-media') === 0) ? 'Pictures are saved.' : 'No pictures saved yet.') + '\nWithout internet: no weather and no new solar data; everything else works.')),
+    'Updates': () => sheetInfo('Updates', 'You have Sun Launcher ' + APP_VERSION + '. New versions load by themselves; a "New version ready" note then asks you to tap Update.',
+      [{ label: 'Check now', run: () => { if (!navigator.serviceWorker) { toast('Updates need the installed app.'); return; } navigator.serviceWorker.getRegistration().then((r) => r ? r.update() : null).then(() => toast('Checked. If there is a new version, the Update note shows in a moment.')).catch(() => toast('Could not check now (offline?).')); } }]),
+    'Privacy': () => sheetInfo('Privacy', 'Your settings, looks and app list stay on this phone.\nOnly these leave it: the weather request to Open-Meteo (with GPS: your place rounded to about 10 km; fixed city: that city) and the solar activity data from NOAA (nothing about you).\nNo accounts, no tracking, no ads.'),
+    'Permissions': () => {
+      const q = (n) => navigator.permissions && navigator.permissions.query ? navigator.permissions.query({ name: n }).then((r) => r.state).catch(() => 'unknown') : Promise.resolve('unknown');
+      Promise.all([q('geolocation'), q('camera')]).then(([g, cam]) => sheetInfo('Permissions', 'Location: ' + g + (S.loc === 'gps' ? ' (used: Location is set to GPS)' : ' (not used: fixed city)') + '\nCamera: ' + cam + ' (only when you take a photo for an app)\nChange them in the browser: site settings.'));
+    },
+    'Clear history': () => sheetInfo('Clear history', 'Forget your recent apps and when you use each app (the dial uses this to put the right app in front).',
+      [{ label: 'Clear history', run: () => { S.recent = []; S.useHours = {}; save(); toast('History cleared.'); } }]),
+    'App lock': () => sheetInfo('App lock', 'A web app cannot lock itself safely. Use your phone\'s screen lock; with the Android version later this can come back.'),
+    // Info
+    'Help': () => { $('tipsAgain').click(); sheetInfo('Help', 'All tips show again as you use the app.\nSwipe up and down: Sun and Moon. Swipe down on the Sun: the Earth. Hold the sun or moon: edit its look. Bottom slider: change the screen. Eye: Watch.'); },
+    'Tutorial': () => { $('tipsAgain').click(); toast('All tips show again.'); },
+    'What is new': () => sheetInfo('What is new', NEWS),
+    'About': () => sheetInfo('About', 'Sun Launcher ' + APP_VERSION + '\nA home screen for your apps, by the sun, the moon and the Earth.\nMaps and data: NASA, ESA, Solar System Scope, Open-Meteo, NOAA, GeoNames (see Licences).'),
+    'Feedback': () => sheetInfo('Feedback', 'There is no server to send feedback to. Tell me (Claude) in our chat, with a screenshot.'),
+    // Phone
+    'Location': () => openSettingsAt('Location'),
+    'Battery saver': () => openSettingsAt('Charging mode'),
+    'Camera access': () => openCamera(),
+    'Shortcuts': () => sheetInfo('Shortcuts', 'Hold an app on the sun for its quick actions. In Edit dial you can pin up to 5 apps to the bar.'),
+    'Language': () => sheetInfo('Language', 'English only for now.'),
+    'Notifications': () => sheetInfo('Notifications', 'Brave on Android limits notifications from web apps. They can come with the Android version later.')
+  };
   function openItem(it) {
     if (it.app) { openApp(BY[it.name]); return; }
+    if (FUNC_RUN[it.name]) { FUNC_RUN[it.name](); return; }
     if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. City names: GeoNames (geonames.org), CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain.', '', false); return; }
     openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
   }
@@ -5134,6 +5237,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   if (S.mode === 'two' && nightness(phaseNow()) > 0.5) st.screen = 'moon';
   if (wantScreen === 'sun' || (wantScreen === 'moon' && S.mode === 'two')) st.screen = wantScreen;
   applyMode();
+  applyTextSize();  // v61
   if (st.screen === 'moon') {
     worlds.classList.add('dragging'); worlds.style.transform = 'translateY(-50%)'; requestAnimationFrame(() => worlds.classList.remove('dragging'));
     if (S.mode === 'two') pushLayer('moon');
