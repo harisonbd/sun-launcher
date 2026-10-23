@@ -2,10 +2,10 @@
 // because Docs Reader and Scanner share this web address (harisonbd.github.io).
 // v42: two caches. CACHE (app code, new each version, ~0.3 MB) and MEDIA (photos and maps, kept across
 // versions so an update does not download them again). Change MEDIA only when a picture's content changes.
-const CACHE = 'sun-launcher-v58';
+const CACHE = 'sun-launcher-v59';
 const MEDIA = 'sun-launcher-media-1';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
-const PICS = ['./tex-sun.jpg', './tex-sun-4k.jpg', './tex-moon.jpg', './sky-sunset.jpg', './sky-dawn.jpg', './sky-day.jpg', './sky-bluehour.jpg', './sky-night.jpg', './sky-overcast.jpg', './sky-rain.jpg', './sky-snow.jpg', './sky-snow-night.jpg', './sky-fog.jpg', './sky-storm.jpg', './stars-4k.jpg', './saturn.jpg', './saturn-ring.png', './earth-day.jpg', './earth-night.jpg', './earth-clouds.jpg'];
+const PICS = ['./tex-sun.jpg', './tex-moon.jpg', './sky-sunset.jpg', './sky-dawn.jpg', './sky-day.jpg', './sky-bluehour.jpg', './sky-night.jpg', './sky-overcast.jpg', './sky-rain.jpg', './sky-snow.jpg', './sky-snow-night.jpg', './sky-fog.jpg', './sky-storm.jpg', './saturn.jpg', './saturn-ring.png', './earth-day.jpg', './earth-night.jpg', './earth-clouds.jpg'];
 self.addEventListener('install', (e) => {
   e.waitUntil(Promise.all([
     caches.open(CACHE).then((c) => c.addAll(FILES)),
@@ -29,7 +29,13 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   // extra pictures (photo of the day, 4k sun, 8k Earth) and the city list (v47): saved in MEDIA the first time they are shown
-  const extra = /\/((sky-[a-z]+-\d|tex-sun-4k|earth-day-8k|pv-[a-z0-9-]+)\.jpg|cities\.json)$/.test(new URL(req.url).pathname);  // v48: pv- = Settings pictures
+  const path = new URL(req.url).pathname;
+  const extra = /\/((sky-[a-z]+-\d|tex-sun-4k|stars-4k|earth-day-8k)\.jpg|cities\.json)$/.test(path);
+  // v59: Settings pictures (pv-) are kept with each version, so a remade picture reaches the phone (MEDIA kept old ones)
+  if (/\/pv-[a-z0-9-]+\.jpg$/.test(path)) {
+    e.respondWith(caches.open(CACHE).then((c) => c.match(req).then((hit) => hit || fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; }))));
+    return;
+  }
   e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => {
     if (extra && res.ok) { const copy = res.clone(); caches.open(MEDIA).then((c) => c.put(req, copy)); }
     return res;

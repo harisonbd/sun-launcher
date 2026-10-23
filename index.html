@@ -427,8 +427,8 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         <span>Edit dial</span>
       </button>
       <div class="favbar" id="favBar" aria-label="Pinned apps" hidden></div>
-      <div class="vstrip" id="sunStrip" role="group" aria-label="Sun screen: slide sideways to change it"><div class="vs-peek" hidden></div><div class="vs-nm"><button type="button" class="vs-prev" aria-label="Previous screen">‹</button><span class="vs-name"></span><button type="button" class="vs-next" aria-label="Next screen">›</button></div><div class="vs-dots" aria-hidden="true"></div><div class="vs-sub">swipe up · Moon</div></div>
-      <button type="button" class="handle bottom" id="toMoon" aria-label="Open the moon menu">
+      <div class="vstrip" id="sunStrip" role="group" aria-label="Sun screen: slide sideways to change it"><div class="vs-peek" hidden></div><div class="vs-nm"><button type="button" class="vs-prev" aria-label="Previous screen">‹</button><span class="vs-name" aria-live="polite"></span><button type="button" class="vs-next" aria-label="Next screen">›</button></div><div class="vs-dots" aria-hidden="true"></div><div class="vs-sub">swipe up · Moon</div></div>
+      <button type="button" class="handle bottom" id="toMoon" aria-label="Open the moon menu" tabindex="-1" aria-hidden="true">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>
         <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M15 4a8 8 0 1 0 5 13A7 7 0 0 1 15 4z"></path></svg>Swipe up · Moon</span>
       </button>
@@ -457,7 +457,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       </button>
       <!-- Moon events (v32): the next sky event as a card (Real moon phase look); tap for the Coming up list -->
       <button type="button" id="moonEvent" class="mevent" hidden><span class="ic" aria-hidden="true"></span><span><b></b><small></small></span></button>
-      <div class="vstrip" id="moonStrip" role="group" aria-label="Moon screen: slide sideways to change it"><div class="vs-peek" hidden></div><div class="vs-nm"><button type="button" class="vs-prev" aria-label="Previous screen">‹</button><span class="vs-name"></span><button type="button" class="vs-next" aria-label="Next screen">›</button></div><div class="vs-dots" aria-hidden="true"></div><div class="vs-sub"></div></div>
+      <div class="vstrip" id="moonStrip" role="group" aria-label="Moon screen: slide sideways to change it"><div class="vs-peek" hidden></div><div class="vs-nm"><button type="button" class="vs-prev" aria-label="Previous screen">‹</button><span class="vs-name" aria-live="polite"></span><button type="button" class="vs-next" aria-label="Next screen">›</button></div><div class="vs-dots" aria-hidden="true"></div><div class="vs-sub"></div></div>
       <div id="moonInfo" class="info">
         <div id="moonName" class="name"></div>
         <div id="moonHint" class="hint"></div>
@@ -848,6 +848,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 
@@ -1376,14 +1377,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 
   /* ---------- Time of day: sky, sun colour, brightness ---------- */
   const SKY = [[0, '#0B1430', '#13203B'], [5, '#121B3A', '#2A2A4E'], [6.5, '#434C68', '#D6B08C'], [7.4, '#55627E', '#DCD6C0'], [8.4, '#56719A', '#BCCBD6'], [9.5, '#3A68A0', '#5F86B4'], [12, '#2C64A6', '#1B4479'], [16, '#2A5C9C', '#1E467E'], [18.5, '#3A2A5E', '#7A3A4A'], [20.5, '#151A3C', '#2A2448'], [22, '#0B1430', '#13203B'], [24, '#0B1430', '#13203B']];
-  const CLOUD = [[0, '#1A2236', '#283250', '#36405E', 0.3, 0.3], [4.8, '#1E2640', '#2E3656', '#46405E', 0.35, 0.35], [6.2, '#7A7F94', '#C9A79B', '#F49A63', 0.85, 0.55], [7.4, '#969FAF', '#D5B5A6', '#ECB188', 0.9, 0.6], [8.6, '#A4B1C2', '#E6E2DC', '#FFE3BE', 0.75, 0.5], [11, '#C3CDDA', '#FFFFFF', '#FFFFFF', 0.5, 0.38], [16, '#BAC4D2', '#FFF6EA', '#FFE9C8', 0.55, 0.42], [17.6, '#8C8394', '#E5A88E', '#FF8C50', 0.85, 0.55], [19, '#5A4E68', '#B8768A', '#F07A5A', 0.75, 0.5], [20.5, '#262A44', '#463E5E', '#6A4A66', 0.45, 0.4], [22, '#1A2236', '#283250', '#36405E', 0.3, 0.3], [24, '#1A2236', '#283250', '#36405E', 0.3, 0.3]];
-  function cloudAt(h) {
-    for (let i = 0; i < CLOUD.length - 1; i++) {
-      const a = CLOUD[i], b = CLOUD[i + 1];
-      if (h >= a[0] && h <= b[0]) { const t = (h - a[0]) / (b[0] - a[0] || 1); return { cb: mix(a[1], b[1], t), cl: mix(a[2], b[2], t), ch: mix(a[3], b[3], t), alpha: a[4] + (b[4] - a[4]) * t, cover: a[5] + (b[5] - a[5]) * t }; }
-    }
-    const z = CLOUD[0]; return { cb: z[1], cl: z[2], ch: z[3], alpha: z[4], cover: z[5] };
-  }
   const SUNT = [[0, '#9AA6C4'], [5, '#B49AC8'], [6.5, '#FF8A65'], [8, '#FFB347'], [11, '#FFE08A'], [13, '#FFF0B3'], [16, '#FFC94D'], [18.5, '#FF8A3D'], [20, '#E0607E'], [21.5, '#9AA6C4'], [24, '#9AA6C4']];
   const st = { press: 0, dpr: 1, rot: 180, pos: 0, screen: 'sun', W: 390, H: 844, vel: 0, spin: null, lastT: 0, view: false, demo: false, demoH: 0, sun: '#FFC94D', deep: '#E8902A', omega: 0, prevRot: 180, lastFrame: 0, tickRot: 180, lift: 0, liftM: 0, peek: false, peekFrom: 'sun', tiltEnd: false };
   function stopAt(stops, h, idx) {
@@ -2179,7 +2172,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const ambient = fancy();
     // v53 (battery): the screen is drawn at most 60 times a second while you touch it (90/120 Hz phones too),
     // 30 for 20 s after the last touch, then 15; the night clock (charging mode) 10. A change from Settings draws at once.
-    const sinceTouch = now - lastTouch, gap = planet.calm ? 98 : sinceTouch < 2000 ? 15 : sinceTouch < 20000 ? 32 : 65;
+    // v59 (user: smoother, same quality): moving things (tweens, flicks, the Earth gliding home) get 60 a second too;
+    // the slow Watch turn (about 1° a second) stays at the battery pace, it looks the same at 30.
+    const watchSlow = st.watch && planet.on && !tweens.length && !st.spin && !ripples.length;
+    const sinceTouch = now - lastTouch, gap = planet.calm ? 98 : (active && !watchSlow) || sinceTouch < 2000 ? 15 : sinceTouch < 20000 ? 32 : 65;
     if ((dirty || active || ambient) && (dirty || now - lastAmbient >= gap)) {
       const t0 = performance.now();
       render(now, dtf); dirty = false;
@@ -2309,7 +2305,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         cancelLP();
         lp = setTimeout(() => {
           lp = 0;
-          if (drag && !drag.moved && !pinch) {
+          if (drag && !drag.moved) {
             endDrag();
             suppressClick = true;
             setTimeout(() => { suppressClick = false; }, 450);
@@ -2436,13 +2432,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     c.fillStyle = glow;
     c.fillRect(0, 0, W, H);
 
-    function poly(pts, fill, stroke, lw) {
-      c.beginPath();
-      pts.forEach((p, j) => { if (j) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); });
-      c.closePath();
-      if (fill) { c.fillStyle = fill; c.fill(); }
-      if (stroke) { c.strokeStyle = stroke; c.lineWidth = lw || 1; c.stroke(); }
-    }
     function line(p1, p2, color, w) {
       c.beginPath(); c.moveTo(p1[0], p1[1]); c.lineTo(p2[0], p2[1]);
       c.strokeStyle = color; c.lineWidth = w; c.lineCap = 'round'; c.stroke();
@@ -2484,8 +2473,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
         // the Rays look is drawn once for the whole sun (raysBack: glow, corona or flames)
       } else if (look === 'neon') {
         // the neon styles draw their own rays (neonBody / neonBack)
-      } else if (look === 'eclipse') {
-        // no drawn lines (22 Oct: they looked fake); the shader's corona has its own streamers
       }
     }
 
@@ -2699,19 +2686,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       GLB.draw(c, bx, by, coreR * 0.95 * press, { mode: 'blackhole', tint: sun, time: reduce ? 0 : now / 1000, glow: 0.75 + 0.35 * light, margin: 1.9 });
       return;
     }
-    if (GLB.ok && look === 'eclipse') {
-      GLB.draw(c, bx, by, coreR * press, { mode: 'eclipse', tint: sun, rot: 0.25, time: reduce ? 0 : now / 1000, glow: 0.9 + 0.3 * (st.press || 0), shine: 0.12, margin: 2.7 });
-      if (fx) {
-        const da = now / 1400, dx = bx + coreR * Math.cos(da), dy = by + coreR * Math.sin(da);
-        const dg = c.createRadialGradient(dx, dy, 0, dx, dy, 18);
-        dg.addColorStop(0, 'rgba(255, 252, 240, 0.9)');
-        dg.addColorStop(1, hexA(sun, 0));
-        c.save(); c.globalCompositeOperation = 'lighter';
-        c.fillStyle = dg; c.beginPath(); c.arc(dx, dy, 18, 0, 2 * Math.PI); c.fill();
-        c.restore();
-      }
-      return;
-    }
     if (GLB.ok && look !== 'neon') {
       // v34: the globe turns like one solid body with the ring: its axis stands at a right angle to the ring
       // (pitch = tilt - 90°) and it turns as far as the apps do (before: 30 % tilt, 35 % turn, so it looked 90° off)
@@ -2736,23 +2710,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       c.fillStyle = '#020308'; c.fill();
       c.lineWidth = 1.8; c.strokeStyle = 'rgba(255, 244, 214, 0.9)'; c.stroke();
       c.restore();
-    } else if (look === 'eclipse') {
-      c.save();
-      c.shadowColor = sun; c.shadowBlur = 30;
-      c.beginPath(); c.arc(cx, cy, coreR, 0, 2 * Math.PI);
-      c.fillStyle = '#070B18'; c.fill();
-      c.lineWidth = 3; c.strokeStyle = sun; c.stroke();
-      c.restore();
-      if (fx) {
-        const da = now / 1400, dx = cx + coreR * Math.cos(da), dy = cy + coreR * Math.sin(da);
-        const dg = c.createRadialGradient(dx, dy, 0, dx, dy, 22);
-        dg.addColorStop(0, 'rgba(255, 252, 240, 0.95)');
-        dg.addColorStop(1, hexA(sun, 0));
-        c.save(); c.globalCompositeOperation = 'lighter';
-        c.fillStyle = dg; c.beginPath(); c.arc(dx, dy, 22, 0, 2 * Math.PI); c.fill();
-        line([dx - 34, dy], [dx + 34, dy], 'rgba(255, 252, 240, 0.5)', 1);
-        c.restore();
-      }
     } else if (look === 'neon') {
       neonBody(S.neonStyle);
     } else {
@@ -2840,9 +2797,9 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     $('sunInfo').style.top = Math.round(top) + 'px';
     if ($('sunInfo').hidden !== !showInfo) { $('sunInfo').hidden = !showInfo; $('clockChip').hidden = !(st.demo || !showInfo); $('clockChip').textContent = clockText(); }
     $('sunTip').hidden = !showTips;
-    $('sunTip').textContent = st.view
+    setText('sunTip', st.view
       ? 'Drag to turn the view · switch this off in Settings to spin again'
-      : 'Flick to spin · hold an app for shortcuts · two fingers turn the view';
+      : 'Flick to spin · hold an app for shortcuts');
   }
 
   // ---- Sun views: the same apps (APPS, st.rot, frontIndex) shown as cards, a list or a big dial ----
@@ -2873,8 +2830,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     const sunAt = (x, y, r, o) => {
       if (!GLB.ok) return;
       const opt = Object.assign({ mode: 'sun', tint: st.sun, rot: t * 0.02, time: t, glow: 0.8, margin: 1.6 }, o);
-      if (look === 'eclipse') Object.assign(opt, { mode: 'eclipse', rot: 0.25, glow: 1, shine: 0.12, margin: Math.max(opt.margin, 2.4) });
-      else if (look === 'blackhole') Object.assign(opt, { mode: 'blackhole', glow: 1, margin: Math.max(opt.margin, 1.9) });
+      if (look === 'blackhole') Object.assign(opt, { mode: 'blackhole', glow: 1, margin: Math.max(opt.margin, 1.9) });
       GLB.draw(c, x, y, r, opt);
     };
     const dOf = (i) => { let d = (((i - pos) % n) + n) % n; if (d > n / 2) d -= n; return d; };
@@ -2944,12 +2900,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       // Sun by a list (was Swap, 22 Oct): a big sun at the right, the apps as pills on an arc of dots next to it
       const T = tuneOf('sun:' + v), Ri = Math.min(W * 0.385, 150, H * 0.178) * 1.35, bx = W * (0.95 + T.x), by = H * (0.34 + T.y), sr = Ri * 1.02 * T.size, rA = Ri * 1.2 * T.ring, stepA = 14 * Math.PI / 180;
       const halo = (r0, r1, a) => { const hg = c.createRadialGradient(bx, by, r0, bx, by, r1); hg.addColorStop(0, hexA(st.sun, a)); hg.addColorStop(1, hexA(st.sun, 0)); c.fillStyle = hg; c.fillRect(0, 0, W, H); };
-      // Eclipse gets a dark halo first, so they stand out on bright photos (v32)
-      if (v === 'eclipse') { const dk = c.createRadialGradient(bx, by, sr * 0.6, bx, by, sr * 1.6); dk.addColorStop(0, 'rgba(6, 8, 18, 0.5)'); dk.addColorStop(1, 'rgba(6, 8, 18, 0)'); c.fillStyle = dk; c.fillRect(0, 0, W, H); }
-      if (v === 'eclipse') {
-        halo(sr * 0.9, sr * 2.2, 0.35);
-        if (GLB.ok) GLB.draw(c, bx, by, sr * 0.8, { mode: 'eclipse', tint: st.sun, rot: 0.25, time: t, glow: 1.1, shine: 0.12, margin: 2.7 });
-      } else if (v === 'small') {
+      if (v === 'small') {
         halo(sr * 0.29, sr * 1.2, 0.4);
         sunAt(W * (0.8 + T.x), by, sr * 0.36, { glow: 1, margin: 1.9 }); bodyAt.sun = { x: W * (0.8 + T.x), y: by, r: sr * 0.36 };
       } else {
@@ -3078,7 +3029,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
 
   /* ---------- Moon ---------- */
-  let LIST = [], GROUPS = [], itemEls = [], labelEls = [], lastLive = -1, labelPos = [], groupStarts = [];
+  let LIST = [], GROUPS = [], itemEls = [], labelEls = [], lastLive = -1, labelPos = [], groupStarts = [], moonInfoH = 0, vsMoonShown = '';
   function openFav(it) {
     const isFav = S.favs.indexOf(it.name) !== -1;
     const a = BY[it.name];
@@ -3394,11 +3345,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
       });
       $('moonName').textContent = cur.name;
       $('moonHint').textContent = cur.app ? cur.hint : cur.group + ' · ' + (live + 1) + ' of ' + N;
-      lastLive = live;
+      lastLive = live; moonInfoH = 0;
     }
-    // v57: never closer than 14 px to the screen slider at the bottom
-    $('moonInfo').style.top = Math.round(Math.min(G.bottom + 18, H - 92 - $('moonInfo').offsetHeight)) + 'px';
-    $('moonTip').textContent = rolo ? 'Flick the cards like a Rolodex, or slide along the left edge to jump' : 'Flick the list, or slide along the ' + ({ crescent: 'moon', arc: 'arc', ring: 'ring', dots: 'dots' }[look]) + ' to jump';
+    if (look !== vsMoonShown) { vsMoonShown = look; moonInfoH = 0; vsRender(); }  // v59: "Follow the time" changed the moon: the slider follows
+    // v57: never closer than 14 px to the screen slider at the bottom (v59: height measured only after a text change)
+    if (!moonInfoH) moonInfoH = $('moonInfo').offsetHeight;
+    $('moonInfo').style.top = Math.round(Math.min(G.bottom + 18, H - 92 - moonInfoH)) + 'px';
+    setText('moonTip', rolo ? 'Flick the cards like a Rolodex, or slide along the left edge to jump' : 'Flick the list, or slide along the ' + ({ crescent: 'moon', arc: 'arc', ring: 'ring', dots: 'dots' }[look]) + ' to jump');
     const sc = $('scrub');
     sc.style.top = Math.round(G.top) + 'px';
     sc.style.height = Math.round(G.bottom - G.top) + 'px';
@@ -3897,7 +3850,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
 
   /* ---------- Gestures ---------- */
-  let drag = null, pinch = null, bubbleTimer = 0;
+  let drag = null, bubbleTimer = 0;
   const pts = new Map();
   function showBubble(on) {
     clearTimeout(bubbleTimer);
@@ -3907,7 +3860,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   // the Earth screen waits just above the top edge and follows the finger down
   function startPlanetPeek() { const pl = $('planetScreen'); pl.hidden = false; pl.classList.add('dragging'); planet.peek = true; }
   function onMove(e) {
-    if (!drag || pinch) return;
+    if (!drag) return;
     const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0, dist = Math.sqrt(dx * dx + dy * dy);
     if (!drag.moved && dist > 6) { drag.moved = true; cancelLP(); }
     if (!drag.moved) return;
@@ -4045,41 +3998,13 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     kick();
   }
 
-  // Two fingers on the sun: move up or down = tilt, twist = turn, pinch = size.
-  function pinchState() {
-    const p = Array.from(pts.values());
-    const a = p[0], b = p[1];
-    return { cy: (a.y + b.y) / 2, ang: Math.atan2(b.y - a.y, b.x - a.x), d: Math.max(20, Math.hypot(b.x - a.x, b.y - a.y)) };
-  }
-  function startPinch() {
-    if (drag) endDrag();
-    cancelLP();
-    st.spin = null;
-    ensureCustom();
-    const s = pinchState();
-    pinch = { s0: s, tilt0: S.tilt, roll0: S.custom.roll, R0: S.custom.R };
-  }
-  function updatePinch() {
-    const s = pinchState(), p = pinch;
-    setTilt(p.tilt0 + (s.cy - p.s0.cy) * 0.35);
-    S.custom.roll = p.roll0 + (s.ang - p.s0.ang) * 180 / Math.PI;
-    S.custom.R = clamp(p.R0 * s.d / p.s0.d, 50, Math.max(st.W, st.H) * 0.55);
-    kick();
-  }
-  function endPinch() {
-    pinch = null;
-    save();
-    snapRot();
-    suppressClick = true;
-    setTimeout(() => { suppressClick = false; }, 400);
-  }
   $('sunScreen').addEventListener('pointerdown', (e) => {
     if (e.target.closest('.corner, .roundbtn, .handle, .viewbtn, .chips, .to-planet, .favbar, .vstrip')) return;
     { const rr = $('sunScreen').getBoundingClientRect(); addRipple('sun', e.clientX - rr.left, e.clientY - rr.top); }
     if (e.target.closest('#core')) { tween('press', 1, 110); const up = () => { tween('press', 0, 420); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); }; window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pts.size === 2) { if (drag) endDrag(); return; }  // v53: two fingers only in the look editor (gesture rule)
-    if (pts.size > 2 || pinch) return;
+    if (pts.size === 2) { if (drag) { if (drag.kind === 'scrub') endDrag(); else onUp(null); } return; }  // v53: two fingers only in the look editor; v59: finish the swipe (snap), never stop half-way
+    if (pts.size > 2) return;
     st.spin = null;
     stopTween('rot');
     if (st.view) { ensureCustom(); startDrag('view', e, { tilt: S.tilt, roll: S.custom.roll }); return; }
@@ -4088,12 +4013,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   window.addEventListener('pointermove', (e) => {
     if (!pts.has(e.pointerId)) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pinch && pts.size >= 2) updatePinch();
   });
   const dropPointer = (e) => {
     if (!pts.has(e.pointerId)) return;
     pts.delete(e.pointerId);
-    if (pinch && pts.size < 2) endPinch();
   };
   window.addEventListener('pointerup', dropPointer);
   window.addEventListener('pointercancel', dropPointer);
@@ -4213,7 +4136,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   function leFill() {
     const t = le, on = !!t.key;
     $('leTitle').textContent = 'Edit look · ' + t.name;
-    $('leTip').textContent = on ? 'Drag to move · two fingers: pinch = size' + (t.rows.indexOf('u') !== -1 ? ', twist = turn' : '') : '';
+    $('leTip').textContent = on ? 'Drag to move' : '';
     [['leRowTilt', 't'], ['leRowTurn', 'u'], ['leRowSize', 's'], ['leRowRing', 'r']].forEach(([id, ch]) => { $(id).hidden = !on || t.rows.indexOf(ch) === -1; });
     $('leNote').hidden = on;
     $('leNote').textContent = 'This screen has no size or place to change. You can change the style and save it.';
@@ -4412,11 +4335,10 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   $('watchBtn').addEventListener('click', () => setWatch(true));
   $('watchCatch').addEventListener('pointerdown', (e) => { e.preventDefault(); setWatch(false); });
   // v47: the button sits in the top row next to Search on every screen (the bottom row covered apps, user screenshots)
-  function placeWatch() {}
   // double-tap on empty sky (Sun and Moon screens) also starts Watch
   let lastSkyTap = null;
   ['sunScreen', 'moonScreen'].forEach((id) => $(id).addEventListener('pointerup', (e) => {
-    if (!e.isPrimary || e.target.closest('button, .facet, .item, .favbar') || st.watch) { lastSkyTap = null; return; }
+    if (!e.isPrimary || e.target.closest('button, .facet, .item, .favbar, .vstrip') || st.watch) { lastSkyTap = null; return; }
     const now = performance.now();
     if (lastSkyTap && now - lastSkyTap.t < 320 && Math.hypot(e.clientX - lastSkyTap.x, e.clientY - lastSkyTap.y) < 30) { lastSkyTap = null; setWatch(true); return; }
     lastSkyTap = { t: now, x: e.clientX, y: e.clientY };
@@ -4478,6 +4400,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
     if (top.name === 'planetScreen') hidePlanet(true);
     else if (top.name === 'moon') goSun(true);
     else if (top.name === 'camera') closeCamera(true);
+    else if (top.name === 'watchCatch') setWatch(false);  // v59: on the Earth #watchCatch is hidden, so hideOverlay did nothing
     else { const el = $(top.name); if (el) hideOverlay(el, true); }
   }
   window.addEventListener('popstate', () => {
@@ -4585,10 +4508,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
   $('sheet').addEventListener('click', (e) => { if (e.target === $('sheet')) hideOverlay($('sheet')); });
-  function openRecent() {
-    openSheet('Recent', S.recent.length ? 'Your last apps.' : 'No apps opened yet. Open an app from the sun first.', '', false,
-      S.recent.map((n) => ({ label: n, run: () => openApp(BY[n]) })));
-  }
 
   /* ---------- Camera ---------- */
   let photoUrl = '';
@@ -4940,6 +4859,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   [['pvars', 'pvarsDots'], ['pmoons', 'pmoonsDots'], ['pstyles', 'pstylesDots']].forEach(([r, d]) => $(r).addEventListener('scroll', () => pvDots(r, d), { passive: true }));
   function renderPicks() {
     vsRender();  // v57: the bottom slider shows the same picks
+    if ($('settings').hidden) return;  // v59: Settings closed: its pictures are rebuilt when it opens (openSettings)
     const sh = shownTheme(), view = S.sunView, fam = PV_FAM.find((f) => f[3].indexOf(view) !== -1) || PV_FAM[0], link = S.pairLink === 'on';
     const moonOf = (v) => { const pk = PAIRS.find((x) => x[2] === v); return pk ? pk[3] : 'dots'; };
     // the 4 cards
@@ -5042,7 +4962,7 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   }
   $('speedBtn').addEventListener('click', () => { hideOverlay($('settings')); speed.start(); });  // v53
   $('tipsAgain').addEventListener('click', () => { S.visits = 0; S.hints = {}; S.tips = 'on'; showTips = true; hintsDone = {}; save(); fillForm(); kick(); toast('All tips show again.'); });
-  function openSettings() { st.peek = true; st.peekFrom = st.screen; fillForm(); showOverlay($('settings')); updateLift(); }
+  function openSettings() { st.peek = true; st.peekFrom = st.screen; fillForm(); showOverlay($('settings')); renderPicks(); updateLift(); }
   function peekScreen(which) {
     if (S.mode === 'one' || st.screen === which) return;
     st.screen = which; worlds.style.transform = which === 'moon' ? 'translateY(-50%)' : 'translateY(0)'; kick();
@@ -5154,7 +5074,6 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
   st.rot = frontDeg();
   st.prevRot = st.rot;
   renderFavBar();
-  placeWatch(); window.addEventListener('resize', placeWatch);  // v46
   locate(false); document.addEventListener('visibilitychange', () => { if (!document.hidden) locate(false); });  // v47: your place, each time the app opens
   // home screen shortcuts (long-press the app icon, v32): ./?screen=sun | moon | earth
   const wantScreen = new URLSearchParams(location.search).get('screen');
