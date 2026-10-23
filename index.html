@@ -862,7 +862,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v61';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v62';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -3651,9 +3651,15 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     keepAwake(on);
     kick();
   }
+  // v62 (bug: turning it off in Settings needed a restart): the check also runs when the setting changes
+  // (onSettings), and "Off" ends a charging clock that charging started
+  let chargeCheck = () => {};
   if (navigator.getBattery) navigator.getBattery().then((b) => {
-    const check = () => { if (S.chargeMode !== 'auto') return; if (b.charging) setCalm(true, true); else if (planet.calm && calmByCharge) setCalm(false); };
-    b.addEventListener('chargingchange', check); check();
+    chargeCheck = () => {
+      if (S.chargeMode !== 'auto') { if (planet.calm && calmByCharge) setCalm(false); return; }
+      if (b.charging) setCalm(true, true); else if (planet.calm && calmByCharge) setCalm(false);
+    };
+    b.addEventListener('chargingchange', () => chargeCheck()); chargeCheck();
   }).catch(() => {});
   document.addEventListener('visibilitychange', () => { if (!document.hidden && planet.calm) keepAwake(true); });
   // 7 (v37): the northern lights band (auroral oval) seen from space: green glow around the north, only on the night
@@ -4600,7 +4606,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   });
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v62 · Turning Charging mode off or on works at once.\nv61 ·The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -5196,6 +5202,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     $('hourRow').hidden = S.sky !== 'preview';
     liveLine();
     if (changed === 'weather') { wxFetch(true); wxLine(); }
+    if (changed === 'chargeMode') chargeCheck();  // v62
     if (changed === 'loc') { applyPlace(); WX = null; wxFetch(true); locate(true); }  // v47
     locLine();
     if (st.demo && S.sky !== 'clock') stopDemo();
