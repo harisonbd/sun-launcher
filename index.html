@@ -52,6 +52,30 @@ body { background: var(--night-deep); color: var(--ink); font-family: var(--font
 .planet.dragging { transition: none; }
 #planetScreen.calm .planet-handle { opacity: 0.2; }
 .planet[hidden] { display: none; }
+/* v66: smart chips on the Earth (HTML, over the canvas) */
+.pchips { position: absolute; left: 0; right: 0; top: calc(30% - 19px); display: flex; justify-content: center; gap: 8px; z-index: 2; touch-action: none; transition: top .35s ease; }
+.pchips.above { top: max(calc(10.5% - 19px), 70px); }
+.pchips.lift { transition: none; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .55)); }
+.pchips.lift .pchip { box-shadow: 0 0 0 2px var(--sun); }
+.pchip { display: flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px 0 8px; border-radius: 19px; border: 1px solid rgba(255, 255, 255, 0.15); background: linear-gradient(180deg, rgba(36, 52, 92, 0.86), rgba(24, 36, 68, 0.86)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); color: #F4F6FA; font: inherit; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; transition: transform .12s; }
+.pchip:active { transform: scale(.94); box-shadow: 0 0 0 2px var(--sun); }
+.pci { width: 22px; height: 22px; display: grid; place-items: center; flex: none; }
+.pci svg { width: 22px; height: 22px; }
+.pnote { position: absolute; left: 50%; top: calc(30% + 27px); transform: translateX(-50%); z-index: 2; display: flex; align-items: center; gap: 6px; max-width: calc(100% - 32px); min-height: 34px; padding: 0 14px 0 10px; border-radius: 17px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(16, 24, 46, 0.78); color: #F2EEE6; font: inherit; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: top .35s ease; }
+.pnote.above { top: calc(max(calc(10.5% - 19px), 70px) + 46px); }
+.pnote.warn { border-color: rgba(255, 122, 92, 0.6); }
+.pnote[hidden] { display: none; }
+.pnote .pci, .pnote .pci svg { width: 20px; height: 20px; }
+#planetScreen.calm .pchips, #planetScreen.calm .pnote { display: none; }
+#app.watch .pchips, #app.watch .pnote { opacity: 0 !important; pointer-events: none !important; transition: opacity .5s; }
+.sheetextra[hidden] { display: none; }
+.wxh { display: flex; justify-content: space-between; gap: 4px; padding: 6px 0 10px; border-bottom: 1px solid var(--line); }
+.wxh div { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; color: var(--ink-2); }
+.wxh svg { width: 30px; height: 30px; }
+.wxh b { font-size: 16px; color: var(--ink); }
+.wxh i { font-style: normal; font-size: 11px; color: #8CC8FF; }
+.wxd { display: grid; grid-template-columns: 56px 30px 1fr; align-items: center; gap: 8px; padding: 6px 0; font-size: 15px; }
+.wxd svg { width: 26px; height: 26px; }
 .planet-handle { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); min-height: 56px; padding: 0 18px; border: none; background: transparent; color: #DCE3F0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 500; cursor: pointer; }
 .to-planet { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); min-height: 44px; padding: 0 14px; border: none; background: transparent; color: var(--ink-3); display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 12px; font-weight: 500; cursor: pointer; z-index: 600; }
 .to-planet[hidden] { display: none; }
@@ -425,6 +449,14 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   <!-- Planet start screen (mockup G, 23 Oct): first screen; swipe up for the sun menu -->
   <div id="planetScreen" class="planet away" aria-label="Start screen: Earth, clock, sunrise and sunset" hidden>
     <canvas id="planetCanvas" class="paint" aria-hidden="true"></canvas>
+    <!-- v66: smart chips (tap for a card; hold and drag: above the date or under the time) and one note -->
+    <div id="pChips" class="pchips" role="group" aria-label="Sun, moon and weather. Hold and drag to move">
+      <button type="button" class="pchip" id="pcRise" aria-label="Sunrise, more about the sun"><span class="pci" id="pcRiseI"></span><span id="pcRiseT"></span></button>
+      <button type="button" class="pchip" id="pcSet" aria-label="Sunset, more about the sun"><span class="pci" id="pcSetI"></span><span id="pcSetT"></span></button>
+      <button type="button" class="pchip" id="pcMoon" aria-label="Moon, more about the moon"><span class="pci" id="pcMoonI"></span><span id="pcMoonT"></span></button>
+      <button type="button" class="pchip" id="pcWx" aria-label="Weather, the next hours"><span class="pci" id="pcWxI"></span><span id="pcWxT"></span></button>
+    </div>
+    <button type="button" id="pNote" class="pnote" hidden><span class="pci" id="pNoteI"></span><span id="pNoteT" aria-live="polite"></span></button>
     <button type="button" class="planet-handle" id="planetUp" aria-label="Open the sun menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>
       <span>Swipe up · Sun menu</span>
@@ -548,6 +580,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
       <h2 id="sheetTitle"></h2>
       <p id="sheetText"></p>
+      <div id="sheetExtra" class="sheetextra" hidden></div>
       <div id="sheetSend" hidden>
         <div style="display: flex; flex-direction: column; gap: 10px">
           <button type="button" class="send" data-to="Scanner"><span class="ic"><img src="data:image/png;base64,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" alt=""></span><span><b>Scanner</b><small>Check the label</small></span></button>
@@ -887,6 +920,14 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         <p id="moonLine" class="helpline"></p>
       </fieldset>
       <fieldset>
+        <legend>Notes on the Earth</legend>
+        <div class="seg">
+          <input type="radio" name="notes" id="notes-on" value="on"><label for="notes-on">On</label>
+          <input type="radio" name="notes" id="notes-off" value="off"><label for="notes-off">Off</label>
+        </div>
+        <p class="helpline">One short note under the chips, only when it matters: rain soon, strong wind, ice, battery low, something in the sky tonight, golden hour, high UV, longer days.</p>
+      </fieldset>
+      <fieldset>
         <legend>Tips</legend>
         <div class="seg">
           <input type="radio" name="tips" id="tips-on" value="on"><label for="tips-on">On</label>
@@ -910,7 +951,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v65';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v66';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -986,7 +1027,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on' };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -1007,6 +1048,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   if (['flat', 'diagonal', 'custom'].indexOf(S.dir) === -1) S.dir = 'flat';  // v46: Sideways and Rolodex left Settings (the look editor tilts and turns)
   S.favs = (S.favs || []).filter((n) => typeof n === 'string').slice(0, 5);
   if (['small', 'normal', 'large'].indexOf(S.textSize) === -1) S.textSize = 'normal';
+  if (S.chipsPos !== 'above') S.chipsPos = 'below';  // v66: chip row under the time (or above the date)
+  if (S.notes !== 'off') S.notes = 'on';  // v66: one short note under the chips when something matters
   S.visits = (S.visits || 0) + 1;
   let showTips = S.visits <= 3 && S.tips === 'on';
   // 23 Oct: Rolodex moon removed (user); Real moon phase and Minimal moon added from the early mockups.
@@ -1597,7 +1640,10 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   /* ---------- Weather (Settings > Weather > Real): Open-Meteo, no key, Vienna's fixed position, every 30 min ---------- */
   // Only these fixed coordinates are sent. The last answer is kept, so the sky stays as it was when offline.
   // v47: your place, rounded to 0.1° (about 10 km) before it is sent
-  const wxUrl = () => 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT.toFixed(1) + '&longitude=' + LON.toFixed(1) + '&current=temperature_2m,cloud_cover,weather_code&timezone=auto';
+  const wxUrl = () => 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT.toFixed(1) + '&longitude=' + LON.toFixed(1) + '&current=temperature_2m,cloud_cover,weather_code&timezone=auto'
+    // v66: the next hours and days for the chips, notes and the weather card (same request, same rounded place)
+    + '&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,wind_gusts_10m,uv_index,cloud_cover'
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=4';
   let WX = null, wxBusy = false;
   try { WX = JSON.parse(localStorage.getItem('sun-launcher-wx') || 'null'); } catch (e) {}
   function wxFetch(force) {
@@ -1608,6 +1654,13 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const c = j.current || {};
       if (typeof c.cloud_cover !== 'number') return;
       WX = { t: Date.now(), temp: c.temperature_2m, cloud: c.cloud_cover, code: c.weather_code };
+      // v66: hours from one hour ago, 48 hours on: [time ms, temp, rain %, rain mm, code, gusts km/h, UV, clouds %]
+      const h = j.hourly || {}, now = Date.now();
+      if (Array.isArray(h.time)) WX.h = h.time.map((tm, i) => [new Date(tm).getTime(), h.temperature_2m[i], h.precipitation_probability[i], h.precipitation[i], h.weather_code[i], h.wind_gusts_10m[i], h.uv_index[i], h.cloud_cover[i]])
+        .filter((r) => r[0] > now - 3600000 && r[0] < now + 48 * 3600000);
+      const dy = j.daily || {};
+      if (Array.isArray(dy.time)) WX.d = dy.time.map((tm, i) => [tm, dy.weather_code[i], dy.temperature_2m_max[i], dy.temperature_2m_min[i]]);
+      if (typeof chipsNow === 'function') chipsNow();
       try { localStorage.setItem('sun-launcher-wx', JSON.stringify(WX)); } catch (e) {}
       if (typeof kick === 'function') kick();
       if (!$('settings').hidden) wxLine();
@@ -3825,7 +3878,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       // v47 (user): always a small gap (~10 px) between the moon and the Earth's glowing air
       const airY = cy - Math.sqrt(Math.max(0, R * R * 1.07 * 1.07 - (mx - cx) * (mx - cx)));
       // and never on the time chips (H * 0.3, 36 px tall) unless Watch hides them; if there is no room, the gap to the Earth wins
-      const chipLow = st.watch ? H * 0.1 : H * 0.3 + 18 + mr + 8;
+      // v66: with the chips above the date, the time sits lower; the moon stays under it
+      const chipLow = st.watch ? H * 0.1 : S.chipsPos === 'above' ? H * 0.32 + 48 * k + mr + 8 : H * 0.3 + 18 + mr + 8;
       const my0 = Math.min(Math.max(H * 0.42, chipLow), airY - mr - 10), my = (limbM + mr + 6) + (my0 - (limbM + mr + 6)) * mRise;
       c.save(); c.globalAlpha = 1 - mSink;
       const mg = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3.2); mg.addColorStop(0, 'rgba(210, 222, 245, ' + (0.12 + 0.18 * mnNow.fraction).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(210, 222, 245, 0)');
@@ -3893,34 +3947,10 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       if (hr >= 22 || hr < 6) { c.fillStyle = 'rgba(0, 0, 0, 0.35)'; c.fillRect(0, 0, W, H); }
       return;
     }
-    T(DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()], H * 0.115, 17, 500, 'rgba(240, 242, 248, 0.85)');
-    T(hm, H * 0.2, Math.round(96 * k), 200, '#F5EFE3');
-    // chips (v36): bigger, with drawn icons (sunrise, sunset, the moon in its real phase)
-    const sn = sunToday(), mn = moonNow();
-    // v60: in the last hour before sunrise or sunset the chip counts down ("in 25 min")
-    const nowH = d.getHours() + d.getMinutes() / 60, soon = (h) => { const m = Math.ceil((h - nowH) * 60); return m > 0 && m <= 60 ? 'in ' + m + ' min' : fmtHour(h); };
-    const chips = [['rise', soon(sn.rise)], ['set', soon(sn.set)], ['moon', Math.round(mn.fraction * 100) + ' %']];
-    c.font = '600 14px ' + font;
-    const ws = chips.map((s) => c.measureText(s[1]).width + 52), gap = 10, total = ws.reduce((a, b) => a + b, 0) + gap * 2;
-    let x = (W - total) / 2; const y = H * 0.3;
-    chips.forEach((s, i) => {
-      c.beginPath(); if (c.roundRect) c.roundRect(x, y - 18, ws[i], 36, 18); else c.rect(x, y - 18, ws[i], 36);
-      c.fillStyle = 'rgba(28, 43, 76, 0.6)'; c.fill(); c.strokeStyle = 'rgba(255, 255, 255, 0.16)'; c.lineWidth = 1; c.stroke();
-      const ix = x + 20, iy = y;
-      if (s[0] === 'moon') { if (GLB.ok) GLB.draw(c, ix, iy, 8, { mode: 'moon', light: realMoonLight(mn.phase), rot: -0.2, shine: 0.15, expo: 1.4, glow: 0, margin: 1.3 }); }
-      else {
-        // half sun on a horizon line, with an arrow up (sunrise) or down (sunset)
-        c.save(); c.strokeStyle = '#FFC94D'; c.fillStyle = '#FFC94D'; c.lineWidth = 1.6; c.lineCap = 'round';
-        c.beginPath(); c.arc(ix, iy + 4, 6, Math.PI, 2 * Math.PI); c.fill();
-        c.beginPath(); c.moveTo(ix - 10, iy + 4.5); c.lineTo(ix + 10, iy + 4.5); c.stroke();
-        const up = s[0] === 'rise', ay = up ? iy - 9 : iy - 4, by2 = up ? iy - 4 : iy - 9;
-        c.beginPath(); c.moveTo(ix + 9, by2 + (up ? 0 : 0)); c.lineTo(ix + 9, ay); c.stroke();
-        c.beginPath(); c.moveTo(ix + 6.5, up ? ay + 2.5 : ay - 2.5); c.lineTo(ix + 9, ay); c.lineTo(ix + 11.5, up ? ay + 2.5 : ay - 2.5); c.stroke();
-        c.restore();
-      }
-      c.fillStyle = 'rgba(244, 246, 250, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(s[1], x + 36, y);
-      x += ws[i] + gap;
-    });
+    const up = S.chipsPos === 'above';  // v66: chips above the date: date and time a bit lower
+    T(DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()], up ? H * 0.235 : H * 0.115, 17, 500, 'rgba(240, 242, 248, 0.85)');
+    T(hm, up ? H * 0.32 : H * 0.2, Math.round(96 * k), 200, '#F5EFE3');
+    chipsUpdate(d);  // v66: the chips are HTML now (icons, taps, drag); only their text changes here
   }
   // v60: tap the moon on the Earth = a small card (phase, light, rise and set, next full moon) with a way to the Moon menu
   function moonCard() {
@@ -3935,6 +3965,196 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       [{ label: 'Open the Moon menu', run: () => { setCalm(false); hidePlanet(); if (S.mode === 'two') goMoon(); } }]);
     $('sheetText').style.whiteSpace = 'pre-line';
   }
+
+  /* ---------- Smart chips (v66, user: mock\smart-chips-v2.html) ----------
+     On the Earth: sunrise, sunset, the moon (its real phase) and the temperature now, as HTML buttons with one icon
+     family. One short note under them, only when something matters (the most important one). Tap a chip for a card.
+     Hold the row and drag it: above the date or under the time (S.chipsPos). */
+  const ICD = (id) => '<defs><radialGradient id="sg' + id + '" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#FFF3C4"/><stop offset=".55" stop-color="#FFC94D"/><stop offset="1" stop-color="#FF9A3C"/></radialGradient>'
+    + '<radialGradient id="ss' + id + '" cx=".45" cy=".35" r=".8"><stop offset="0" stop-color="#FFE2A8"/><stop offset=".5" stop-color="#FF9F43"/><stop offset="1" stop-color="#E8603C"/></radialGradient>'
+    + '<linearGradient id="cl' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#C9D3E6"/></linearGradient>'
+    + '<linearGradient id="cd' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C3CCDD"/><stop offset="1" stop-color="#8E99B0"/></linearGradient>'
+    + '<radialGradient id="mo' + id + '" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#FBF8EF"/><stop offset="1" stop-color="#C9C6BC"/></radialGradient></defs>';
+  const icCloud = (g, x, y, sc) => '<path transform="translate(' + x + ' ' + y + ') scale(' + sc + ')" d="M7.2 18.5h9.6a3.7 3.7 0 0 0 .4-7.4 5.2 5.2 0 0 0-10-.9 3.2 3.2 0 0 0 0 8.3z" fill="url(#' + g + ')" stroke="rgba(255,255,255,.55)" stroke-width=".6"/>';
+  const icLine = (x1, y1, x2, y2, col, w) => '<line x1="' + x1.toFixed(2) + '" y1="' + y1.toFixed(2) + '" x2="' + x2.toFixed(2) + '" y2="' + y2.toFixed(2) + '" stroke="' + col + '" stroke-width="' + (w || 1.6) + '" stroke-linecap="round"/>';
+  const icSun = (g, cx, cy, r) => Array.from({ length: 8 }, (_, i) => { const a = i * Math.PI / 4; return icLine(cx + Math.cos(a) * (r + 1.6), cy + Math.sin(a) * (r + 1.6), cx + Math.cos(a) * (r + 3.4), cy + Math.sin(a) * (r + 3.4), '#FFC94D'); }).join('') + '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#' + g + ')"/>';
+  // sunrise: 5 rays, the same distance apart (36°) and length (user)
+  const icRays = (col) => [198, 234, 270, 306, 342].map((dg) => { const a = dg * Math.PI / 180; return icLine(12 + Math.cos(a) * 7.4, 17 + Math.sin(a) * 7.4, 12 + Math.cos(a) * 9.6, 17 + Math.sin(a) * 9.6, col); }).join('');
+  const icHorizon = '<line x1="3" y1="17" x2="21" y2="17" stroke="#9fb0cf" stroke-width="1.6" stroke-linecap="round"/><line x1="7.5" y1="20.2" x2="16.5" y2="20.2" stroke="#9fb0cf" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>';
+  function icMoonPath(p, cx, cy, r) {  // the lit part of the moon at phase p (0 new, .5 full; waxing = lit on the right)
+    const kk = Math.cos(p * 2 * Math.PI), wax = p < 0.5, rx = Math.abs(kk) * r;
+    return 'M ' + cx + ' ' + (cy - r) + ' A ' + r + ' ' + r + ' 0 0 ' + (wax ? 1 : 0) + ' ' + cx + ' ' + (cy + r) + ' A ' + rx.toFixed(2) + ' ' + r + ' 0 0 ' + ((kk > 0) === wax ? 0 : 1) + ' ' + cx + ' ' + (cy - r) + ' Z';
+  }
+  const ICON = {
+    rise: (i) => icHorizon + '<path d="M6.5 17a5.5 5.5 0 0 1 11 0z" fill="url(#sg' + i + ')"/>' + icRays('#FFC94D'),
+    set: (i) => icHorizon + '<path d="M6.5 17a5.5 5.5 0 0 1 11 0z" fill="url(#ss' + i + ')"/>',
+    moon: (i, p) => '<circle cx="12" cy="12" r="8" fill="#2a3044"/><path d="' + icMoonPath(p == null ? 0.5 : p, 12, 12, 8) + '" fill="url(#mo' + i + ')"/><circle cx="9.5" cy="10" r="1.2" fill="#b9b5aa" opacity=".55"/><circle cx="13.8" cy="14.6" r="1.6" fill="#b9b5aa" opacity=".45"/>',
+    clear: (i) => icSun('sg' + i, 12, 12, 4.6),
+    partly: (i) => icSun('sg' + i, 9, 9, 3.8) + icCloud('cl' + i, 1.2, 1.5, 0.95),
+    cloudy: (i) => icCloud('cd' + i, -2.5, -3, 0.9) + icCloud('cl' + i, 1.6, 1, 0.95),
+    rain: (i) => icCloud('cl' + i, 0, -3.5, 1) + [[8.5, 18.2], [12.2, 19.4], [15.9, 18.2]].map(([x, y]) => '<path d="M' + x + ' ' + y + 'c-.9 1.4-1.4 2.2-1.4 2.9a1.4 1.4 0 0 0 2.8 0c0-.7-.5-1.5-1.4-2.9z" fill="#8CC8FF"/>').join(''),
+    snow: (i) => icCloud('cl' + i, 0, -3.5, 1) + [[8.4, 19.4], [12, 21], [15.6, 19.4]].map(([x, y]) => icLine(x - 1.4, y, x + 1.4, y, '#E8F2FF', 1.2) + icLine(x - 0.7, y - 1.2, x + 0.7, y + 1.2, '#E8F2FF', 1.2) + icLine(x + 0.7, y - 1.2, x - 0.7, y + 1.2, '#E8F2FF', 1.2)).join(''),
+    storm: (i) => icCloud('cd' + i, 0, -3.5, 1) + '<path d="M12.8 14.2l-2.6 4.2h2.4l-1.4 4 4-5.4h-2.5l1.6-2.8z" fill="#FFC94D" stroke="#FFC94D" stroke-width=".6" stroke-linejoin="round"/>',
+    night: (i) => '<path d="M15.8 4.6a7.6 7.6 0 1 0 3.6 13.9A8.4 8.4 0 0 1 15.8 4.6z" fill="url(#mo' + i + ')"/><path d="M19 4.2l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z" fill="#FFE9B0"/><circle cx="21" cy="10" r=".7" fill="#FFE9B0"/>',
+    nightcloud: (i) => '<path d="M14.8 3.6a6.6 6.6 0 1 0 3.2 12A7.4 7.4 0 0 1 14.8 3.6z" fill="url(#mo' + i + ')"/>' + icCloud('cl' + i, 1.6, 2.6, 0.9),
+    fog: () => '<g stroke="#C9D3E6" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M4 9.5c2-1.2 4-1.2 6 0s4 1.2 6 0 3-1 4 0"/><path d="M4 13.5c2-1.2 4-1.2 6 0s4 1.2 6 0 3-1 4 0" opacity=".8"/><path d="M4 17.5c2-1.2 4-1.2 6 0s4 1.2 6 0 3-1 4 0" opacity=".6"/></g>',
+    off: (i) => icCloud('cd' + i, 0, 0, 1),
+    umbrella: () => '<path d="M3.5 12a8.5 8.5 0 0 1 17 0c-1-1-2.3-1-3.3 0-1-1-2.4-1-3.4 0-1-1-2.4-1-3.4 0-1-1-2.4-1-3.4 0-1-1-2.4-1-3.5 0z" fill="#8CC8FF"/><path d="M12 12v6.2a1.9 1.9 0 0 1-3.8 0" stroke="#DCE6F5" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
+    wind: () => '<g stroke="#DCE6F5" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M3 9h11a2.6 2.6 0 1 0-2.6-2.6"/><path d="M3 13h15a2.8 2.8 0 1 1-2.8 2.8"/><path d="M3 17h7"/></g>',
+    frost: () => '<g stroke="#BFE3FF" stroke-width="1.5" stroke-linecap="round">' + [0, 60, 120].map((dg) => { const a = dg * Math.PI / 180, x = Math.cos(a) * 8.5, y = Math.sin(a) * 8.5; return icLine(12 - x, 12 - y, 12 + x, 12 + y, '#BFE3FF', 1.5); }).join('') + '</g><circle cx="12" cy="12" r="1.6" fill="#BFE3FF"/>',
+    uv: (i) => icSun('sg' + i, 12, 12, 4.2) + '<text x="12" y="13.6" text-anchor="middle" font-size="4.6" font-weight="800" fill="#7a3d00" font-family="system-ui">UV</text>',
+    meteor: (i) => '<defs><linearGradient id="mt' + i + '" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#FFE9B0"/></linearGradient></defs><path d="M20.5 3.5L9 15" stroke="url(#mt' + i + ')" stroke-width="2.2" stroke-linecap="round"/><circle cx="8" cy="16" r="2.4" fill="#FFF6DA"/><circle cx="8" cy="16" r="4" fill="#FFE9B0" opacity=".25"/>',
+    stars: () => '<path d="M9 4l1 2.6 2.6 1-2.6 1L9 11.2l-1-2.6-2.6-1 2.6-1z" fill="#FFE9B0"/><path d="M17 11l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" fill="#FFE9B0"/><circle cx="7" cy="17" r="1" fill="#FFE9B0"/>',
+    aurora: () => '<path d="M3 18c3-6 5-9 9-9s6 3 9 9" stroke="#6FF0A0" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M5 18c2-4 4-6 7-6s5 2 7 6" stroke="#B48CFF" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".8"/>',
+    golden: (i) => icHorizon + '<path d="M6.5 17a5.5 5.5 0 0 1 11 0z" fill="url(#sg' + i + ')" opacity=".9"/><circle cx="12" cy="14" r="8" fill="#FFC94D" opacity=".15"/>',
+    daylight: (i) => icSun('sg' + i, 11, 12, 3.8) + '<path d="M19 6v5M16.5 8.5h5" stroke="#6FDC8C" stroke-width="1.6" stroke-linecap="round"/>',
+    batlow: () => '<rect x="3" y="7.5" width="16" height="9" rx="2.4" stroke="#DCE6F5" stroke-width="1.6" fill="none"/><rect x="20" y="10.3" width="1.6" height="3.4" rx=".8" fill="#DCE6F5"/><rect x="4.8" y="9.3" width="3" height="5.4" rx="1.1" fill="#FF7A5C"/>'
+  };
+  let icUid = 0;
+  const icon = (name, arg) => { const i = 'k' + (++icUid); return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + ICD(i) + ICON[name](i, arg) + '</svg>'; };
+  // weather code + day/night -> icon name
+  function wxIcon(code, night, cloud) {
+    if (code >= 95) return 'storm';
+    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow';
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'rain';
+    if (code === 45 || code === 48) return 'fog';
+    if (code === 3) return 'cloudy';
+    if (code === 2 || (cloud || 0) > 40) return night ? 'nightcloud' : 'partly';
+    return night ? 'night' : 'clear';
+  }
+  const isNightAt = (ms) => sunAltAz(new Date(ms)).alt < -3;
+  // fill each icon only when its kind changes (no DOM work every frame)
+  function setIcon(el, key, html) { if (el.dataset.k !== key) { el.dataset.k = key; el.innerHTML = html; } }
+  function chipsUpdate(d) {
+    const box = $('pChips'); if (!box) return;
+    box.classList.toggle('above', S.chipsPos === 'above'); $('pNote').classList.toggle('above', S.chipsPos === 'above');
+    const sn = sunToday(), mn = moonNow(), nowH = d.getHours() + d.getMinutes() / 60;
+    const soon = (h) => { const m = Math.ceil((h - nowH) * 60); return m > 0 && m <= 60 ? 'in ' + m + ' min' : fmtHour(h); };  // v60
+    setIcon($('pcRiseI'), 'rise', icon('rise')); setText('pcRiseT', soon(sn.rise));
+    setIcon($('pcSetI'), 'set', icon('set')); setText('pcSetT', soon(sn.set));
+    const ph = Math.round(mn.phase * 50) / 50; setIcon($('pcMoonI'), 'm' + ph, icon('moon', ph)); setText('pcMoonT', Math.round(mn.fraction * 100) + ' %');
+    const w = S.weather === 'real' && WX && Date.now() - WX.t < 3 * 3600000 ? WX : null;
+    if (w) { const n = wxIcon(w.code, isNightAt(Date.now()), w.cloud); setIcon($('pcWxI'), n, icon(n)); setText('pcWxT', Math.round(w.temp) + '°'); }
+    else { setIcon($('pcWxI'), 'off', icon('off')); setText('pcWxT', '–°'); }
+  }
+  // ---- the note: only one, the most important; checked once a minute and when the weather or battery changes
+  let BAT = null, noteNow = null;
+  try { if (navigator.getBattery) navigator.getBattery().then((b) => { BAT = b; ['levelchange', 'chargingchange'].forEach((ev) => b.addEventListener(ev, () => chipsNow())); chipsNow(); }).catch(() => {}); } catch (e) {}
+  const hm = (ms) => { const t = new Date(ms); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); };
+  // the time the sun passes a height this evening (golden hour = 6°), or null
+  function sunCrossEvening(alt) {
+    const t0 = new Date(); t0.setHours(12, 0, 0, 0);
+    let prev = sunAltAz(t0).alt;
+    for (let m = 10; m <= 12 * 60; m += 10) { const t = t0.getTime() + m * 60000, a = sunAltAz(new Date(t)).alt; if (prev >= alt && a < alt) return t - 10 * 60000 * ((alt - a) / (prev - a)); prev = a; }
+    return null;
+  }
+  function dayLen(day) { try { const t = sunTimes(day); return (t.set - t.rise) / 60000; } catch (e) { return 0; } }
+  function pickNote() {
+    if (S.notes === 'off') return null;
+    const now = Date.now(), d = new Date(), H = d.getHours(), w = S.weather === 'real' && WX && WX.h && now - WX.t < 3 * 3600000 ? WX : null;
+    // 1 battery low (not charging)
+    if (BAT && !BAT.charging && BAT.level < 0.2) {
+      const left = BAT.dischargingTime && isFinite(BAT.dischargingTime) ? ' · about ' + Math.max(1, Math.round(BAT.dischargingTime / 3600)) + ' h left' : '';
+      return { k: 'bat', ic: 'batlow', warn: true, t: Math.round(BAT.level * 100) + ' %' + left };
+    }
+    if (w) {
+      const next = (hrs) => w.h.filter((r) => r[0] >= now - 1800000 && r[0] <= now + hrs * 3600000);
+      // 2 storm or strong wind in the next 6 hours
+      const gust = next(6).find((r) => r[5] >= 60 || r[4] >= 95);
+      if (gust) return { k: 'wind', ic: gust[4] >= 95 ? 'storm' : 'wind', warn: true, t: gust[4] >= 95 ? 'Thunderstorm around ' + hm(gust[0]) : 'Strong wind from ' + hm(gust[0]) + ' · gusts ' + Math.round(gust[5]) + ' km/h' };
+      // 3 rain or snow starting in the next 3 hours (or falling now: until when)
+      const wet = (r) => r[2] >= 50 && (r[3] >= 0.2 || (r[4] >= 51 && r[4] <= 86));
+      const h3 = next(3), nowWet = h3[0] && wet(h3[0]);
+      if (nowWet) { const dry = w.h.find((r) => r[0] > now && !wet(r)); const snow = h3[0][4] >= 71 && h3[0][4] <= 86; return { k: 'rain', ic: snow ? 'snow' : 'umbrella', t: (snow ? 'Snow' : 'Rain') + (dry ? ' until ' + hm(dry[0]) : ' for hours') }; }
+      const start = h3.find(wet);
+      if (start) { const snow = start[4] >= 71 && start[4] <= 86, end = w.h.find((r) => r[0] > start[0] && !wet(r)), hrs = end ? Math.round((end[0] - start[0]) / 3600000) : 0;
+        return { k: 'rain', ic: snow ? 'snow' : 'umbrella', t: (snow ? 'Snow' : 'Rain') + ' from ' + hm(start[0]) + (hrs ? ' · about ' + hrs + (hrs === 1 ? ' hour' : ' hours') : '') }; }
+      // 4 frost or ice in the morning (evening to 9:00, at or below 1 °C)
+      if (H >= 18 || H < 9) { const cold = next(14).filter((r) => new Date(r[0]).getHours() <= 9 && r[1] <= 1); if (cold.length) { const end = w.h.find((r) => r[0] > cold[cold.length - 1][0] && r[1] > 1); return { k: 'frost', ic: 'frost', t: 'Ice possible' + (end ? ' until ' + hm(end[0]) : ' in the morning') }; } }
+    }
+    // 5 something in the sky tonight (today's event, or strong northern lights)
+    const tonight = skyEvents().find((e) => sameDay(e.date, d) && (e.date.getHours() >= 15 || H < 6));
+    if (tonight && H >= 12) return { k: 'sky', ic: /meteor/i.test(tonight.title) ? 'meteor' : 'moon', t: tonight.title + (/meteor/i.test(tonight.title) ? ' tonight · best after midnight' : ' tonight') };
+    const kp = SOL && SOL.kp ? SOL.kp[localDay(d)] || 0 : 0;
+    if (kp >= 7 && (H >= 17 || H < 5)) return { k: 'sky', ic: 'aurora', t: 'Northern lights possible tonight (Kp ' + Math.round(kp) + ')' };
+    // 6 golden hour soon (the 40 minutes before it starts)
+    const g = sunCrossEvening(6);
+    if (g && g - now > 0 && g - now < 40 * 60000) return { k: 'sun', ic: 'golden', t: 'Golden hour in ' + Math.ceil((g - now) / 60000) + ' min' };
+    if (w) {
+      // 7 clear sky tonight (evening only; few clouds from 21:00 to 2:00)
+      if (H >= 16 && H < 23) { const n = w.h.filter((r) => { const hh = new Date(r[0]).getHours(); return r[0] > now && (hh >= 21 || hh <= 2); }).slice(0, 6); if (n.length >= 4 && n.reduce((a, r) => a + r[7], 0) / n.length < 25) return { k: 'sky', ic: 'stars', t: 'Clear sky tonight · good for stars' }; }
+      // 8 high UV (morning to early afternoon)
+      if (H >= 8 && H < 15) { const top = w.h.filter((r) => sameDay(new Date(r[0]), d)).reduce((m, r) => (r[6] > (m ? m[6] : -1) ? r : m), null); if (top && top[6] >= 6 && top[0] > now - 3600000) return { k: 'uv', ic: 'uv', t: 'UV ' + Math.round(top[6]) + ' around ' + hm(top[0]) + ' · use sun cream' }; }
+    }
+    // 9 longer days (winter solstice to spring equinox, in the morning)
+    const y = d.getFullYear(), md = (d.getMonth() + 1) * 100 + d.getDate();
+    if ((md >= 1222 || md <= 320) && H >= 6 && H < 12) { const plus = Math.round(dayLen(d) - dayLen(new Date(d.getTime() - 86400000))); if (plus >= 1) return { k: 'sun', ic: 'daylight', t: '+' + plus + ' min of daylight since yesterday' }; }
+    return null;
+  }
+  function chipsNow() {
+    const n = pickNote(), el = $('pNote'); if (!el) return;
+    noteNow = n;
+    if (!n) { el.hidden = true; return; }
+    setIcon($('pNoteI'), n.ic, icon(n.ic)); setText('pNoteT', n.t);
+    el.classList.toggle('warn', !!n.warn); el.hidden = false;
+  }
+  setInterval(chipsNow, 60000);
+  setTimeout(chipsNow, 0);
+  // ---- cards (tap a chip or the note)
+  function wxCard() {
+    const w = S.weather === 'real' && WX ? WX : null;
+    if (!w) { sheetInfo('Weather', 'Weather is off. Turn it on to see the temperature, the next hours and rain notes here. Only your city (or your place rounded to about 10 km) is sent to Open-Meteo.', [{ label: 'Turn on weather', run: () => { S.weather = 'real'; save(); fillForm(); wxFetch(true); toast('Weather on.'); } }]); return; }
+    const now = Date.now(), hrs = (w.h || []).filter((r) => r[0] >= now - 1800000).slice(0, 6), mins = Math.round((now - w.t) / 60000);
+    sheetInfo(Math.round(w.temp) + '° · ' + wxText(w.code), (CITY || 'Here') + (noteNow && /rain|wind|frost|uv/.test(noteNow.k) ? ' · ' + noteNow.t : '') + '\n' + (mins < 2 ? 'Updated just now' : 'Updated ' + mins + ' min ago'));
+    const x = $('sheetExtra'); x.textContent = '';
+    if (hrs.length) {
+      const row = document.createElement('div'); row.className = 'wxh';
+      hrs.forEach((r, i) => { const c = document.createElement('div'); c.innerHTML = '<span>' + (i === 0 ? 'now' : String(new Date(r[0]).getHours()).padStart(2, '0')) + '</span>' + icon(wxIcon(r[4], isNightAt(r[0]), r[7])) + '<b>' + Math.round(r[1]) + '°</b>' + (r[2] >= 20 ? '<i>' + r[2] + ' %</i>' : ''); row.appendChild(c); });
+      x.appendChild(row);
+    }
+    (w.d || []).slice(1, 4).forEach((r) => { const c = document.createElement('div'); c.className = 'wxd'; const dt = new Date(r[0] + 'T12:00'); c.innerHTML = '<span>' + DAYS[dt.getDay()] + '</span>' + icon(wxIcon(r[1], false, 0)) + '<span>' + Math.round(r[3]) + '° – ' + Math.round(r[2]) + '°</span>'; x.appendChild(c); });
+    x.hidden = false;
+  }
+  function sunCard() {
+    const d = new Date(), sn = sunToday(), len = dayLen(d), tom = new Date(d.getTime() + 86400000), diff = Math.round(dayLen(tom) - len);
+    const g = sunCrossEvening(6), dark = sunCrossEvening(-6), dst = tom.getTimezoneOffset() !== d.getTimezoneOffset();
+    sheetInfo('Sun today', 'Up ' + fmtHour(sn.rise) + ' · down ' + fmtHour(sn.set) + ' · ' + Math.floor(len / 60) + ' h ' + Math.round(len % 60) + ' min of light\n'
+      + (g ? 'Golden hour from ' + hm(g) : '') + (dark ? ' · dark at ' + hm(dark) : '') + '\n'
+      + 'Tomorrow ' + (diff === 0 ? 'about the same' : Math.abs(diff) + ' min ' + (diff > 0 ? 'longer' : 'shorter')) + (dst ? ' · the clocks change tonight' : ''));
+  }
+  let chipDrag = null, chipNoClick = false;
+  (() => {
+    const row = $('pChips'); if (!row) return;
+    $('pcRise').addEventListener('click', () => { if (!chipNoClick) { hapt('press'); sunCard(); } });
+    $('pcSet').addEventListener('click', () => { if (!chipNoClick) { hapt('press'); sunCard(); } });
+    $('pcMoon').addEventListener('click', () => { if (!chipNoClick) { hapt('press'); moonCard(); } });
+    $('pcWx').addEventListener('click', () => { if (!chipNoClick) { hapt('press'); wxCard(); } });
+    $('pNote').addEventListener('click', () => { const n = noteNow; if (!n) return; hapt('press'); if (n.k === 'sky') { if (/Northern/.test(n.t)) sunCard(); else openEvents(); } else if (n.k === 'sun') sunCard(); else if (n.k !== 'bat') wxCard(); });
+    // hold the row (0.45 s), then drag it up or down: it snaps above the date or under the time
+    row.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();  // the Earth's own swipe and hold do not start from the chips
+      const scr = $('planetScreen').getBoundingClientRect();
+      chipDrag = { y0: e.clientY, id: e.pointerId, top: scr.top, H: scr.height, on: false, t: setTimeout(() => { chipDrag.on = true; row.classList.add('lift'); hapt('press'); try { row.setPointerCapture(e.pointerId); } catch (er) {} }, 450) };
+    });
+    row.addEventListener('pointermove', (e) => {
+      if (!chipDrag) return;
+      if (!chipDrag.on) { if (Math.abs(e.clientY - chipDrag.y0) > 10) { clearTimeout(chipDrag.t); chipDrag = null; } return; }
+      row.style.transform = 'translateY(' + (e.clientY - chipDrag.y0) + 'px)';
+    });
+    const end = (e) => {
+      if (!chipDrag) return;
+      clearTimeout(chipDrag.t);
+      if (chipDrag.on) {
+        const y = (e.clientY - chipDrag.top) / chipDrag.H, pos = y < 0.2 ? 'above' : 'below';
+        row.classList.remove('lift'); row.style.transform = '';
+        if (pos !== S.chipsPos) { S.chipsPos = pos; save(); hapt('detent'); toast(pos === 'above' ? 'Chips above the date.' : 'Chips under the time.'); }
+        chipNoClick = true; setTimeout(() => { chipNoClick = false; }, 350);
+        kick();
+      }
+      chipDrag = null;
+    };
+    row.addEventListener('pointerup', end); row.addEventListener('pointercancel', end);
+  })();
   // 3 (v36): tap Vienna on the Earth (or the moon in the sky) for a short card
   let planetSpot = null, planetMoon = null, planetSun = null;
   function viennaCard() {
@@ -4605,6 +4825,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     $('sheetTitle').textContent = title;
     $('sheetText').textContent = text;
     $('sheetText').style.whiteSpace = '';
+    $('sheetExtra').textContent = ''; $('sheetExtra').hidden = true;  // v66: weather card rows
     const o = $('sheetOpen');
     if (href) { o.href = href; o.hidden = false; } else { o.hidden = true; o.removeAttribute('href'); }
     $('sheetSend').hidden = !send;
@@ -4711,7 +4932,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   });
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -5094,7 +5315,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc'];
+  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes'];
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
@@ -5437,6 +5658,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     liveLine();
     if (changed === 'weather') { wxFetch(true); wxLine(); }
     if (changed === 'chargeMode') chargeCheck();  // v62
+    if (changed === 'notes' || changed === 'weather') chipsNow();  // v66
     if (changed === 'loc') { applyPlace(); WX = null; wxFetch(true); locate(true); }  // v47
     locLine();
     if (st.demo && S.sky !== 'clock') stopDemo();
