@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com https://services.swpc.noaa.gov; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com https://services.swpc.noaa.gov https://celestrak.org; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#0B1430">
 <title>Sun Launcher</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -74,6 +74,12 @@ body { background: var(--night-deep); color: var(--ink); font-family: var(--font
 #planetScreen.calm .pchips, #planetScreen.calm .pnote { display: none; }
 #app.watch .pchips, #app.watch .pnote { opacity: 0 !important; pointer-events: none !important; transition: opacity .5s; }
 .sheetextra[hidden] { display: none; }
+.skyrow { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 12px; padding: 7px 0; }
+.skyrow svg { width: 30px; height: 30px; }
+.skyrow b { display: block; font-size: 16px; font-weight: 600; }
+.skyrow small { display: block; font-size: 13px; color: var(--ink-2); }
+.skyrow span { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.skysep { height: 1px; background: var(--line); margin: 6px 0; }
 .wxh { display: flex; justify-content: space-between; gap: 4px; padding: 6px 0 10px; border-bottom: 1px solid var(--line); }
 .wxh div { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; color: var(--ink-2); }
 .wxh svg { width: 30px; height: 30px; }
@@ -969,7 +975,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v69';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v70';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1027,7 +1033,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     { name: 'Look', items: ['Theme', 'Accent colour', 'Text size', 'Icons', 'Wallpaper', 'Sounds'] },
     { name: 'Phone', items: ['Notifications', 'Language', 'Location', 'Camera access', 'Battery saver', 'Shortcuts'] },
     { name: 'Safety', items: ['Privacy', 'Permissions', 'App lock', 'Clear history', 'Offline status', 'Updates'] },
-    { name: 'Info', items: ['Help', 'Tutorial', 'Feedback', 'What is new', 'Licences', 'About'] }
+    { name: 'Info', items: ['Tonight\'s sky', 'Help', 'Tutorial', 'Feedback', 'What is new', 'Licences', 'About'] }
   ];
   const THEMES = {
     daylight: { name: 'Daylight', look: 'rays', color: 'time', moon: 'phase' },
@@ -4068,6 +4074,13 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     aurora: () => '<path d="M3 18c3-6 5-9 9-9s6 3 9 9" stroke="#6FF0A0" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M5 18c2-4 4-6 7-6s5 2 7 6" stroke="#B48CFF" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".8"/>',
     golden: (i) => icHorizon + '<path d="M6.5 17a5.5 5.5 0 0 1 11 0z" fill="url(#sg' + i + ')" opacity=".9"/><circle cx="12" cy="14" r="8" fill="#FFC94D" opacity=".15"/>',
     daylight: (i) => icSun('sg' + i, 11, 12, 3.8) + '<path d="M19 6v5M16.5 8.5h5" stroke="#6FDC8C" stroke-width="1.6" stroke-linecap="round"/>',
+    // v70: planets and the space station
+    jupiter: (i) => '<defs><radialGradient id="jp' + i + '" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#F6E7CF"/><stop offset="1" stop-color="#C79A6B"/></radialGradient></defs><circle cx="12" cy="12" r="7.5" fill="url(#jp' + i + ')"/><path d="M5 10h14M4.8 13h14.4M6 15.6h12" stroke="#B07A4A" stroke-width="1" opacity=".55"/><ellipse cx="14.6" cy="14.4" rx="1.6" ry="1" fill="#C0603A" opacity=".8"/>',
+    venus: (i) => '<defs><radialGradient id="ve' + i + '" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#FFFBEA"/><stop offset="1" stop-color="#E8D9A8"/></radialGradient></defs><circle cx="12" cy="12" r="9.5" fill="#FFF6D0" opacity=".15"/><circle cx="12" cy="12" r="7" fill="url(#ve' + i + ')"/>',
+    mars: (i) => '<defs><radialGradient id="ma' + i + '" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#FFB38A"/><stop offset="1" stop-color="#B8462A"/></radialGradient></defs><circle cx="12" cy="12" r="6" fill="url(#ma' + i + ')"/><path d="M9 9.5c1.4.6 2.6.3 3.6-.4M12 15.4c1-.5 2.4-.3 3 .4" stroke="#7a2a18" stroke-width=".9" fill="none" opacity=".6"/>',
+    saturn: (i) => '<defs><radialGradient id="sa' + i + '" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#F6E7CF"/><stop offset="1" stop-color="#C9A66B"/></radialGradient></defs><circle cx="12" cy="12" r="5" fill="url(#sa' + i + ')"/><ellipse cx="12" cy="12" rx="10.5" ry="3.2" fill="none" stroke="#E8D3B0" stroke-width="1.6" transform="rotate(-20 12 12)"/><path d="M7.4 10.2a5 5 0 0 1 9.2 0" fill="url(#sa' + i + ')"/>',
+    mercury: () => '<circle cx="12" cy="12" r="5" fill="#B8B4AE"/><circle cx="10.4" cy="10.6" r="1" fill="#8f8b85"/><circle cx="13.6" cy="13.4" r=".8" fill="#8f8b85"/>',
+    iss: () => '<g transform="rotate(-20 12 12)"><rect x="2.5" y="8.6" width="6" height="2.6" rx=".4" fill="#8CB4E8"/><rect x="2.5" y="12.8" width="6" height="2.6" rx=".4" fill="#8CB4E8"/><rect x="15.5" y="8.6" width="6" height="2.6" rx=".4" fill="#8CB4E8"/><rect x="15.5" y="12.8" width="6" height="2.6" rx=".4" fill="#8CB4E8"/><line x1="8.5" y1="12" x2="15.5" y2="12" stroke="#DCE6F5" stroke-width="1.4" stroke-linecap="round"/><rect x="10.4" y="9.8" width="3.2" height="4.4" rx="1" fill="#F2F4F8"/></g>',
     batlow: () => '<rect x="3" y="7.5" width="16" height="9" rx="2.4" stroke="#DCE6F5" stroke-width="1.6" fill="none"/><rect x="20" y="10.3" width="1.6" height="3.4" rx=".8" fill="#DCE6F5"/><rect x="4.8" y="9.3" width="3" height="5.4" rx="1.1" fill="#FF7A5C"/>'
   };
   let icUid = 0;
@@ -4132,6 +4145,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       // 4 frost or ice in the morning (evening to 9:00, at or below 2 °C in the air: the ground can be colder)
       if (H >= 18 || H < 9) { const cold = next(14).filter((r) => new Date(r[0]).getHours() <= 9 && r[1] <= 2); if (cold.length) { const end = w.h.find((r) => r[0] > cold[cold.length - 1][0] && r[1] > 2); return { k: 'frost', ic: 'frost', t: 'Ice possible' + (end ? ' until ' + hm(end[0]) : ' in the morning') }; } }
     }
+    // 4b (v70) the space station: a pass you can see, from 60 minutes before until it ends
+    const pass = issPasses().find((s) => s.end > now && s.start - now < 3600000);
+    if (pass) return { k: 'iss', ic: 'iss', t: (pass.start <= now ? 'Space station now · ' : 'Space station ' + hm(pass.start) + ' · ') + Math.max(1, Math.round((pass.end - pass.start) / 60000)) + ' min, ' + (pass.max > 45 ? 'high' : 'low in the ' + skyDir(pass.maxAz)) };
     // 5 something in the sky tonight (today's event, or strong northern lights)
     const tonight = skyEvents().find((e) => sameDay(e.date, d) && (e.date.getHours() >= 15 || H < 6));
     if (tonight && H >= 12) return { k: 'sky', ic: /meteor/i.test(tonight.title) ? 'meteor' : 'moon', t: tonight.title + (/meteor/i.test(tonight.title) ? ' tonight · best after midnight' : ' tonight') };
@@ -4146,12 +4162,15 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       // 8 high UV (morning to early afternoon)
       if (H >= 8 && H < 15) { const top = w.h.filter((r) => sameDay(new Date(r[0]), d)).reduce((m, r) => (r[6] > (m ? m[6] : -1) ? r : m), null); if (top && top[6] >= 6 && top[0] > now - 3600000) return { k: 'uv', ic: 'uv', t: 'UV ' + Math.round(top[6]) + ' around ' + hm(top[0]) + ' · use sun cream' }; }
     }
+    // 8b (v70) a bright planet tonight (evening only, when nothing else is on)
+    if (H >= 16 && H < 23) { const pl = planetsTonight().planets.find((p) => p.mag < 0.5 && p.name !== 'Mercury'); if (pl) return { k: 'planet', ic: pl.name.toLowerCase(), t: pl.name + (pl.fromDusk ? ' tonight · ' + skyBright(pl.mag) + ' in the ' + pl.dir : ' rises ' + hm(pl.first) + ' · ' + skyBright(pl.mag) + ' in the ' + pl.dir) }; }
     // 9 longer days (winter solstice to spring equinox, in the morning)
     const y = d.getFullYear(), md = (d.getMonth() + 1) * 100 + d.getDate();
     if ((md >= 1222 || md <= 320) && H >= 6 && H < 12) { const plus = Math.round(dayLen(d) - dayLen(new Date(d.getTime() - 86400000))); if (plus >= 1) return { k: 'sun', ic: 'daylight', t: '+' + plus + ' min of daylight since yesterday' }; }
     return null;
   }
   function chipsNow() {
+    issFetch();  // v70: the station's orbit, once a day when online
     const n = pickNote(), el = $('pNote'); if (!el) return;
     noteNow = n;
     if (!n) { el.hidden = true; return; }
@@ -4189,7 +4208,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     $('pcSet').addEventListener('click', () => { if (!chipNoClick) { hapt('press'); sunCard(); } });
     $('pcMoon').addEventListener('click', () => { if (!chipNoClick) { hapt('press'); moonCard(); } });
     $('pcWx').addEventListener('click', () => { if (!chipNoClick) { hapt('press'); wxCard(); } });
-    $('pNote').addEventListener('click', () => { const n = noteNow; if (!n) return; hapt('press'); if (n.k === 'sky') { if (/Northern/.test(n.t)) sunCard(); else openEvents(); } else if (n.k === 'sun') sunCard(); else if (n.k !== 'bat') wxCard(); });
+    $('pNote').addEventListener('click', () => { const n = noteNow; if (!n) return; hapt('press'); if (n.k === 'iss' || n.k === 'planet') { skyCard(); return; } if (n.k === 'sky') { if (/Northern/.test(n.t)) sunCard(); else openEvents(); } else if (n.k === 'sun') sunCard(); else if (n.k !== 'bat') wxCard(); });
     // hold the row (0.45 s), then drag it up or down: it snaps above the date or under the time
     row.addEventListener('pointerdown', (e) => {
       e.stopPropagation();  // the Earth's own swipe and hold do not start from the chips
@@ -4418,6 +4437,172 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     if (st.screen === 'moon' || both || S.mode === 'one') renderMoon(now, h);
   }
 
+  /* ---------- Tonight's sky (v70, user: mock\next-ideas.html part 1) ----------
+     Planets: low-precision orbit formulas (Paul Schlyter, "How to compute planetary positions"), good to about 1°,
+     calculated on the phone. The space station: its orbit (TLE) from CelesTrak once a day, then the passes are
+     calculated on the phone (Kepler orbit + the Earth's flattening J2, fine for 1-2 days). A pass counts only when
+     you can see it: the station in sunlight, your sky dark (sun below -6°), and at least 10° up. */
+  const SKY_RAD = Math.PI / 180;
+  const skyJD = (ms) => ms / 86400000 + 2440587.5;
+  const skyRev = (x) => ((x % 360) + 360) % 360;
+  function skyKepler(M, e) { let E = M + e * Math.sin(M); for (let k = 0; k < 8; k++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); return E; }
+  // orbit elements at day d (days from 2000 Jan 0.0): [N, i, w, a, e, M] in degrees / AU
+  const PLANET_EL = {
+    Mercury: (d) => [48.3313 + 3.24587e-5 * d, 7.0047 + 5.0e-8 * d, 29.1241 + 1.01444e-5 * d, 0.387098, 0.205635 + 5.59e-10 * d, 168.6562 + 4.0923344368 * d],
+    Venus: (d) => [76.6799 + 2.4659e-5 * d, 3.3946 + 2.75e-8 * d, 54.891 + 1.38374e-5 * d, 0.72333, 0.006773 - 1.302e-9 * d, 48.0052 + 1.6021302244 * d],
+    Mars: (d) => [49.5574 + 2.11081e-5 * d, 1.8497 - 1.78e-8 * d, 286.5016 + 2.92961e-5 * d, 1.523688, 0.093405 + 2.516e-9 * d, 18.6021 + 0.5240207766 * d],
+    Jupiter: (d) => [100.4542 + 2.76854e-5 * d, 1.303 - 1.557e-7 * d, 273.8777 + 1.64505e-5 * d, 5.20256, 0.048498 + 4.469e-9 * d, 19.895 + 0.0830853001 * d],
+    Saturn: (d) => [113.6634 + 2.3898e-5 * d, 2.4886 - 1.081e-7 * d, 339.3939 + 2.97661e-5 * d, 9.55475, 0.055546 - 9.499e-9 * d, 316.967 + 0.0334442282 * d]
+  };
+  // the sun around the Earth (ecliptic x, y in AU) at day d
+  function skySun(d) {
+    const w = 282.9404 + 4.70935e-5 * d, e = 0.016709 - 1.151e-9 * d, M = skyRev(356.047 + 0.9856002585 * d) * SKY_RAD, E = skyKepler(M, e);
+    const xv = Math.cos(E) - e, yv = Math.sqrt(1 - e * e) * Math.sin(E), v = Math.atan2(yv, xv), r = Math.hypot(xv, yv), lon = v + w * SKY_RAD;
+    return [r * Math.cos(lon), r * Math.sin(lon)];
+  }
+  // a planet seen from the Earth: right ascension, declination (radians), distances r (sun) and R (earth) in AU
+  function skyPlanet(name, ms) {
+    const d = skyJD(ms) - 2451543.5, el = PLANET_EL[name](d), N = el[0] * SKY_RAD, i = el[1] * SKY_RAD, w = el[2] * SKY_RAD, a = el[3], e = el[4], M = skyRev(el[5]) * SKY_RAD;
+    const E = skyKepler(M, e), xv = a * (Math.cos(E) - e), yv = a * Math.sqrt(1 - e * e) * Math.sin(E), v = Math.atan2(yv, xv), r = Math.hypot(xv, yv), u = v + w;
+    const xh = r * (Math.cos(N) * Math.cos(u) - Math.sin(N) * Math.sin(u) * Math.cos(i)), yh = r * (Math.sin(N) * Math.cos(u) + Math.cos(N) * Math.sin(u) * Math.cos(i)), zh = r * Math.sin(u) * Math.sin(i);
+    const s = skySun(d), xg = xh + s[0], yg = yh + s[1], zg = zh, ecl = (23.4393 - 3.563e-7 * d) * SKY_RAD;
+    const xe = xg, ye = yg * Math.cos(ecl) - zg * Math.sin(ecl), ze = yg * Math.sin(ecl) + zg * Math.cos(ecl);
+    return { ra: Math.atan2(ye, xe), dec: Math.atan2(ze, Math.hypot(xe, ye)), r: r, R: Math.hypot(xg, yg, zg), sunR: Math.hypot(s[0], s[1]) };
+  }
+  const skyGmst = (ms) => skyRev(280.46061837 + 360.98564736629 * (skyJD(ms) - 2451545)) * SKY_RAD;
+  function skyAltAz(ra, dec, ms) {
+    const H = skyGmst(ms) + LON * SKY_RAD - ra, phi = LAT * SKY_RAD;
+    const alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H));
+    const az = Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi)) / SKY_RAD + 180;
+    return { alt: alt / SKY_RAD, az: skyRev(az) };
+  }
+  const skyDir = (az) => ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][Math.round(az / 45) % 8];
+  // how bright (magnitude, smaller = brighter), from the usual simple formulas
+  function skyMag(name, p) {
+    const k = 5 * Math.log10(p.r * p.R);
+    const cosPh = (p.r * p.r + p.R * p.R - p.sunR * p.sunR) / (2 * p.r * p.R), ph = Math.acos(Math.max(-1, Math.min(1, cosPh))) / SKY_RAD;
+    if (name === 'Mercury') return -0.36 + k + 0.027 * ph + 2.2e-13 * Math.pow(ph, 6);
+    // Venus: Mallama (2018), also right for the thin crescent near the sun
+    if (name === 'Venus') return k + (ph < 163.7 ? -4.384 - 1.044e-3 * ph + 3.687e-4 * ph * ph - 2.814e-6 * Math.pow(ph, 3) + 8.938e-9 * Math.pow(ph, 4) : 236.05828 - 2.81914 * ph + 8.39034e-3 * ph * ph);
+    if (name === 'Mars') return -1.51 + k + 0.016 * ph;
+    if (name === 'Jupiter') return -9.25 + k + 0.014 * ph;
+    return -9.0 + k + 0.044 * ph;  // Saturn (without its rings' tilt)
+  }
+  const skyBright = (m) => m < -3 ? 'very bright' : m < -1 ? 'bright' : m < 1 ? 'easy to see' : 'faint';
+  // tonight: from dusk (sun -6°) to dawn, every 10 minutes
+  function skyNight(ms) {
+    const step = 600000, out = [];
+    let t = ms, dark = false, start = null;
+    for (let k = 0; k < 6 * 30 && out.length < 2; k++, t += step) {
+      const isDark = sunAltAz(new Date(t)).alt < -6;
+      if (isDark && !dark) start = t;
+      if (!isDark && dark) out.push([start, t]);
+      dark = isDark;
+    }
+    if (dark && start) out.push([start, t]);
+    return out[0] || null;
+  }
+  let skyMemo = { t: 0, v: null };
+  function planetsTonight() {
+    const now = Date.now();
+    if (skyMemo.v && now - skyMemo.t < 10 * 60000) return skyMemo.v;
+    const night = skyNight(now), list = [];
+    if (night) {
+      Object.keys(PLANET_EL).forEach((name) => {
+        let first = null, last = null, best = null;
+        for (let t = night[0]; t <= night[1]; t += 600000) {
+          const p = skyPlanet(name, t), h = skyAltAz(p.ra, p.dec, t);
+          if (h.alt > 8) { if (first === null) first = t; last = t; if (!best || h.alt > best.alt) best = { alt: h.alt, az: h.az, t: t, mag: skyMag(name, p) }; }
+        }
+        if (first === null || (name === 'Mercury' && best.alt < 12)) return;
+        const fromDusk = first <= night[0] + 600000;
+        list.push({ name: name, first: first, last: last, fromDusk: fromDusk, toDawn: last >= night[1] - 600000, mag: best.mag, dir: skyDir(best.az), alt: best.alt, at: best.t, dusk: night[0] });
+      });
+    }
+    list.sort((a, b) => a.mag - b.mag);
+    skyMemo = { t: now, v: { night: night, planets: list } };
+    return skyMemo.v;
+  }
+  // ---- the space station
+  let ISS = null;
+  try { ISS = JSON.parse(localStorage.getItem('sun-launcher-iss') || 'null'); } catch (e) {}
+  let issBusy = false;
+  function issFetch() {
+    if (issBusy || !navigator.onLine || (ISS && Date.now() - ISS.t < 20 * 3600000)) return;
+    issBusy = true;
+    fetch('https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE', { cache: 'no-store' }).then((r) => r.text()).then((txt) => {
+      const L = txt.split(/\r?\n/).map((s) => s.trim()).filter(Boolean), l1 = L.find((s) => s.startsWith('1 25544')), l2 = L.find((s) => s.startsWith('2 25544'));
+      if (!l1 || !l2) return;
+      ISS = { t: Date.now(), l1: l1, l2: l2 };
+      try { localStorage.setItem('sun-launcher-iss', JSON.stringify(ISS)); } catch (e) {}
+      passMemo = { t: 0, v: [] };
+      if (typeof chipsNow === 'function') chipsNow();
+    }).catch(() => {}).then(() => { issBusy = false; });
+  }
+  function issElements(tle) {
+    const l1 = tle.l1, l2 = tle.l2, yy = +l1.slice(18, 20), day = +l1.slice(20, 32);
+    const epoch = Date.UTC(yy < 57 ? 2000 + yy : 1900 + yy, 0, 1) + (day - 1) * 86400000;
+    return { epoch: epoch, ndot2: +l1.slice(33, 43), i: +l2.slice(8, 16) * SKY_RAD, raan: +l2.slice(17, 25) * SKY_RAD, e: +('0.' + l2.slice(26, 33).trim()), w: +l2.slice(34, 42) * SKY_RAD, M: +l2.slice(43, 51) * SKY_RAD, n: +l2.slice(52, 63) };
+  }
+  // the station's place (km, Earth-fixed) at time ms
+  function issPos(el, ms) {
+    const mu = 398600.4418, Re = 6378.137, J2 = 1.08262668e-3, td = (ms - el.epoch) / 86400000, n0 = el.n * 2 * Math.PI / 86400;
+    const a = Math.cbrt(mu / (n0 * n0)), p = a * (1 - el.e * el.e), k = 1.5 * J2 * (Re / p) * (Re / p) * n0, ts = td * 86400;
+    const raan = el.raan - k * Math.cos(el.i) * ts, w = el.w + 0.5 * k * (5 * Math.cos(el.i) * Math.cos(el.i) - 1) * ts;
+    const M = el.M + 2 * Math.PI * (el.n * td + el.ndot2 * td * td), E = skyKepler(M % (2 * Math.PI), el.e);
+    const r = a * (1 - el.e * Math.cos(E)), v = 2 * Math.atan2(Math.sqrt(1 + el.e) * Math.sin(E / 2), Math.sqrt(1 - el.e) * Math.cos(E / 2)), u = v + w;
+    const xi = r * (Math.cos(raan) * Math.cos(u) - Math.sin(raan) * Math.sin(u) * Math.cos(el.i)), yi = r * (Math.sin(raan) * Math.cos(u) + Math.cos(raan) * Math.sin(u) * Math.cos(el.i)), zi = r * Math.sin(u) * Math.sin(el.i);
+    const g = skyGmst(ms);
+    return { eci: [xi, yi, zi], ecef: [xi * Math.cos(g) + yi * Math.sin(g), -xi * Math.sin(g) + yi * Math.cos(g), zi] };
+  }
+  function issLook(pos) {  // height and direction from your place
+    const f = 1 / 298.257223563, e2 = f * (2 - f), phi = LAT * SKY_RAD, lam = LON * SKY_RAD, Re = 6378.137, N = Re / Math.sqrt(1 - e2 * Math.sin(phi) * Math.sin(phi)), h = 0.2;
+    const ox = (N + h) * Math.cos(phi) * Math.cos(lam), oy = (N + h) * Math.cos(phi) * Math.sin(lam), oz = (N * (1 - e2) + h) * Math.sin(phi);
+    const dx = pos[0] - ox, dy = pos[1] - oy, dz = pos[2] - oz, rng = Math.hypot(dx, dy, dz);
+    const s = Math.sin(phi) * Math.cos(lam) * dx + Math.sin(phi) * Math.sin(lam) * dy - Math.cos(phi) * dz, e = -Math.sin(lam) * dx + Math.cos(lam) * dy, z = Math.cos(phi) * Math.cos(lam) * dx + Math.cos(phi) * Math.sin(lam) * dy + Math.sin(phi) * dz;
+    return { alt: Math.asin(z / rng) / SKY_RAD, az: skyRev(Math.atan2(e, -s) / SKY_RAD) };
+  }
+  function issLit(eci, ms) {  // is the station in sunlight? (the Earth's shadow as a cylinder)
+    const d = skyJD(ms) - 2451543.5, s = skySun(d), ecl = (23.4393 - 3.563e-7 * d) * SKY_RAD;
+    const sx = s[0], sy = s[1] * Math.cos(ecl), sz = s[1] * Math.sin(ecl), L = Math.hypot(sx, sy, sz), ux = sx / L, uy = sy / L, uz = sz / L;
+    const dot = eci[0] * ux + eci[1] * uy + eci[2] * uz;
+    return dot > 0 || Math.sqrt(Math.max(0, eci[0] * eci[0] + eci[1] * eci[1] + eci[2] * eci[2] - dot * dot)) > 6378.137;
+  }
+  let passMemo = { t: 0, v: [] };
+  function issPasses() {
+    const now = Date.now();
+    if (!ISS || now - ISS.t > 6 * 86400000) return [];
+    if (now - passMemo.t < 5 * 60000) return passMemo.v;
+    const el = issElements(ISS), out = [];
+    let cur = null;
+    for (let t = now - 10 * 60000; t < now + 48 * 3600000; t += 20000) {
+      const p = issPos(el, t), lk = issLook(p.ecef), see = lk.alt > 10 && issLit(p.eci, t) && sunAltAz(new Date(t)).alt < -6;
+      if (see) { if (!cur) cur = { start: t, from: lk.az, max: lk.alt, maxAz: lk.az, end: t, to: lk.az }; else { cur.end = t; cur.to = lk.az; if (lk.alt > cur.max) { cur.max = lk.alt; cur.maxAz = lk.az; } } }
+      else if (cur) { if (cur.end - cur.start >= 60000 && cur.end > now) out.push(cur); cur = null; }
+    }
+    passMemo = { t: now, v: out };
+    return out;
+  }
+  const skyHm = (ms) => { const t = new Date(ms); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); };
+  // the card: every planet tonight, then the next space station passes
+  function skyCard() {
+    issFetch();
+    const pt = planetsTonight(), passes = issPasses().slice(0, 2), x = $('sheetExtra');
+    sheetInfo('Tonight\'s sky', (CITY || 'Here') + (pt.night ? ' · dark from ' + skyHm(pt.night[0]) + ' to ' + skyHm(pt.night[1]) : ''));
+    x.textContent = '';
+    const row = (ic, name, sub, tm) => { const r = document.createElement('div'); r.className = 'skyrow'; r.innerHTML = icon(ic) + '<div><b></b><small></small></div><span></span>'; r.querySelector('b').textContent = name; r.querySelector('small').textContent = sub; r.querySelector('span').textContent = tm; x.appendChild(r); };
+    if (!pt.planets.length) row('stars', 'No bright planet tonight', 'they are too close to the sun', '');
+    pt.planets.forEach((p) => row(p.name.toLowerCase(), p.name, skyBright(p.mag) + ' · ' + p.dir + (p.alt > 50 ? ', high' : ''),
+      p.fromDusk && p.toDawn ? 'all night' : p.fromDusk ? 'until ' + skyHm(p.last) : 'from ' + skyHm(p.first)));
+    const sep = document.createElement('div'); sep.className = 'skysep'; x.appendChild(sep);
+    // the day is written out: a short "Sun" would read as the sun in this app
+    const tmrw = new Date(Date.now() + 86400000);
+    const dayOf = (d) => sameDay(d, new Date()) || (pt.night && +d < pt.night[1]) ? '' : sameDay(d, tmrw) ? 'tomorrow ' : d.toLocaleDateString('en-GB', { weekday: 'long' }) + ' ';
+    if (passes.length) passes.forEach((s) => row('iss', 'Space station', (s.max > 45 ? 'high over you' : 'low, ' + Math.round(s.max) + '° up') + ' · from the ' + skyDir(s.from) + ' · ' + Math.max(1, Math.round((s.end - s.start) / 60000)) + ' min',
+      dayOf(new Date(s.start)) + skyHm(s.start)));
+    else row('iss', 'Space station', ISS ? 'no pass you can see in the next 2 days' : (navigator.onLine ? 'getting its orbit…' : 'needs the internet once a day'), '');
+    x.hidden = false;
+  }
   /* ---------- Gestures ---------- */
   let drag = null, bubbleTimer = 0;
   const pts = new Map();
@@ -5158,7 +5343,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -5190,7 +5375,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       + '\n' + (keys.some((k) => k.indexOf('sun-launcher-media') === 0) ? 'Pictures are saved.' : 'No pictures saved yet.') + '\nWithout internet: no weather and no new solar data; everything else works.')),
     'Updates': () => sheetInfo('Updates', 'You have Sun Launcher ' + APP_VERSION + '. New versions load by themselves; a "New version ready" note then asks you to tap Update.',
       [{ label: 'Check now', run: () => { if (!navigator.serviceWorker) { toast('Updates need the installed app.'); return; } navigator.serviceWorker.getRegistration().then((r) => r ? r.update() : null).then(() => toast('Checked. If there is a new version, the Update note shows in a moment.')).catch(() => toast('Could not check now (offline?).')); } }]),
-    'Privacy': () => sheetInfo('Privacy', 'Your settings, looks and app list stay on this phone.\nOnly these leave it: the weather request to Open-Meteo (with GPS: your place rounded to about 10 km; fixed city: that city) and the solar activity data from NOAA (nothing about you).\nNo accounts, no tracking, no ads.'),
+    'Privacy': () => sheetInfo('Privacy', 'Your settings, looks and app list stay on this phone.\nOnly these leave it: the weather request to Open-Meteo (with GPS: your place rounded to about 10 km; fixed city: that city), the solar activity data from NOAA and, once a day, the space station\'s orbit from CelesTrak (nothing about you in either).\nNo accounts, no tracking, no ads.'),
     'Permissions': () => {
       const q = (n) => navigator.permissions && navigator.permissions.query ? navigator.permissions.query({ name: n }).then((r) => r.state).catch(() => 'unknown') : Promise.resolve('unknown');
       q('geolocation').then((g) => sheetInfo('Permissions', 'Location: ' + g + (S.loc === 'gps' ? ' (used: Location is set to GPS)' : ' (not used: fixed city)') + '\nCamera: not needed. A photo opens your phone\'s own camera.\nChange permissions in the browser: site settings.'));
@@ -5202,6 +5387,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     'Help': () => { $('tipsAgain').click(); sheetInfo('Help', 'All tips show again as you use the app.\nSwipe up and down: Sun and Moon. Swipe down on the Sun: the Earth. Hold the sun or moon: edit its look. Bottom slider: change the screen. Eye: Watch.'); },
     'Tutorial': () => { $('tipsAgain').click(); toast('All tips show again.'); },
     'What is new': () => sheetInfo('What is new', NEWS),
+    'Tonight\'s sky': () => skyCard(),  // v70
     'About': () => sheetInfo('About', 'Sun Launcher ' + APP_VERSION + '\nA home screen for your apps, by the sun, the moon and the Earth.\nMaps and data: NASA, ESA, Solar System Scope, Open-Meteo, NOAA, GeoNames (see Licences).'),
     'Feedback': () => sheetInfo('Feedback', 'There is no server to send feedback to. Tell me (Claude) in our chat, with a screenshot.'),
     // Phone
