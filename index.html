@@ -967,7 +967,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v67';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v68';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -3889,10 +3889,12 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   function renderPlanet(now) {
     const c = $('planetCanvas').getContext('2d'), W = st.W, H = st.H, k = W / 390;
     c.clearRect(0, 0, W, H);
+    const spec = specialNow();  // v68: special sky days
     // v46 (user): real stars (NASA star map), the drawn ones only until the map has loaded
     drawStarMap(c, W, H, 0.85, now, [par.x, par.y], 1400);
     { const sn = seasonNow(); if (sn.name === 'summer' && sunAltAz(new Date()).alt < -6) drawStarMap(c, W, H, 0.55 * sn.w, now, [par.x, par.y], 1400); }  // v67: summer nights: the Milky Way brighter
     if (!starOk) drawStars(c, W, H, 0.8, now, fancy(), [par.x, par.y]);
+    if (spec.kind === 'meteors') drawMeteors(c, W, H, now, spec.k);  // v68: before the Earth, so the Earth covers them
     // the time shown follows the app's sky time (also "Pick a time" and "Play a day")
     const d0 = new Date(); d0.setHours(0, 0, 0, 0);
     const d = st.demo || S.sky !== 'clock' ? new Date(d0.getTime() + hourNow() * 3600000) : new Date();
@@ -3923,7 +3925,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     // at one height, so all its up and down came in the short sink.
     const mRise = clamp((mv[2] + 0.2) / 1.2, 0, 1), mt = 1 - clamp((mv[2] + 0.2) / 0.35, 0, 1), mSink = mt * mt * (3 - 2 * mt), mSide = Math.atan2(mv[0], mv[2]) / (Math.PI / 2);
     if (mRise > 0 && GLB.ok) {  // v53 (mockup C): the moon also sets behind the Earth's edge, its glow fading
-      const mx = cx + clamp(mSide, -1.2, 1.2) * (W / 2 - 34), mr = 15 * k, limbM = cy - Math.sqrt(Math.max(0, R * R - (mx - cx) * (mx - cx)));
+      const mx = cx + clamp(mSide, -1.2, 1.2) * (W / 2 - 34), mr = 15 * k * (spec.kind === 'super' ? 1.16 : 1), limbM = cy - Math.sqrt(Math.max(0, R * R - (mx - cx) * (mx - cx)));
       // v47 (user): always a small gap (~10 px) between the moon and the Earth's glowing air
       const airY = cy - Math.sqrt(Math.max(0, R * R * 1.07 * 1.07 - (mx - cx) * (mx - cx)));
       // and never on the time chips (H * 0.3, 36 px tall) unless Watch hides them; if there is no room, the gap to the Earth wins
@@ -3935,6 +3937,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       c.fillStyle = mg; c.fillRect(mx - mr * 3.3, my - mr * 3.3, mr * 6.6, mr * 6.6);
       c.restore();
       GLB.draw(c, mx, my, mr, { mode: 'moon', light: realMoonLight(mnNow.phase), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0.6, margin: 1.6 });
+      if (spec.kind === 'lunar' || spec.kind === 'super') specialMoon(c, mx, my, mr, spec, 1 - mSink);  // v68
       if (mSink < 0.5) planetMoon = { x: mx, y: my };
     }
     {
@@ -3955,6 +3958,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         c.restore();
         if (sy < limbY - 4 && sink < 0.5) planetSun = { x: sx, y: sy };  // v42: tap the sun -> Sun menu
         GLB.draw(c, sx, sy, sr, { mode: 'sun', tint: '#FFC94D', rot: now / 1000 * 0.02, time: now / 1000, glow: 0.8, margin: 1.6 });
+        if (spec.kind === 'solar') specialSun(c, sx, sy, sr, spec.k);  // v68
       }
       // v42: until the Earth photos have loaded (slow mobile data), a simple drawn Earth with the real lit side
       if (!ok) drawnEarth(c, cx, cy, R, lv);
@@ -3972,6 +3976,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         c.restore();
         // 7 (v37): northern lights seen from space, a green band around the north on the night side (stronger with high Kp)
         drawAuroraSpace(c, cx, cy, R, centerLon, lv, now, toView);
+        if (spec.kind === 'aurora') auroraPhoto(c, cx, cy, R, W, spec.k, now);  // v68: NASA photo on storm nights
         const vp = toView([Math.cos(LAT * rad) * Math.sin((LON - centerLon) * rad), Math.sin(LAT * rad), Math.cos(LAT * rad) * Math.cos((LON - centerLon) * rad)]);
         const vx = cx + R * vp[0], vy = cy - R * vp[1], vz = vp[2];  // vz < 0: your place is on the far side while spinning
         planetSpot = vz > 0.1 ? { x: vx, y: vy } : null;
@@ -4257,6 +4262,110 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     }
     c.restore();
     if (!reduce) kickLater();
+  }
+
+  /* ---------- Special sky days on the Earth (v68, user: mock\looks.html E1-E5, looks-v2.html) ----------
+     Only on the real days: meteor shower peak nights (21-05 h, the peak date and the night after), the moon eclipse
+     (copper, around its time), the supermoon (a bit bigger and brighter), the partial sun eclipse (the moon covers
+     the sun as much as it does in your city), strong northern lights (NOAA Kp >= 7, at night) with the NASA photo
+     (ISS052-E-7857, Jack Fischer, NASA). For tests: ?special=meteors|lunar|supermoon|solar|aurora */
+  const SPECIAL_TEST = (() => { try { return new URLSearchParams(location.search).get('special') || ''; } catch (e) { return ''; } })();
+  let specMemo = { t: 0, v: { kind: '' } };
+  function specialNow() {
+    const now = Date.now();
+    if (now - specMemo.t < 60000) return specMemo.v;
+    let v = { kind: '' };
+    const T = { meteors: { kind: 'meteors', k: 1 }, lunar: { kind: 'lunar', k: 1, total: true }, supermoon: { kind: 'super', k: 1 }, solar: { kind: 'solar', k: 0.47 }, aurora: { kind: 'aurora', k: 1 } };
+    if (T[SPECIAL_TEST]) v = T[SPECIAL_TEST];
+    else {
+      const d = new Date(now), H = d.getHours(), night = H >= 21 || H < 5;
+      // the sun eclipse: 47 % in Vienna, 10:14 - 12:22, deepest 11:17 (coverage grows and shrinks)
+      ECLIPSES.forEach((e) => { const t = new Date(e[0]).getTime(), dt = Math.abs(now - t);
+        if (/Sun eclipse/.test(e[2]) && dt < 68 * 60000) { const pct = parseInt((e[2].match(/(\d+) %/) || [0, 50])[1], 10) / 100; v = { kind: 'solar', k: pct * (1 - dt / (68 * 60000)) }; }
+        if (/moon eclipse/i.test(e[2]) && dt < 2.5 * 3600000) { const total = /Total/.test(e[2]), faint = /Faint/.test(e[2]); v = { kind: 'lunar', total: total, k: (total ? 1 : faint ? 0.3 : 0.5) * Math.min(1, (2.5 * 3600000 - dt) / 3600000) }; } });
+      if (!v.kind) {
+        const kp = SOL && SOL.kp ? SOL.kp[localDay(d)] || 0 : 0;
+        if (kp >= 7 && night && sunAltAz(d).alt < -6) v = { kind: 'aurora', k: Math.min(1, 0.55 + (kp - 7) * 0.2) };
+      }
+      if (!v.kind && night) {
+        const y = d.getFullYear(), peak = SHOWERS.find((s) => { const p = new Date(y, s[0] - 1, s[1]); const dd = (d - p) / 86400000; return dd > -0.2 && dd < 1.25; });
+        if (peak) v = { kind: 'meteors', k: Math.min(1, peak[3] / 80), name: peak[2] };
+      }
+      if (!v.kind) { const sm = skyEvents().find((e) => e.title === 'Supermoon' && sameDay(e.date, d)); if (sm) v = { kind: 'super', k: 1 }; }
+    }
+    specMemo = { t: now, v: v };
+    return v;
+  }
+  // meteors: a few short bright streaks in the sky above the Earth, now and then
+  const meteorFx = { list: [], next: 0 };
+  function drawMeteors(c, W, H, now, k) {
+    if (reduce) return;
+    if (now > meteorFx.next) { meteorFx.next = now + (1600 + Math.random() * 4200) / Math.max(0.3, k); meteorFx.list.push({ t0: now, x: W * (0.15 + Math.random() * 0.85), y: H * (0.04 + Math.random() * 0.28), a: 2.35 + (Math.random() - 0.5) * 0.5, L: 60 + Math.random() * 90, dur: 500 + Math.random() * 500 }); }
+    meteorFx.list = meteorFx.list.filter((m) => now - m.t0 < m.dur);
+    c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
+    meteorFx.list.forEach((m) => {
+      const p = (now - m.t0) / m.dur, hx = m.x + Math.cos(m.a) * m.L * p * 1.6, hy = m.y + Math.sin(m.a) * m.L * p * 1.6, tx = hx - Math.cos(m.a) * m.L * Math.min(1, p * 2), ty = hy - Math.sin(m.a) * m.L * Math.min(1, p * 2), al = Math.sin(Math.PI * p);
+      const g = c.createLinearGradient(hx, hy, tx, ty); g.addColorStop(0, 'rgba(255, 252, 235, ' + al + ')'); g.addColorStop(1, 'rgba(255, 252, 235, 0)');
+      c.strokeStyle = g; c.lineWidth = 1.8; c.beginPath(); c.moveTo(hx, hy); c.lineTo(tx, ty); c.stroke();
+      c.fillStyle = 'rgba(255, 255, 240, ' + al + ')'; c.beginPath(); c.arc(hx, hy, 1.4, 0, 6.283); c.fill();
+    });
+    c.restore();
+    kickLater();
+  }
+  // the moon: copper in a total eclipse (bright, not dark: the Earth's sunsets light it), dimmer when partial;
+  // a supermoon gets a wider, brighter glow
+  function specialMoon(c, x, y, r, spec, vis) {
+    if (vis <= 0) return;
+    c.save(); c.globalAlpha = vis;
+    if (spec.kind === 'super') {
+      const g = c.createRadialGradient(x, y, r, x, y, r * 4.4); g.addColorStop(0, 'rgba(235, 240, 255, 0.28)'); g.addColorStop(1, 'rgba(235, 240, 255, 0)');
+      c.globalCompositeOperation = 'lighter'; c.fillStyle = g; c.fillRect(x - r * 4.5, y - r * 4.5, r * 9, r * 9);
+    } else {
+      const k = spec.k;
+      c.save(); c.beginPath(); c.arc(x, y, r * 1.02, 0, 6.283); c.clip();
+      c.globalCompositeOperation = 'multiply'; c.globalAlpha = vis * k;
+      const m = c.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r * 1.05);
+      m.addColorStop(0, spec.total ? '#f2a066' : '#d8c4b4'); m.addColorStop(0.7, spec.total ? '#c0603a' : '#b6a090'); m.addColorStop(1, spec.total ? '#7a2c18' : '#857060');
+      c.fillStyle = m; c.fillRect(x - r * 1.1, y - r * 1.1, r * 2.2, r * 2.2);
+      if (spec.total) { c.globalCompositeOperation = 'screen'; c.globalAlpha = vis * k * 0.35; c.fillStyle = '#ff9a5a'; c.fillRect(x - r * 1.1, y - r * 1.1, r * 2.2, r * 2.2);
+        // the thin blue band at the edge of the Earth's shadow
+        c.globalCompositeOperation = 'lighter'; c.globalAlpha = vis * k * 0.5; const b = c.createRadialGradient(x - r * 0.9, y + r * 0.2, r * 0.9, x - r * 0.9, y + r * 0.2, r * 1.15); b.addColorStop(0, 'rgba(90, 170, 255, 0)'); b.addColorStop(0.6, 'rgba(90, 170, 255, 0.45)'); b.addColorStop(1, 'rgba(90, 170, 255, 0)'); c.fillStyle = b; c.fillRect(x - r * 1.1, y - r * 1.1, r * 2.2, r * 2.2); }
+      c.restore();
+      if (spec.total) { c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(x, y, r, x, y, r * 3.4); g.addColorStop(0, 'rgba(200, 90, 50, ' + (0.3 * k) + ')'); g.addColorStop(1, 'rgba(200, 90, 50, 0)'); c.fillStyle = g; c.fillRect(x - r * 3.5, y - r * 3.5, r * 7, r * 7); }
+    }
+    c.restore();
+  }
+  // the sun: the moon covers a part of it (cov = how much of the sun's width), the rest stays bright with its glare
+  function specialSun(c, x, y, r, cov) {
+    if (cov <= 0.01) return;
+    const d = r * 2 * (1 - Math.min(0.98, cov)), a = -0.65;
+    c.save();
+    c.fillStyle = '#04060c'; c.beginPath(); c.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, r * 1.03, 0, 6.283); c.fill();
+    // a soft bright rim on the sun's lit crescent
+    c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(x - Math.cos(a) * r * 0.6, y - Math.sin(a) * r * 0.6, 0, x, y, r * 2.2);
+    g.addColorStop(0, 'rgba(255, 236, 190, 0.25)'); g.addColorStop(1, 'rgba(255, 236, 190, 0)'); c.fillStyle = g; c.fillRect(x - r * 2.3, y - r * 2.3, r * 4.6, r * 4.6);
+    c.restore();
+  }
+  // strong northern lights: the NASA photo along the Earth's edge, its dark parts invisible ('screen'), fading to
+  // the sides and down onto the Earth, slowly breathing
+  const auImg = new Image(); let auOk = false, auAsked = false, auMask = null;
+  function auroraPhoto(c, cx, cy, R, W, k, now) {
+    if (!auAsked) { auAsked = true; auImg.onload = () => { auOk = true; kickLater(); }; auImg.src = 'aurora-iss.jpg'; }
+    if (!auOk) return;
+    if (!auMask) {  // the photo with soft edges, made once
+      auMask = document.createElement('canvas'); auMask.width = auImg.width; auMask.height = auImg.height;
+      const m = auMask.getContext('2d'), w = auMask.width, h = auMask.height;
+      m.drawImage(auImg, 0, 0); m.globalCompositeOperation = 'destination-in';
+      const gx = m.createLinearGradient(0, 0, w, 0); gx.addColorStop(0, 'rgba(0,0,0,0)'); gx.addColorStop(0.18, 'rgba(0,0,0,1)'); gx.addColorStop(0.82, 'rgba(0,0,0,1)'); gx.addColorStop(1, 'rgba(0,0,0,0)');
+      m.fillStyle = gx; m.fillRect(0, 0, w, h);
+      const gy = m.createLinearGradient(0, 0, 0, h); gy.addColorStop(0, 'rgba(0,0,0,0)'); gy.addColorStop(0.12, 'rgba(0,0,0,1)'); gy.addColorStop(0.45, 'rgba(0,0,0,1)'); gy.addColorStop(0.85, 'rgba(0,0,0,0)');
+      m.fillStyle = gy; m.fillRect(0, 0, w, h);
+    }
+    const w = W * 1.25, h = w * auImg.height / auImg.width, limb = cy - R, breathe = reduce ? 1 : 0.88 + 0.12 * Math.sin(now / 2600);
+    c.save(); c.globalCompositeOperation = 'screen'; c.globalAlpha = Math.min(1, k * breathe);
+    c.drawImage(auMask, cx - w / 2, limb - h * 0.34, w, h);  // the photo's own edge (about 1/3 down) on the Earth's edge
+    c.restore();
+    kickLater();
   }
   // 3 (v36): tap Vienna on the Earth (or the moon in the sky) for a short card
   let planetSpot = null, planetMoon = null, planetSun = null;
@@ -5035,7 +5144,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   });
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -5091,7 +5200,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   function openItem(it) {
     if (it.app) { openApp(BY[it.name]); return; }
     if (FUNC_RUN[it.name]) { FUNC_RUN[it.name](); return; }
-    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. City names: GeoNames (geonames.org), CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain.', '', false); return; }
+    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. City names: GeoNames (geonames.org), CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain. Northern lights photo: NASA, ISS052-E-7857 (astronaut Jack Fischer, 2017).', '', false); return; }
     openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
   }
   $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
