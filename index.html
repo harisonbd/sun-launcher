@@ -456,6 +456,84 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 .toast .tundo { min-height: 36px; padding: 0 14px; border: none; border-radius: 18px; background: var(--sun); color: var(--sun-ink); font-weight: 700; cursor: pointer; }
 .toast { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); max-width: 80%; background: var(--panel-2); color: var(--ink); padding: 10px 16px; border-radius: 14px; font-size: 14px; font-weight: 500; z-index: 950; text-align: center; }
 @media (prefers-reduced-motion: reduce) { #worlds { transition-duration: .01s; } }
+
+/* v71: calm glass for the menus (mock\style-v3.html). Frosted and see-through; the Earth or sky stays visible.
+   --gl1/--gl2 = the glass tint. By day (#app.bright) it is darker so text stays readable; with Effects = Calm
+   (no .fx) there is no blur, only an almost solid tint. */
+#app { --gl1: rgba(8, 12, 26, .44); --gl2: rgba(8, 12, 26, .66); --hair: rgba(255, 255, 255, .13); --ghost: rgba(244, 242, 236, .6); }
+#app.bright { --gl1: rgba(8, 12, 26, .62); --gl2: rgba(8, 12, 26, .8); }
+#app:not(.fx) { --gl1: rgba(12, 17, 34, .93); --gl2: rgba(10, 14, 28, .96); }
+#app .overlay { background: rgba(5, 8, 18, .22); }
+#app .sheet, #app .search-panel, #app .toast, #app .updatebar { background: linear-gradient(180deg, var(--gl1), var(--gl2)); border: 1px solid var(--hair); }
+#app.fx .sheet, #app.fx .search-panel, #app.fx .toast, #app.fx .updatebar { -webkit-backdrop-filter: blur(14px) saturate(1.1); backdrop-filter: blur(14px) saturate(1.1); }
+/* cards and forms float with round corners; Settings stays low so the screen above shows your changes live */
+#sheet .sheet, #edit .sheet, #appForm .sheet { width: auto; flex: 1; margin: 0 10px calc(10px + env(safe-area-inset-bottom, 0px)); border-radius: 28px; padding-bottom: 22px; }
+#settings .sheet { border-bottom: none; }
+#app .sheet h2 { font-size: 31px; font-weight: 200; letter-spacing: .01em; }
+#app .search-panel { border: none; }
+/* the window opens with a soft fade and a small slide ("backwards": once open, nothing blocks the blur) */
+#app .overlay:not([hidden]) > .sheet, #app .overlay:not([hidden]) > .search-panel { animation: glassIn .32s cubic-bezier(.2, .8, .2, 1) backwards; }
+@keyframes glassIn { from { opacity: 0; transform: translateY(14px); } }
+@media (prefers-reduced-motion: reduce) { #app .overlay:not([hidden]) > .sheet, #app .overlay:not([hidden]) > .search-panel { animation: none; } }
+/* thin lines and pills instead of filled boxes; the one main action is a white pill */
+#app legend, #app .psec, #app .afl { font-size: 11px; font-weight: 500; letter-spacing: .14em; color: var(--ghost); }
+#app .btn { border: 1px solid rgba(255, 255, 255, .24); font-weight: 400; }
+#app .btn.primary { background: rgba(255, 255, 255, .9); border-color: transparent; color: #1a1d26; font-weight: 600; }
+#app .btn.danger { color: #ff9b8c; }
+#app .seg:not(.swatches) label, #app .preset { background: transparent; border: 1px solid rgba(255, 255, 255, .2); border-radius: 22px; font-weight: 400; color: var(--ink-2); }
+#app .seg:not(.swatches) input:checked + label { background: rgba(255, 255, 255, .9); border-color: transparent; color: #1a1d26; font-weight: 600; }
+#app .seg input:focus-visible + label { outline: 2px solid var(--sun); outline-offset: 2px; }
+#app .tabs button { border: 1px solid rgba(255, 255, 255, .2); font-weight: 400; }
+#app .tabs button.on { background: rgba(255, 255, 255, .9); color: #1a1d26; font-weight: 600; }
+#app .swapopts { background: rgba(255, 255, 255, .05); border: 1px solid var(--hair); }
+#app .act, #app .send, #app .erow { background: transparent; border: 1px solid var(--hair); }
+#app .addapp { border: 1px dashed rgba(255, 255, 255, .35); background: transparent; color: var(--ink); font-weight: 400; }
+#app .ainp, #app .apaste, #app .asite, #app .awhere button, #app .where { background: rgba(255, 255, 255, .06); border: 1px solid var(--hair); }
+#app .awhere button.on, #app .asite.on, #app .where.on-sun { background: rgba(255, 255, 255, .9); border-color: transparent; color: #1a1d26; }
+#app .lookchip { border: 1px solid rgba(255, 255, 255, .3); font-weight: 400; }
+/* Settings groups: thin rows with a line icon, no boxes */
+#app details.more > summary { border: none; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); border-radius: 0; min-height: 56px; padding: 0 2px 0 36px; font-size: 17px; font-weight: 400; position: relative; }
+#app details.more > summary::after { content: ''; width: 8px; height: 8px; border-right: 1.4px solid var(--ghost); border-bottom: 1.4px solid var(--ghost); transform: rotate(-45deg); margin-left: 10px; flex: none; transition: transform .2s; }
+#app details.more[open] > summary::after { content: ''; transform: rotate(45deg); }
+#app details.more > summary::before { content: ''; position: absolute; left: 2px; top: 50%; width: 22px; height: 22px; margin-top: -11px; background-position: center; background-size: contain; background-repeat: no-repeat; opacity: .8; }
+#grpSky > summary::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F4F2EC' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z'/%3E%3Ccircle cx='12' cy='10' r='2.2'/%3E%3C/svg%3E"); }
+#grpFeel > summary::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F4F2EC' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='7' y='3' width='10' height='18' rx='2.5'/%3E%3Cpath d='M3.5 9v6M20.5 9v6'/%3E%3C/svg%3E"); }
+#moreSettings > summary::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F4F2EC' stroke-width='1.4'%3E%3Ccircle cx='5.5' cy='12' r='1.3'/%3E%3Ccircle cx='12' cy='12' r='1.3'/%3E%3Ccircle cx='18.5' cy='12' r='1.3'/%3E%3C/svg%3E"); }
+#app details.more + details.more > summary { border-top: none; }
+#app .grp summary .sum { color: var(--ghost); font-size: 12.5px; margin-left: auto; }
+/* card rows (Tonight's sky): thin lines between rows, times in light large numbers */
+#app .skyrow { border-top: 1px solid var(--hair); }
+#app .skyrow span { font-size: 17px; font-weight: 300; }
+#app .skysep { height: 0; margin: 0; }
+/* Search: full glass, rows with thin lines, big thin letters over each A-Z group, and the letter strip */
+#app .search-bar input { background: rgba(255, 255, 255, .1); border: 1px solid var(--hair); }
+#app .res { background: transparent; border-radius: 0; border-bottom: 1px solid rgba(255, 255, 255, .08); min-height: 58px; font-weight: 400; }
+#app .res .ini { background: transparent; border: 1px solid rgba(255, 255, 255, .28); font-weight: 300; }
+#app .res .ini:has(img) { border: none; }
+#app .res small { font-weight: 400; color: var(--ghost); }
+#app .results { gap: 0; }
+.reswrap { position: relative; flex: 1; min-height: 0; display: flex; }
+.reswrap .results { flex: 1; position: relative; }
+.reswrap.has-az .results { margin-right: 26px; scrollbar-width: none; }
+.reswrap.has-az .results::-webkit-scrollbar { display: none; }
+.azhdr { font-size: 26px; font-weight: 200; color: var(--ink); margin: 14px 0 2px 8px; letter-spacing: .02em; }
+.azstrip { position: absolute; right: 0; top: 4px; bottom: 4px; width: 26px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; touch-action: none; cursor: ns-resize; }
+.azstrip[hidden] { display: none; }
+.azstrip span { font-size: 10.5px; color: var(--ghost); line-height: 1; transition: transform .12s, color .12s; pointer-events: none; }
+.azstrip span.near { color: var(--ink-2); transform: translateX(-6px) scale(1.35); }
+.azstrip span.on { color: var(--ink); transform: translateX(-13px) scale(1.9); font-weight: 300; }
+.azlens { position: absolute; right: 52px; width: 66px; height: 66px; border-radius: 50%; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .3); display: grid; place-items: center; font-size: 34px; font-weight: 200; color: var(--ink); transform: translateY(-50%) scale(.6); opacity: 0; transition: opacity .15s, transform .15s; pointer-events: none; }
+#app.fx .azlens { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.azlens.on { opacity: 1; transform: translateY(-50%) scale(1); }
+/* small messages: a glass pill; its action is the white button */
+#app .toast { border-radius: 26px; padding: 12px 18px; font-weight: 400; }
+#app .toast.has-undo { padding: 6px 6px 6px 18px; }
+#app .toast .tundo, #app .updatebar button { background: rgba(255, 255, 255, .9); color: #1a1d26; font-weight: 600; }
+#app .updatebar { border-radius: 26px; font-weight: 400; }
+#app .updatebar .ux { background: transparent; color: var(--ghost); }
+/* Large text: the thin titles and numbers become one step thicker */
+#app.ts-large .sheet h2, #app.ts-large .azhdr { font-weight: 300; }
+#app.ts-large .skyrow span { font-weight: 400; }
 </style>
 
 <div id="app">
@@ -650,7 +728,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         <input id="searchInput" type="search" placeholder="Search apps and functions" aria-label="Search apps and functions" autocomplete="off" data-autofocus>
         <button type="button" class="btn small" id="searchClose">Close</button>
       </div>
-      <div id="results" class="results"></div>
+      <div class="reswrap" id="resWrap"><div id="results" class="results"></div><div id="azStrip" class="azstrip" aria-hidden="true" hidden></div><div id="azLens" class="azlens" aria-hidden="true"></div></div>
     </div>
   </div>
 
@@ -975,7 +1053,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v70';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v71';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1598,6 +1676,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     r.setProperty('--sun', sun);
     r.setProperty('--sun-deep', st.deep);
     app.classList.toggle('fx', S.fx === 'fancy');
+    // v71: darker menu glass when the sky behind is light (its real colour, not the hour)
+    const lum = (c) => { const n = parseInt(String(c).slice(1, 7), 16); return isNaN(n) ? 0 : (0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255)) / 255; };
+    app.classList.toggle('bright', (lum(top) + lum(bot)) / 2 > 0.22);
     FRONT_FX.forEach((v) => app.classList.toggle('ff-' + v, S.frontFx.indexOf(v) !== -1));
     app.classList.toggle('photo-sky', S.skyPhoto === 'sunset');
     app.classList.toggle('live-sky', S.skyPhoto === 'live');
@@ -5343,7 +5424,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -5481,7 +5562,13 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       box.appendChild(p);
       return;
     }
-    hits.forEach((r) => {
+    const azFrom = q ? hits.length : hits.findIndex((r) => r.where.indexOf('Recent') !== 0);
+    let azLast = '';
+    hits.forEach((r, i) => {
+      if (azFrom !== -1 && i >= azFrom) {  // v71: big thin letter over each A-Z group
+        const L = azKey(r.name);
+        if (L !== azLast) { azLast = L; const h = document.createElement('div'); h.className = 'azhdr'; h.dataset.az = L; h.textContent = L; box.appendChild(h); }
+      }
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'res';
@@ -5498,7 +5585,32 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     clearTimeout(soloT);
     if (q && hits.length === 1 && BY[hits[0].name]) soloT = setTimeout(() => openResult(hits[0].name), 600);  // v63: apps only
     firstHit = hits[0] ? hits[0].name : '';
+    azBuild();
   }
+  // v71: letter strip. Slide along the right edge: the letters near the finger grow like a wave, a glass lens
+  // shows the letter big, and the list goes to that letter. Only the letters that have apps are shown.
+  function azKey(name) { const c = name.charAt(0).toUpperCase(); return c >= 'A' && c <= 'Z' ? c : '#'; }
+  function azBuild() {
+    const strip = $('azStrip'), hs = $('results').querySelectorAll('.azhdr');
+    strip.textContent = '';
+    const on = hs.length >= 3;
+    strip.hidden = !on; $('resWrap').classList.toggle('has-az', on);
+    if (on) hs.forEach((h) => { const s = document.createElement('span'); s.textContent = h.dataset.az; strip.appendChild(s); });
+  }
+  function azAt(y) {
+    const strip = $('azStrip'), sp = strip.children, rc = strip.getBoundingClientRect();
+    if (!sp.length) return;
+    const i = Math.max(0, Math.min(sp.length - 1, Math.floor((y - rc.top) / rc.height * sp.length)));
+    for (let k = 0; k < sp.length; k++) sp[k].className = k === i ? 'on' : Math.abs(k - i) === 1 ? 'near' : '';
+    const L = sp[i].textContent, lens = $('azLens'), wr = $('resWrap').getBoundingClientRect();
+    lens.textContent = L; lens.style.top = (y - wr.top) + 'px'; lens.classList.add('on');
+    const h = $('results').querySelector('.azhdr[data-az="' + L + '"]');
+    if (h && strip.dataset.cur !== L) { strip.dataset.cur = L; $('results').scrollTop = h.offsetTop; hapt('detent'); }  // offsetTop, never scrollIntoView (it moves #app)
+  }
+  function azEnd() { const strip = $('azStrip'); strip.dataset.cur = ''; for (const s of strip.children) s.className = ''; $('azLens').classList.remove('on'); }
+  $('azStrip').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); try { $('azStrip').setPointerCapture(e.pointerId); } catch (x) {} azAt(e.clientY); });
+  $('azStrip').addEventListener('pointermove', (e) => { if (e.buttons || e.pointerType === 'touch') { e.stopPropagation(); azAt(e.clientY); } });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((t) => $('azStrip').addEventListener(t, azEnd));
   let soloT = 0, firstHit = '';
   function openResult(name) {
     clearTimeout(soloT);
