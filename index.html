@@ -446,6 +446,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 @keyframes hintIn { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
 @keyframes nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-6px); } }
 @media (prefers-reduced-motion: reduce) { .hintpill, .hintpill .arr { animation: none; } }
+.toast.has-undo { display: flex; align-items: center; gap: 14px; pointer-events: auto; }
+.toast .tundo { min-height: 36px; padding: 0 14px; border: none; border-radius: 18px; background: var(--sun); color: var(--sun-ink); font-weight: 700; cursor: pointer; }
 .toast { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); max-width: 80%; background: var(--panel-2); color: var(--ink); padding: 10px 16px; border-radius: 14px; font-size: 14px; font-weight: 500; z-index: 950; text-align: center; }
 @media (prefers-reduced-motion: reduce) { #worlds { transition-duration: .01s; } }
 </style>
@@ -967,7 +969,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v68';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v69';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1043,7 +1045,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'astro' };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'astro', useWeek: {} };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -1107,6 +1109,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   S.recent = (S.recent || []).filter((n) => BY[n]);
   S.pins = (Array.isArray(S.pins) ? S.pins : []).filter((n) => BY[n]).slice(0, 5);
   if (!S.useHours || typeof S.useHours !== 'object') S.useHours = {};
+  // v69: the dial learns work days and weekends apart; the learning so far is copied to both (nothing is lost)
+  if (!S.useWeek || typeof S.useWeek !== 'object' || Array.isArray(S.useWeek)) S.useWeek = {};
+  if (!Object.keys(S.useWeek).length) Object.keys(S.useHours).forEach((n) => { const u = S.useHours[n]; if (Array.isArray(u) && u.length === 24) S.useWeek[n] = u.concat(u); });
   if (!S.tune || typeof S.tune !== 'object') S.tune = {};
   if (!S.looks || typeof S.looks !== 'object') S.looks = { sun: [], moon: [] };
   ['sun', 'moon'].forEach((kd) => { S.looks[kd] = (Array.isArray(S.looks[kd]) ? S.looks[kd] : []).filter((l) => l && typeof l.name === 'string').slice(0, 5); });
@@ -1301,7 +1306,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const SHOWERS = [ // [month 1-12, day, name, meteors per hour in a dark sky, best time, where to look]
     [1, 3, 'Quadrantids', 80, 'after midnight', 'north-east'], [4, 22, 'Lyrids', 18, 'after midnight', 'east'],
     [8, 12, 'Perseids', 100, 'after midnight', 'north-east'], [10, 21, 'Orionids', 20, 'after midnight', 'east'],
-    [11, 17, 'Leonids', 15, 'after midnight', 'east'], [12, 14, 'Geminids', 120, 'from 22:00', 'east, later high in the south']];
+    [11, 17, 'Leonids', 15, 'after midnight', 'east'], [12, 14, 'Geminids', 120, 'from 22:00', 'east, later high in the south'],
+    [5, 6, 'Eta Aquariids', 15, 'before dawn', 'east, low'], [12, 22, 'Ursids', 10, 'after midnight', 'north']];  // v69: from the research report
   const ECLIPSES = [
     ['2027-02-20T20:13:00', '◑', 'Faint moon eclipse', 'Penumbral: the moon dims only a little · all of it visible from Vienna'],
     ['2027-08-02T11:17:00', '◐', 'Sun eclipse · 47 %', 'Partial over Vienna, deepest at 11:17 · only with eclipse glasses'],
@@ -5055,18 +5061,22 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     showOverlay($('sheet'));
   }
   function countUse(name) {
-    const h = new Date().getHours(), u = S.useHours[name] || (S.useHours[name] = new Array(24).fill(0));
+    const d = new Date(), h = d.getHours(), u = S.useHours[name] || (S.useHours[name] = new Array(24).fill(0));
     u[h] = (u[h] || 0) + 1;
+    const w = S.useWeek[name] || (S.useWeek[name] = new Array(48).fill(0)), off = d.getDay() === 0 || d.getDay() === 6 ? 24 : 0;  // v69
+    w[off + h] = (w[off + h] || 0) + 1;
     save();
   }
   // v39: the app opened most around this hour (this hour counts 2, the hours next to it 1) turns to the front.
   // Counts stay on this phone. Needs 3+ opens; never while a finger is on the dial.
   function smartFront() {
     if (S.mode === 'one' || drag || !APPS.length) return;
-    const h = new Date().getHours();
+    const d = new Date(), h = d.getHours(), off = d.getDay() === 0 || d.getDay() === 6 ? 24 : 0;
+    // v69: today's kind of day (work day or weekend) once it has enough opens (12+), else all days together
+    const dayN = Object.keys(S.useWeek).reduce((s, n) => s + S.useWeek[n].slice(off, off + 24).reduce((a, b) => a + b, 0), 0), useDay = dayN >= 12;
     let best = -1, top = 0;
     APPS.forEach((a, i) => {
-      const u = S.useHours[a.name]; if (!u) return;
+      const u = useDay ? (S.useWeek[a.name] || []).slice(off, off + 24) : S.useHours[a.name]; if (!u || !u.length) return;
       const sc = 2 * (u[h] || 0) + (u[(h + 23) % 24] || 0) + (u[(h + 1) % 24] || 0);
       if (sc > top) { top = sc; best = i; }
     });
@@ -5130,6 +5140,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         // v63: the settings that start empty (null) take only the right shape; the rest must match the type
         if (k === 'custom') { if (v === null || nums(v)) { S[k] = v; n++; } return; }
         if (k === 'place') { if (v === null || (plain(v) && isFinite(v.lat) && isFinite(v.lon) && typeof v.lat === 'number' && typeof v.lon === 'number')) { S[k] = v ? { lat: v.lat, lon: v.lon, city: typeof v.city === 'string' ? v.city : '' } : null; n++; } return; }
+        if (k === 'useWeek') { if (plain(v)) { const u = {}; Object.keys(v).forEach((a) => { if (Array.isArray(v[a]) && v[a].length === 48 && v[a].every((x) => typeof x === 'number' && isFinite(x))) u[a] = v[a]; }); S[k] = u; n++; } return; }  // v69
         if (k === 'useHours') { if (plain(v)) { const u = {}; Object.keys(v).forEach((a) => { if (Array.isArray(v[a]) && v[a].length === 24 && v[a].every((x) => typeof x === 'number' && isFinite(x))) u[a] = v[a]; }); S[k] = u; n++; } return; }
         if (k === 'looks') { if (plain(v) && Array.isArray(v.sun) && Array.isArray(v.moon)) { S[k] = { sun: v.sun.filter(plain).slice(0, 5), moon: v.moon.filter(plain).slice(0, 5) }; n++; } return; }
         if (k === 'apps') { if (v === null || Array.isArray(v)) { S[k] = v ? v.map(cleanApp).filter(Boolean) : null; n++; } return; }  // v64
@@ -5142,9 +5153,12 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       save(); toast('Backup loaded (' + n + ' settings). Restarting…'); setTimeout(() => location.reload(), 900);
     }).catch(() => toast('This file is not a Sun Launcher backup.'));
   });
+  // v69: ask the browser once to keep this app's data when the phone runs low on space
+  let storageKept = null;
+  try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -5161,10 +5175,11 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     'Import': () => $('importInput').click(),
     'Storage': () => {
       const ls = (localStorage.getItem(KEY) || '').length;
+      const kept = storageKept === true ? '\nProtected: the phone will not clean it up.' : storageKept === false ? '\nNot protected yet: when the phone is full, the browser may clean it up (Backup & restore keeps a copy).' : '';
       (navigator.storage && navigator.storage.estimate ? navigator.storage.estimate() : Promise.resolve({})).then((e) =>
         (window.caches ? caches.keys() : Promise.resolve([])).then((keys) => sheetInfo('Storage',
           'This app keeps ' + (e.usage != null ? mb(e.usage) : 'an unknown amount') + ' on this phone' + (e.quota ? ' (room for ' + mb(e.quota) + ')' : '') + '.\n'
-          + 'Saved for offline use: ' + keys.filter((k) => k.indexOf('sun-launcher-') === 0).length + ' stores (app, pictures).\nYour settings: ' + (ls / 1024).toFixed(1) + ' KB.')));
+          + 'Saved for offline use: ' + keys.filter((k) => k.indexOf('sun-launcher-') === 0).length + ' stores (app, pictures).\nYour settings: ' + (ls / 1024).toFixed(1) + ' KB.' + kept)));
     },
     'Clear cache': () => sheetInfo('Clear cache', 'Deletes the saved pictures (sun, moon, Earth, sky photos). They download again when shown, up to about 12 MB: best on Wi-Fi. Your settings stay.',
       [{ label: 'Delete saved pictures', run: () => (window.caches ? caches.keys() : Promise.resolve([])).then((keys) => Promise.all(keys.filter((k) => k.indexOf('sun-launcher-media') === 0).map((k) => caches.delete(k)))).then(() => toast('Saved pictures deleted.')) }]),
@@ -5181,7 +5196,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       q('geolocation').then((g) => sheetInfo('Permissions', 'Location: ' + g + (S.loc === 'gps' ? ' (used: Location is set to GPS)' : ' (not used: fixed city)') + '\nCamera: not needed. A photo opens your phone\'s own camera.\nChange permissions in the browser: site settings.'));
     },
     'Clear history': () => sheetInfo('Clear history', 'Forget your recent apps and when you use each app (the dial uses this to put the right app in front).',
-      [{ label: 'Clear history', run: () => { S.recent = []; S.useHours = {}; save(); toast('History cleared.'); } }]),
+      [{ label: 'Clear history', run: () => { S.recent = []; S.useHours = {}; S.useWeek = {}; save(); toast('History cleared.'); } }]),
     'App lock': () => sheetInfo('App lock', 'A web app cannot lock itself safely. Use your phone\'s screen lock; with the Android version later this can come back.'),
     // Info
     'Help': () => { $('tipsAgain').click(); sheetInfo('Help', 'All tips show again as you use the app.\nSwipe up and down: Sun and Moon. Swipe down on the Sun: the Earth. Hold the sun or moon: edit its look. Bottom slider: change the screen. Eye: Watch.'); },
@@ -5241,12 +5256,15 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   });
 
   let toastTimer = 0;
-  function toast(msg) {
+  function toast(msg, undo) {
     const t = $('toast');
     t.textContent = msg;
+    // v69: an Undo button (6 s) when the step can be taken back
+    if (undo) { const b = document.createElement('button'); b.type = 'button'; b.className = 'tundo'; b.textContent = 'Undo'; b.addEventListener('click', () => { clearTimeout(toastTimer); t.hidden = true; hapt('press'); undo(); }); t.appendChild(b); }
+    t.classList.toggle('has-undo', !!undo);
     t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+    toastTimer = setTimeout(() => { t.hidden = true; }, undo ? 6000 : 2600);
   }
 
   /* ---------- Search ---------- */
@@ -5266,9 +5284,10 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     let hits = searchIndex().filter((r) => !q || r.name.toLowerCase().indexOf(q) !== -1 || r.where.toLowerCase().indexOf(q) !== -1);
     if (!q) {  // v55: Recent moved here from its corner: your last apps first
       const rec = S.recent.map((n) => hits.find((r) => r.name === n)).filter(Boolean).map((r) => ({ name: r.name, where: 'Recent · ' + r.where }));
-      hits = rec.concat(hits.filter((r) => S.recent.indexOf(r.name) === -1));
-    }
-    hits = hits.slice(0, 14);
+      // v69: then all your apps A-Z (functions show when you type)
+      const az = hits.filter((r) => BY[r.name] && S.recent.indexOf(r.name) === -1).sort((x, y) => x.name.localeCompare(y.name));
+      hits = rec.concat(az);
+    } else hits = hits.slice(0, 14);
     if (!hits.length) {
       const p = document.createElement('div');
       p.className = 'empty';
@@ -5450,6 +5469,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const sw = (l) => l.map((n) => n === from ? to : n);
     S.order = sw(S.order); S.onMoon = sw(S.onMoon); S.pins = sw(S.pins); S.recent = sw(S.recent); S.favs = sw(S.favs);
     if (S.useHours[from]) { S.useHours[to] = S.useHours[from]; delete S.useHours[from]; }
+    if (S.useWeek[from]) { S.useWeek[to] = S.useWeek[from]; delete S.useWeek[from]; }  // v69
   }
   function saveApps(list) { S.apps = list.map((a) => cleanApp(a)); loadApps(); }
   $('afSave').addEventListener('click', () => {
@@ -5486,10 +5506,18 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     return true;
   }
   function removeApp(name) {
+    // v69: keep what is needed to bring it back (Undo, 6 s)
+    const was = JSON.stringify({ apps: APP_LIST, order: S.order, onMoon: S.onMoon, pins: S.pins, recent: S.recent, favs: S.favs, hours: S.useHours[name] || null, week: S.useWeek[name] || null });
     const strip = (l) => l.filter((n) => n !== name);
-    S.order = strip(S.order); S.onMoon = strip(S.onMoon); S.pins = strip(S.pins); S.recent = strip(S.recent); S.favs = strip(S.favs); delete S.useHours[name];
+    S.order = strip(S.order); S.onMoon = strip(S.onMoon); S.pins = strip(S.pins); S.recent = strip(S.recent); S.favs = strip(S.favs); delete S.useHours[name]; delete S.useWeek[name];
     saveApps(APP_LIST.filter((x) => x.name !== name));
-    changed(); toast(name + ' removed.');
+    changed();
+    toast(name + ' removed.', () => {
+      const w = JSON.parse(was);
+      S.order = w.order; S.onMoon = w.onMoon; S.pins = w.pins; S.recent = w.recent; S.favs = w.favs;
+      if (w.hours) S.useHours[name] = w.hours; if (w.week) S.useWeek[name] = w.week;
+      saveApps(w.apps); changed(); toast(name + ' is back.');
+    });
   }
   // from the hold menu: a sheet asks once more
   function askRemove(name) {
