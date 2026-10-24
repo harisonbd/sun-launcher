@@ -573,6 +573,12 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 .ptimer[hidden], #planetScreen.timing #pNote { display: none; }
 .ptimer svg { width: 20px; height: 20px; }
 #app.watch .ptimer { opacity: 0 !important; pointer-events: none !important; }
+
+/* v73: the note (and the timer chip) sit at the bottom of the Earth, over the 'Swipe up' line: under the time they covered
+   the moon. Chips "above" go to the very top; the eye then moves to the bottom-left on the Earth. */
+#planetScreen .pnote, #planetScreen .pnote.above, #planetScreen .ptimer, #planetScreen .ptimer.above { top: auto; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
+#planetScreen .pchips.above { top: calc(16px + env(safe-area-inset-top, 0px)); }
+#app:has(#planetScreen:not(.away):not([hidden]) .pchips.above) .watchbtn { top: auto; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
 </style>
 
 <div id="app">
@@ -1111,7 +1117,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v72';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v73';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -3237,7 +3243,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       // v39: with the favourites bar the cards sit higher and closer (and the source line goes), so the bar does not cover them
       const bar = S.pins.length > 0, listY = H * (bar ? 0.72 : 0.78), gapY = bar ? 44 : 58;
       if (!bar) txt('Solar data: NOAA Space Weather · forecast for 3 days', W / 2, H * 0.645, 11, 500, 'rgba(255, 214, 160, 0.65)', 'center');
-      place((d) => Math.abs(d) > (bar ? 1.05 : 1.45) ? null : { x: W / 2, y: listY + d * gapY, s: 1 - 0.07 * Math.min(1, Math.abs(d)), o: 1 - 0.4 * Math.min(1, Math.abs(d)) });
+      const listTop = rowY + 54 + 26;  // v73: under the day names and tags, plus half a card
+      place((d) => Math.abs(d) > (bar ? 1.05 : 1.45) || listY + d * gapY < listTop ? null : { x: W / 2, y: listY + d * gapY, s: 1 - 0.07 * Math.min(1, Math.abs(d)), o: 1 - 0.4 * Math.min(1, Math.abs(d)) });
     } else if (v === 'minimal') {
       // like B. Minimal moon: big date, sun at the top-right edge, three short lines, the day curve, a plain list
       const T = tuneOf('sun:minimal'), R = 128 * k * T.size, bx = W - 30 * k + T.x * W, by = H * (0.215 + T.y);
@@ -3910,7 +3917,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         el.style.zIndex = String(sel ? 300 : Math.round(100 + f * 100));
         return;
       }
-      const vis = cards ? ad < 2.6 : ad < 4.6;
+      const vis = cards ? ad < 2.6 && (!phaseRow || listY + dd * rowGap > phaseRow.y + 80) : ad < 4.6;  // v73: never on the mini moons
       el.style.zIndex = String(200 - Math.round(ad * 10));
       if (cards) el.style.transform = 'translate(' + (W / 2).toFixed(1) + 'px,' + (listY + dd * rowGap).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (1 - Math.min(ad, 2) * 0.06).toFixed(3) + ')';
       else el.style.transform = 'translate(18px,' + (listY + dd * rowGap).toFixed(1) + 'px) translate(0,-50%)';
@@ -5607,7 +5614,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v73 · Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
