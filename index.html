@@ -52,6 +52,11 @@ body { background: var(--night-deep); color: var(--ink); font-family: var(--font
 .planet.dragging { transition: none; }
 #planetScreen.calm .planet-handle { opacity: 0.2; }
 .planet[hidden] { display: none; }
+/* v67: season light over the sun screen's drawing (under the app pills); opacity = how far into the season */
+.seasontint { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: soft-light; }
+.seasontint.season-winter { background: linear-gradient(rgba(150, 190, 255, .32), rgba(200, 225, 255, .36)); }
+.seasontint.season-spring { background: linear-gradient(180deg, rgba(200, 235, 190, .26), rgba(255, 236, 190, .2)); }
+.seasontint.season-autumn { background: linear-gradient(rgba(255, 150, 60, .24), rgba(170, 80, 30, .32)); }
 /* v66: smart chips on the Earth (HTML, over the canvas) */
 .pchips { position: absolute; left: 0; right: 0; top: calc(30% - 19px); display: flex; justify-content: center; gap: 8px; z-index: 2; touch-action: none; transition: top .35s ease; }
 .pchips.above { top: max(calc(10.5% - 19px), 70px); }
@@ -467,6 +472,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       <!-- Live photo sky (22 Oct): two layers that fade into each other when the photo changes -->
       <div id="skyLive" class="skylive" aria-hidden="true"><div></div><div></div></div>
       <canvas id="sunCanvas" class="paint" aria-hidden="true"></canvas>
+      <div id="seasonTint" class="seasontint" aria-hidden="true"></div>
       <div id="facets" class="layer"></div>
       <!-- Camera button hidden for now (user, 22 Oct: "maybe later"); remove hidden to bring it back. -->
       <button type="button" id="core" class="core" aria-label="Camera: take a photo and send it to an app" hidden>
@@ -715,6 +721,16 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         </div>
         <p id="themeLine" class="helpline"></p>
       </fieldset>
+      <!-- v67: seasons -->
+      <fieldset>
+        <legend>Seasons</legend>
+        <div class="seg">
+          <input type="radio" name="seasons" id="se-off" value="off"><label for="se-off">Off</label>
+          <input type="radio" name="seasons" id="se-astro" value="astro"><label for="se-astro">Astronomical</label>
+          <input type="radio" name="seasons" id="se-meteo" value="meteo"><label for="se-meteo">Meteorological</label>
+        </div>
+        <p class="helpline">Winter snow, spring blossoms, a brighter summer Milky Way, autumn leaves. Astronomical: the equinoxes and solstices (about 20 Mar, 21 Jun, 23 Sep, 21 Dec). Meteorological: 1 Mar, 1 Jun, 1 Sep, 1 Dec.</p>
+      </fieldset>
       <!-- the old pickers: hidden, still the source of truth for the radios (pairs, sun screen, sun style, moon look) -->
       <div id="oldPickers" hidden>
       <!-- v34: Screen style pairs: each sun screen has a moon partner with the same name -->
@@ -951,7 +967,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v66';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v67';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1027,7 +1043,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on' };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'astro' };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -1049,7 +1065,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   S.favs = (S.favs || []).filter((n) => typeof n === 'string').slice(0, 5);
   if (['small', 'normal', 'large'].indexOf(S.textSize) === -1) S.textSize = 'normal';
   if (S.chipsPos !== 'above') S.chipsPos = 'below';  // v66: chip row under the time (or above the date)
-  if (S.notes !== 'off') S.notes = 'on';  // v66: one short note under the chips when something matters
+  if (S.notes !== 'off') S.notes = 'on';
+  if (['off', 'astro', 'meteo'].indexOf(S.seasons) === -1) S.seasons = 'astro';  // v67: seasons look (Settings)  // v66: one short note under the chips when something matters
   S.visits = (S.visits || 0) + 1;
   let showTips = S.visits <= 3 && S.tips === 'on';
   // 23 Oct: Rolodex moon removed (user); Real moon phase and Minimal moon added from the early mockups.
@@ -1288,6 +1305,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const ECLIPSES = [
     ['2027-02-20T20:13:00', '◑', 'Faint moon eclipse', 'Penumbral: the moon dims only a little · all of it visible from Vienna'],
     ['2027-08-02T11:17:00', '◐', 'Sun eclipse · 47 %', 'Partial over Vienna, deepest at 11:17 · only with eclipse glasses'],
+    ['2028-01-12T05:13:00', '◑', 'Small moon eclipse', 'Partial: a thin bite of the Earth\'s shadow at 05:13 · the moon low in the west'],
     ['2028-12-31T17:52:00', '●', 'Total moon eclipse', 'The moon turns red · all of it visible from Vienna']];
   let evMemo = null;
   function skyEvents() {
@@ -1602,6 +1620,34 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     while (x > 0) x -= mw;
     for (; x < W; x += mw) c.drawImage(starImg, x, y, mw, mh);
     c.restore();
+  }
+  /* ---------- Seasons (v67, user) ----------
+     Astronomical: from the sun's place on its yearly path (0° = March equinox, 90° = June solstice, ...), so the dates
+     are right every year. Meteorological: 1 Mar, 1 Jun, 1 Sep, 1 Dec. The look fades in and out over about 3 days
+     around the change. South of the equator the seasons swap. For tests: ?season=winter|spring|summer|autumn */
+  const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
+  const SEASON_TEST = (() => { try { const v = new URLSearchParams(location.search).get('season'); return SEASONS.indexOf(v) !== -1 ? v : ''; } catch (e) { return ''; } })();
+  function sunLongitude(date) {  // degrees, the same formulas as sunAltAz
+    const rad = Math.PI / 180, d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545, M = rad * (357.5291 + 0.98560028 * d);
+    const C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    return (((M + C) / rad + 102.9372 + 180) % 360 + 360) % 360;
+  }
+  function seasonNow(date) {
+    if (S.seasons === 'off') return { name: '', w: 0 };
+    if (SEASON_TEST) return { name: SEASON_TEST, w: 1 };
+    const dt = date || new Date();
+    let i, dist;  // dist = days from the nearest change (1° of the sun's path is about 1 day)
+    if (S.seasons === 'meteo') {
+      const m = dt.getMonth(), starts = [2, 5, 8, 11];
+      i = [3, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3][m];
+      const y = dt.getFullYear(), from = new Date(y, starts[i], 1), next = new Date(m === 11 || m < 2 ? (m === 11 ? y + 1 : y) : y, starts[(i + 1) % 4], 1);
+      const start = i === 3 && m < 2 ? new Date(y - 1, 11, 1) : from;
+      dist = Math.min((dt - start) / 86400000, (next - dt) / 86400000);
+    } else {
+      const L = sunLongitude(dt); i = Math.floor(L / 90) % 4; dist = Math.min(L % 90, 90 - (L % 90));
+    }
+    if (LAT < 0) i = (i + 2) % 4;
+    return { name: SEASONS[i], w: Math.max(0, Math.min(1, dist / 1.5)) };
   }
   /* ---------- Location (v47): GPS only when "My location" is picked; nearest city from cities.json (GeoNames) ---------- */
   let cityList = null;
@@ -2545,7 +2591,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const parts = [];
   let emitAcc = 0;
   let lastFront = -1;
-  function renderSun(now, hour, dtf) {
+  // v67: the season look is drawn on top of the sun screen (under the app pills, which are HTML)
+  function renderSun(now, hour, dtf) { renderSun0(now, hour, dtf); seasonDraw(sunCv.getContext('2d'), st.W, st.H, now, hour); }
+  function renderSun0(now, hour, dtf) {
     const c = sunCv.getContext('2d'), W = st.W, H = st.H;
     c.clearRect(0, 0, W, H);
     updateLiveSky();
@@ -3843,6 +3891,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     c.clearRect(0, 0, W, H);
     // v46 (user): real stars (NASA star map), the drawn ones only until the map has loaded
     drawStarMap(c, W, H, 0.85, now, [par.x, par.y], 1400);
+    { const sn = seasonNow(); if (sn.name === 'summer' && sunAltAz(new Date()).alt < -6) drawStarMap(c, W, H, 0.55 * sn.w, now, [par.x, par.y], 1400); }  // v67: summer nights: the Milky Way brighter
     if (!starOk) drawStars(c, W, H, 0.8, now, fancy(), [par.x, par.y]);
     // the time shown follows the app's sky time (also "Pick a time" and "Play a day")
     const d0 = new Date(); d0.setHours(0, 0, 0, 0);
@@ -4069,8 +4118,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const start = h3.find(wet);
       if (start) { const snow = start[4] >= 71 && start[4] <= 86, end = w.h.find((r) => r[0] > start[0] && !wet(r)), hrs = end ? Math.round((end[0] - start[0]) / 3600000) : 0;
         return { k: 'rain', ic: snow ? 'snow' : 'umbrella', t: (snow ? 'Snow' : 'Rain') + ' from ' + hm(start[0]) + (hrs ? ' · about ' + hrs + (hrs === 1 ? ' hour' : ' hours') : '') }; }
-      // 4 frost or ice in the morning (evening to 9:00, at or below 1 °C)
-      if (H >= 18 || H < 9) { const cold = next(14).filter((r) => new Date(r[0]).getHours() <= 9 && r[1] <= 1); if (cold.length) { const end = w.h.find((r) => r[0] > cold[cold.length - 1][0] && r[1] > 1); return { k: 'frost', ic: 'frost', t: 'Ice possible' + (end ? ' until ' + hm(end[0]) : ' in the morning') }; } }
+      // 4 frost or ice in the morning (evening to 9:00, at or below 2 °C in the air: the ground can be colder)
+      if (H >= 18 || H < 9) { const cold = next(14).filter((r) => new Date(r[0]).getHours() <= 9 && r[1] <= 2); if (cold.length) { const end = w.h.find((r) => r[0] > cold[cold.length - 1][0] && r[1] > 2); return { k: 'frost', ic: 'frost', t: 'Ice possible' + (end ? ' until ' + hm(end[0]) : ' in the morning') }; } }
     }
     // 5 something in the sky tonight (today's event, or strong northern lights)
     const tonight = skyEvents().find((e) => sameDay(e.date, d) && (e.date.getHours() >= 15 || H < 6));
@@ -4155,6 +4204,60 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     };
     row.addEventListener('pointerup', end); row.addEventListener('pointercancel', end);
   })();
+
+  /* ---------- Season looks on the Sun screen (v67, user: mock\looks.html S1 + S4, looks-v2.html Spring B + light) ----------
+     Winter: slow snow and white on the hills, cold light. Spring: a blossom branch in the top corner, petals falling,
+     soft morning light (6-11 h). Summer: nothing here (the Earth's Milky Way is brighter at night). Autumn: falling
+     leaves, golden light. Few particles, drawn only when the sun screen is drawn; still with "reduce motion". */
+  const seasonFx = { name: '', parts: [], t: 0 };
+  function seasonParts(name, W, H) {
+    const n = name === 'winter' ? 70 : name === 'autumn' ? 14 : name === 'spring' ? 12 : 0;
+    seasonFx.parts = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, v: 0.5 + Math.random(), a: Math.random() * 6.28, r: 1 + Math.random() * 2.2, c: Math.floor(Math.random() * 3) }));
+  }
+  function seasonDraw(c, W, H, now, hour) {
+    const sn = seasonNow(), tint = $('seasonTint');
+    if (tint) { const cls = sn.w > 0 ? 'season-' + sn.name : ''; if (tint.dataset.s !== cls) { tint.className = 'seasontint ' + cls; tint.dataset.s = cls; } tint.style.opacity = sn.w.toFixed(2); }
+    if (!sn.w || sn.name === 'summer') return;
+    if (seasonFx.name !== sn.name || !seasonFx.parts.length && sn.name !== 'summer') { seasonFx.name = sn.name; seasonParts(sn.name, W, H); }
+    const t = now / 1000, dt = reduce ? 0 : Math.min(0.05, Math.max(0, t - (seasonFx.t || t))); seasonFx.t = t;
+    c.save(); c.globalAlpha = sn.w;
+    if (sn.name === 'winter') {
+      // white on the hill tops at the bottom, then the snow
+      const g = c.createLinearGradient(0, H * 0.84, 0, H); g.addColorStop(0, 'rgba(235, 242, 255, 0)'); g.addColorStop(0.35, 'rgba(235, 242, 255, 0.28)'); g.addColorStop(1, 'rgba(235, 242, 255, 0.5)');
+      c.fillStyle = g; c.fillRect(0, H * 0.84, W, H * 0.16);
+      c.fillStyle = 'rgba(255, 255, 255, 0.88)';
+      seasonFx.parts.forEach((p) => { p.y += p.v * 26 * dt; p.x += Math.sin(t * 0.8 + p.a) * 9 * dt; if (p.y > H) { p.y = -4; p.x = Math.random() * W; } c.beginPath(); c.arc(p.x, p.y, p.r, 0, 6.283); c.fill(); });
+    } else if (sn.name === 'autumn') {
+      const cols = ['#d9772b', '#b8451f', '#e0a53a'];
+      seasonFx.parts.forEach((p) => { p.y += p.v * 30 * dt; p.x += Math.sin(t * 0.7 + p.a) * 22 * dt; if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
+        c.save(); c.translate(p.x, p.y); c.rotate(t * 0.9 + p.a); c.fillStyle = cols[p.c];
+        c.beginPath(); c.moveTo(0, -p.r * 3.2); c.quadraticCurveTo(p.r * 2.2, 0, 0, p.r * 3.2); c.quadraticCurveTo(-p.r * 2.2, 0, 0, -p.r * 3.2); c.fill();
+        c.strokeStyle = 'rgba(80, 30, 10, .5)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(0, -p.r * 3); c.lineTo(0, p.r * 3.4); c.stroke(); c.restore(); });
+    } else if (sn.name === 'spring') {
+      // soft morning light from the sun (6-11 h)
+      const b = bodyAt.sun, morning = hour >= 6 && hour < 11 ? Math.min(1, (hour - 6) / 0.8, (11 - hour) / 0.8) : 0;
+      if (b && morning > 0) {
+        c.save(); c.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 7; i++) { const a = 1.9 + i * 0.16 + Math.sin(t * 0.15 + i) * 0.02, L = H * 1.1, gg = c.createLinearGradient(b.x, b.y, b.x + Math.cos(a) * L, b.y + Math.sin(a) * L);
+          gg.addColorStop(0, 'rgba(255, 245, 205, ' + (0.08 * morning) + ')'); gg.addColorStop(1, 'rgba(255, 245, 205, 0)'); c.fillStyle = gg;
+          c.beginPath(); c.moveTo(b.x, b.y); c.lineTo(b.x + Math.cos(a - 0.035) * L, b.y + Math.sin(a - 0.035) * L); c.lineTo(b.x + Math.cos(a + 0.035) * L, b.y + Math.sin(a + 0.035) * L); c.fill(); }
+        c.restore();
+      }
+      // the branch in the top-left corner, blossoms on it
+      c.strokeStyle = '#3b2620'; c.lineCap = 'round';
+      c.lineWidth = 5; c.beginPath(); c.moveTo(-6, H * 0.11); c.quadraticCurveTo(W * 0.22, H * 0.085, W * 0.46, H * 0.15); c.stroke();
+      c.lineWidth = 3; c.beginPath(); c.moveTo(W * 0.25, H * 0.095); c.quadraticCurveTo(W * 0.32, H * 0.15, W * 0.37, H * 0.19); c.stroke();
+      c.beginPath(); c.moveTo(W * 0.12, H * 0.103); c.quadraticCurveTo(W * 0.15, H * 0.05, W * 0.21, H * 0.03); c.stroke();
+      [[.07, .105], [.14, .094], [.19, .075], [.26, .1], [.31, .135], [.35, .175], [.39, .13], [.44, .148], [.18, .04], [.1, .118], [.33, .115]].forEach(([x, y], i) => {
+        for (let q = 0; q < 5; q++) { const a = q / 5 * 6.283 + i; c.fillStyle = q % 2 ? '#ffd3e2' : '#ffc0d6'; c.beginPath(); c.ellipse(x * W + Math.cos(a) * 4.6, y * H + Math.sin(a) * 4.6, 4.6, 3, a, 0, 6.283); c.fill(); }
+        c.fillStyle = '#e8708f'; c.beginPath(); c.arc(x * W, y * H, 2, 0, 6.283); c.fill(); });
+      // petals falling from the branch
+      seasonFx.parts.forEach((p) => { p.y += p.v * 18 * dt; p.x += Math.sin(t * 0.7 + p.a) * 14 * dt; if (p.y > H) { p.y = H * (0.06 + Math.random() * 0.1); p.x = Math.random() * W * 0.5; }
+        c.save(); c.translate(p.x, p.y); c.rotate(t * 1.2 + p.a); c.fillStyle = 'rgba(255, 200, 220, .9)'; c.beginPath(); c.ellipse(0, 0, 4.6, 2.8, 0, 0, 6.283); c.fill(); c.restore(); });
+    }
+    c.restore();
+    if (!reduce) kickLater();
+  }
   // 3 (v36): tap Vienna on the Earth (or the moon in the sky) for a short card
   let planetSpot = null, planetMoon = null, planetSun = null;
   function viennaCard() {
@@ -4932,7 +5035,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   });
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -5315,7 +5418,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes'];
+  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons'];
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
