@@ -534,6 +534,45 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 /* Large text: the thin titles and numbers become one step thicker */
 #app.ts-large .sheet h2, #app.ts-large .azhdr { font-weight: 300; }
 #app.ts-large .skyrow span { font-weight: 400; }
+
+/* v72: Timer (calm glass). Full-screen glass over the Earth; a thin ring, very thin large numbers, one white pill. */
+#timer { align-items: stretch; }
+.tmpanel { position: relative; width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; padding: calc(18px + env(safe-area-inset-top, 0px)) 20px calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, var(--gl1), var(--gl2)); }
+#app.fx .tmpanel { -webkit-backdrop-filter: blur(14px) saturate(1.1); backdrop-filter: blur(14px) saturate(1.1); }
+#app .overlay:not([hidden]) > .tmpanel { animation: glassIn .32s cubic-bezier(.2, .8, .2, 1) backwards; }
+.tmclose { position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); top: calc(12px + env(safe-area-inset-top, 0px)); width: 48px; height: 48px; border: none; background: transparent; color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.tmclose svg { width: 24px; height: 24px; }
+.tmpill { margin-top: 4px; min-height: 40px; padding: 0 20px; border-radius: 20px; background: rgba(255, 255, 255, .13); border: 1px solid rgba(255, 255, 255, .14); color: var(--ink-2); font: inherit; font-size: 15px; cursor: pointer; }
+.tmpill:disabled { cursor: default; }
+.tmlens { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; max-width: 330px; }
+.tmlens[hidden] { display: none; }
+.tmlens button { min-width: 48px; min-height: 40px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, .2); background: transparent; color: var(--ink-2); font: inherit; font-size: 15px; cursor: pointer; }
+.tmlens button.on { background: rgba(255, 255, 255, .9); color: #1a1d26; font-weight: 600; border-color: transparent; }
+.tmring { position: relative; width: min(66vw, 280px); aspect-ratio: 1; margin: auto 0 0; }
+.tmring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#tmArc { transition: stroke-dashoffset .25s linear; }
+.tmnum { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-56%); text-align: center; font-size: 64px; font-weight: 200; letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+.tmsub { position: absolute; left: 0; right: 0; top: 64%; text-align: center; font-size: 12px; color: var(--ghost); letter-spacing: .14em; text-transform: uppercase; }
+.tmacts { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 34px 0 auto; }
+.tmgo { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 36px; border-radius: 27px; border: 1px solid transparent; background: rgba(255, 255, 255, .9); color: #1a1d26; font: inherit; font-size: 17px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, .25); }
+.tmgo svg { width: 18px; height: 18px; }
+.tmgo path { fill: currentColor; }
+.tmgo.pause { background: rgba(255, 255, 255, .16); color: var(--ink); border-color: rgba(255, 255, 255, .22); box-shadow: none; }
+.tmreset { min-height: 44px; padding: 0 18px; border: none; background: transparent; color: var(--ghost); font: inherit; font-size: 15px; cursor: pointer; }
+.tmreset[hidden] { visibility: hidden; display: block; }
+.tmbar { display: flex; justify-content: space-around; width: 100%; max-width: 380px; }
+.tmbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 56px; border: none; background: transparent; color: var(--ghost); font: inherit; font-size: 11.5px; cursor: pointer; }
+.tmbar button em { font-style: normal; }
+.tmbar svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.tmbar button.on { color: var(--sun); }
+#tmSnd.on { color: var(--ink-2); }
+/* the chip on the Earth: in the note's place, while a timer runs */
+.ptimer { position: absolute; left: 50%; top: calc(30% + 27px); transform: translateX(-50%); z-index: 2; display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 14px 0 8px; border-radius: 17px; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .16); color: var(--ink); font: inherit; font-size: 14px; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: .03em; white-space: nowrap; cursor: pointer; }
+#app.fx .ptimer { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.ptimer.above { top: calc(max(calc(10.5% - 19px), 70px) + 46px); }
+.ptimer[hidden], #planetScreen.timing #pNote { display: none; }
+.ptimer svg { width: 20px; height: 20px; }
+#app.watch .ptimer { opacity: 0 !important; pointer-events: none !important; }
 </style>
 
 <div id="app">
@@ -548,6 +587,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       <button type="button" class="pchip" id="pcWx" aria-label="Weather, the next hours"><span class="pci" id="pcWxI"></span><span id="pcWxT"></span></button>
     </div>
     <button type="button" id="pNote" class="pnote" hidden><span class="pci" id="pNoteI"></span><span id="pNoteT" aria-live="polite"></span></button>
+    <!-- v72: the running timer (tap to open it) -->
+    <button type="button" id="pTimer" class="ptimer" aria-label="Timer, tap to open" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="1.2"/><circle id="pTimerArc" cx="12" cy="12" r="9" fill="none" stroke="#fff" stroke-width="1.4" stroke-dasharray="56.5" stroke-dashoffset="0" transform="rotate(-90 12 12)" stroke-linecap="round"/></svg><span id="pTimerT" aria-live="off"></span></button>
     <button type="button" class="planet-handle" id="planetUp" aria-label="Open the sun menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>
       <span>Swipe up · Sun menu</span>
@@ -1046,6 +1087,23 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     </form>
   </div>
 
+  <!-- v72: Timer -->
+  <div id="timer" class="overlay" hidden>
+    <div class="tmpanel" role="dialog" aria-modal="true" aria-label="Timer">
+      <button type="button" class="tmclose" id="tmClose" aria-label="Close the timer (it keeps running)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button type="button" class="tmpill" id="tmPill" aria-label="Pick the length"></button>
+      <div class="tmlens" id="tmLens" hidden></div>
+      <div class="tmring"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,.2)" stroke-width=".7"/><circle id="tmArc" cx="50" cy="50" r="46" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="289.03" stroke-dashoffset="0" transform="rotate(-90 50 50)"/><circle id="tmDot" cx="50" cy="4" r="1.6" fill="var(--sun)"/></svg>
+        <div class="tmnum" id="tmNum" role="timer"></div><div class="tmsub" id="tmSub"></div></div>
+      <div class="tmacts"><button type="button" class="tmgo" id="tmGo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Start</span></button><button type="button" class="tmreset" id="tmReset" hidden>Reset</button></div>
+      <div class="tmbar" id="tmBar">
+        <button type="button" data-m="focus"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/></svg><em>Focus</em></button>
+        <button type="button" data-m="timer"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 3h4M18.5 6.5l-1.3 1.3"/></svg><em>Timer</em></button>
+        <button type="button" data-m="stop"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5l3-2.5M12 3v2.5M9.5 3h5"/></svg><em>Stopwatch</em></button>
+        <button type="button" id="tmSnd" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h3l4 3.5v-11L8 10z"/><path d="M15.5 9.5a3.5 3.5 0 0 1 0 5M18 7a7 7 0 0 1 0 10"/></svg><em>Sound</em></button>
+      </div>
+    </div>
+  </div>
   <div id="toast" class="toast" role="status" hidden></div>
 </div>
 
@@ -1053,7 +1111,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v71';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v72';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1068,7 +1126,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     { name: 'Weather', hint: 'Example app: today and the next days', href: '', short: ['Today', 'Next 7 days'] },
     { name: 'Notes', hint: 'Example app: quick notes', href: '', short: ['New note', 'Last note'] },
     { name: 'Music', hint: 'Example app: your playlists', href: '', short: ['Play last playlist', 'Shuffle all'] },
-    { name: 'Timer', hint: 'Example app: countdown and stopwatch', href: '', short: ['5-minute timer', 'Stopwatch'] },
+    { name: 'Timer', hint: 'Focus, countdown and stopwatch', href: '', short: ['5-minute timer', 'Stopwatch'] },
     { name: 'Translator', hint: 'Example app: text and camera translation', href: '', short: ['Translate text', 'Translate with the camera'] }
   ];
   const BY = Object.create(null);  // v63: no inherited names (a backup with "constructor" is not an app)
@@ -4684,6 +4742,130 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     else row('iss', 'Space station', ISS ? 'no pass you can see in the next 2 days' : (navigator.onLine ? 'getting its orbit…' : 'needs the internet once a day'), '');
     x.hidden = false;
   }
+  // ===== v72: Timer (calm glass, mock\style-v2.html) =====
+  // Three kinds: Focus (default 25 min), Timer (any length) and Stopwatch. Start / Pause / Reset only.
+  // It keeps running when you close it: a small glass chip under the time on the Earth shows it; tap it to open.
+  // Kept in its own localStorage key, so a reload keeps a running timer. A web app cannot ring while it is closed:
+  // when you come back after the end, it tells you then.
+  const TKEY = 'sun-launcher-timer', TLENS = [1, 3, 5, 10, 15, 20, 25, 30, 45, 60], TRING = 2 * Math.PI * 46;
+  const TM = { mode: 'focus', len: { focus: 25, timer: 5 }, run: false, end: 0, left: 0, t0: 0, acc: 0, sound: true };
+  try { Object.assign(TM, JSON.parse(localStorage.getItem(TKEY) || '{}')); } catch (e) {}
+  let tmIv = 0;
+  function tmSave() { try { localStorage.setItem(TKEY, JSON.stringify(TM)); } catch (e) {} }
+  const tmDown = () => TM.mode !== 'stop';
+  const tmTotal = () => TM.len[TM.mode] * 60000;
+  // ms left (countdown) or ms gone (stopwatch)
+  function tmNow() {
+    if (tmDown()) return TM.run ? Math.max(0, TM.end - Date.now()) : (TM.left || tmTotal());
+    return TM.acc + (TM.run ? Date.now() - TM.t0 : 0);
+  }
+  const tmBusy = () => TM.run || (tmDown() ? TM.left > 0 && TM.left < tmTotal() : TM.acc > 0);
+  function tmFmt(ms) {
+    const s = tmDown() ? Math.ceil(ms / 1000) : Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(x).padStart(2, '0');
+  }
+  const TM_NAME = { focus: 'Focus', timer: 'Timer', stop: 'Stopwatch' };
+  function tmStart() {
+    if (tmDown()) { TM.end = Date.now() + (TM.left || tmTotal()); TM.left = 0; } else TM.t0 = Date.now();
+    TM.run = true; tmSave(); tmLoop(); hapt('press'); tmRender();
+  }
+  function tmPause() {
+    if (!TM.run) return;
+    if (tmDown()) TM.left = Math.max(1000, TM.end - Date.now()); else TM.acc += Date.now() - TM.t0;
+    TM.run = false; tmSave(); hapt('press'); tmRender();
+  }
+  function tmReset() { TM.run = false; TM.left = 0; TM.acc = 0; TM.end = 0; tmSave(); tmRender(); }
+  function tmMode(m) { if (TM.mode === m) return; tmReset(); TM.mode = m; $('tmLens').hidden = true; tmSave(); hapt('detent'); tmRender(); }
+  function tmLoop() { clearInterval(tmIv); if (TM.run) tmIv = setInterval(tmTick, 250); }
+  function tmTick() {
+    if (TM.run && tmDown() && Date.now() >= TM.end) { tmDone(); return; }
+    tmRender();
+  }
+  // the end: a soft three-note chime (if Sound is on), a buzz, and a note
+  function tmDone() {
+    const late = Date.now() - TM.end > 60000, name = TM_NAME[TM.mode], min = TM.len[TM.mode];
+    TM.run = false; TM.left = 0; TM.end = 0; tmSave(); clearInterval(tmIv);
+    if (!late) {
+      if (TM.sound) tmChime();
+      if (S.haptics !== 'off' && navigator.vibrate) { try { navigator.vibrate([180, 120, 180, 120, 360]); } catch (e) {} }
+    }
+    toast(name + ' done · ' + min + ' min' + (late ? ' (it ended while the app was closed)' : ''));
+    tmRender();
+  }
+  function tmChime() {
+    try {
+      const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+      const ac = new C(), t = ac.currentTime;
+      [659.3, 784, 1046.5].forEach((f, i) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0, t + i * 0.32); g.gain.linearRampToValueAtTime(0.18, t + i * 0.32 + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.32 + 1.4);
+        o.connect(g); g.connect(ac.destination); o.start(t + i * 0.32); o.stop(t + i * 0.32 + 1.5);
+      });
+      setTimeout(() => { try { ac.close(); } catch (e) {} }, 2600);
+    } catch (e) {}
+  }
+  function tmRender() {
+    const ms = tmNow(), open = !$('timer').hidden;
+    if (open) {
+      $('tmNum').textContent = tmFmt(ms);
+      $('tmPill').textContent = tmDown() ? TM_NAME[TM.mode] + ' · ' + TM.len[TM.mode] + ' min' : 'Stopwatch';
+      $('tmPill').disabled = !tmDown();
+      $('tmSub').textContent = !tmBusy() ? '' : !TM.run ? 'paused' : tmDown() ? 'remaining' : 'running';
+      // the thin ring: it empties as the countdown runs (the stopwatch fills it once a minute); a gold point at its tip
+      const f = tmDown() ? (tmBusy() ? ms / tmTotal() : 1) : (ms % 60000) / 60000;
+      $('tmArc').style.strokeDashoffset = String(TRING * (1 - f));
+      $('tmArc').style.opacity = tmBusy() || !tmDown() ? '1' : '0';
+      const a = (-90 + 360 * f) * Math.PI / 180;
+      $('tmDot').setAttribute('cx', (50 + 46 * Math.cos(a)).toFixed(2)); $('tmDot').setAttribute('cy', (50 + 46 * Math.sin(a)).toFixed(2));
+      $('tmDot').style.opacity = tmBusy() ? '1' : '0';
+      const go = $('tmGo');
+      go.classList.toggle('pause', TM.run);
+      go.querySelector('span').textContent = TM.run ? 'Pause' : tmBusy() ? 'Resume' : 'Start';
+      go.querySelector('path').setAttribute('d', TM.run ? 'M7 5h3.4v14H7zM13.6 5H17v14h-3.4z' : 'M7 4.5v15l12-7.5z');
+      $('tmReset').hidden = !tmBusy();
+      $('tmBar').querySelectorAll('[data-m]').forEach((b) => b.classList.toggle('on', b.dataset.m === TM.mode));
+      $('tmSnd').classList.toggle('on', TM.sound); $('tmSnd').setAttribute('aria-pressed', String(TM.sound));
+      $('tmSnd').querySelector('em').textContent = TM.sound ? 'Sound' : 'Silent';
+    }
+    // the chip on the Earth (while a timer runs or is paused); it takes the place of the note
+    const chip = $('pTimer'), show = tmBusy();
+    chip.hidden = !show; $('planetScreen').classList.toggle('timing', show);
+    if (show) {
+      chip.classList.toggle('above', $('pNote').classList.contains('above'));
+      const f = tmDown() ? ms / tmTotal() : (ms % 60000) / 60000;
+      $('pTimerArc').style.strokeDashoffset = String(56.5 * (1 - f));
+      $('pTimerT').textContent = (TM.run ? '' : 'Paused · ') + tmFmt(ms) + ' · ' + TM_NAME[TM.mode];
+    }
+  }
+  function openTimer(mode, min, go) {
+    if (mode && mode !== TM.mode) tmMode(mode);
+    if (min && tmDown() && !tmBusy()) { TM.len[TM.mode] = min; tmSave(); }
+    $('tmLens').hidden = true;
+    showOverlay($('timer'));
+    tmRender();
+    if (go && !TM.run) tmStart();
+  }
+  $('tmGo').addEventListener('click', () => { if (TM.run) tmPause(); else tmStart(); });
+  $('tmReset').addEventListener('click', () => { hapt('press'); tmReset(); });
+  $('tmClose').addEventListener('click', () => hideOverlay($('timer')));
+  $('pTimer').addEventListener('click', () => { hapt('press'); openTimer(); });
+  $('tmBar').querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => tmMode(b.dataset.m)));
+  $('tmSnd').addEventListener('click', () => { TM.sound = !TM.sound; tmSave(); hapt('detent'); tmRender(); });
+  // tap the top pill to pick the length
+  TLENS.forEach((n) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = n; b.dataset.n = n;
+    b.addEventListener('click', () => { if (TM.run) return; TM.len[TM.mode] = n; TM.left = 0; $('tmLens').hidden = true; tmSave(); hapt('detent'); tmRender(); });
+    $('tmLens').appendChild(b);
+  });
+  $('tmPill').addEventListener('click', () => {
+    if (!tmDown() || TM.run) return;
+    const L = $('tmLens'); L.hidden = !L.hidden;
+    L.querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.n === TM.len[TM.mode]));
+  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tmTick(); });
+  // after the rest of the code has loaded (toast lives in 3-ui.js)
+  setTimeout(() => { tmLoop(); tmTick(); }, 0);
   /* ---------- Gestures ---------- */
   let drag = null, bubbleTimer = 0;
   const pts = new Map();
@@ -5357,12 +5539,13 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     countUse(a.name);
     maybePinTip(a.name);  // v46
     if (a.href) { hapt('press'); const w = window.open(a.href, '_blank'); if (w) w.opener = null; else location.href = a.href; return; }
+    if (a.name === 'Timer') { hapt('press'); openTimer(); return; }  // v72: the built-in timer
     openSheet(a.name, 'Link not set yet: [' + a.name + ' address].', '', false);
   }
   function openShortcuts(a) {
     const acts = (a.short || []).map((q) => ({
       label: q.label,
-      run: () => { pushRecent(a.name); if (q.href) { hapt('press'); const w = window.open(q.href, '_blank'); if (w) w.opener = null; else location.href = q.href; } else toast(a.name + ': ' + q.label + ' has no link yet (Edit app).'); }
+      run: () => { pushRecent(a.name); if (!q.href && a.name === 'Timer') { const n = /(\d+)/.exec(q.label); if (/stopwatch/i.test(q.label)) openTimer('stop', 0, true); else openTimer(n ? 'timer' : 'focus', n ? +n[1] : 0, true); return; } if (q.href) { hapt('press'); const w = window.open(q.href, '_blank'); if (w) w.opener = null; else location.href = q.href; } else toast(a.name + ': ' + q.label + ' has no link yet (Edit app).'); }
     }));
     acts.push({ label: '✎ Edit app', run: () => openAppForm(a.name) }, { label: 'Remove ' + a.name, run: () => askRemove(a.name) });
     openSheet(a.name, a.short && a.short.length ? 'Quick actions' : 'No quick actions yet: add them in Edit app.', a.href, false, acts);
@@ -5424,7 +5607,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
