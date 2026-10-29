@@ -1302,7 +1302,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v82';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v83';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -2738,15 +2738,23 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     // v59 (user: smoother, same quality): moving things (tweens, flicks, the Earth gliding home) get 60 a second too;
     // the slow Watch turn (about 1° a second) stays at the battery pace, it looks the same at 30.
     const watchSlow = st.watch && planet.on && !tweens.length && !st.spin && !ripples.length;
-    const sinceTouch = now - lastTouch, gap = planet.calm ? 98 : (active && !watchSlow) || sinceTouch < 2000 ? 15 : sinceTouch < 20000 ? 32 : 65;
-    if ((dirty || active || ambient) && (dirty || now - lastAmbient >= gap)) {
+    // v83 (battery, measured on the Pixel: the Earth idle used ~57 % of one core, Pixel's home 0 %): the quiet Earth is
+    // drawn 10 times a second (night clock 5); its clouds and turn are so slow it looks the same
+    const sinceTouch = now - lastTouch, quiet = sinceTouch >= 20000 && !active && !watchSlow;
+    const gap = planet.calm ? 200 : (active && !watchSlow) || sinceTouch < 2000 ? 15 : !quiet ? 32 : planet.on ? 100 : 65;
+    const covered = hpCovered();  // v83: the home pages or the card wallet hide the Earth: nothing to draw
+    if ((dirty || active || ambient) && !covered && (dirty || now - lastAmbient >= gap)) {
       const t0 = performance.now();
       render(now, dtf); dirty = false;
       lastAmbient = now;
       if (speed.on) speed.add(performance.now() - t0);
     }
-    if ((active || ambient || tweens.length) && !raf && !document.hidden) raf = requestAnimationFrame(frame);
+    if (document.hidden || raf) return;
+    if (active || tweens.length || (ambient && !covered && gap <= 15)) raf = requestAnimationFrame(frame);
+    // v83: between slow drawings, wait with a timer instead of waking at every screen refresh (90 a second on the Pixel)
+    else if (ambient && !covered && !ambT) ambT = setTimeout(() => { ambT = 0; if (!raf) raf = requestAnimationFrame(frame); }, Math.max(0, gap - (now - lastAmbient)));
   }
+  let ambT = 0;
   function velocity(samples) {
     if (!samples || samples.length < 2) return 0;
     const last = samples[samples.length - 1];
@@ -5261,13 +5269,17 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const r = e.getBoundingClientRect(), v = shown && r.width > 0 && r.right > 0 && r.left < innerWidth;
       out.push({ s: s, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), v: v });
     });
-    if (out.length) SunAndroid.widgetPlace(JSON.stringify(out));
+    const j = JSON.stringify(out);
+    if (out.length && j !== hpSent) { hpSent = j; SunAndroid.widgetPlace(j); }  // v83: only when something moved
   }
-  // while the pages are on screen (or sliding), follow them every frame; once they are gone, one last "hide"
-  let hpLoop = 0;
+  let hpSent = '';
+  // v83 (battery: it ran 60 times a second while the pages were open): follow the pages every frame only while they
+  // move (a swipe or the 0.4 s slide), then stop; each move calls this again
+  let hpLoop = 0, hpUntil = 0;
   function hpFollow() {
+    hpUntil = performance.now() + 600;
     if (hpLoop) return;
-    const step = () => { hpSync(); hpLoop = hp.el.hidden ? 0 : requestAnimationFrame(step); };
+    const step = (t) => { hpSync(); hpLoop = t < hpUntil ? requestAnimationFrame(step) : 0; };
     hpLoop = requestAnimationFrame(step);
   }
   function hpRender() {
@@ -5326,6 +5338,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const W = st.W;
     if (hp.i === 0 && dx > 0) { hp.el.style.transform = 'translateX(' + dx + 'px)'; hp.track.style.transform = 'translateX(0)'; }
     else { hp.el.style.transform = 'translateX(0)'; hp.track.style.transform = 'translateX(' + clamp(-hp.i * W + dx, -W * 1.15, 0) + 'px)'; }
+    hp.cover = hp.on && !(hp.i === 0 && dx > 0);  // v83: the Earth is fully hidden (not drawn); while sliding back it shows
+    if (!hp.cover) kick();
+    hpFollow();
     hp.el.querySelectorAll('.hpdots i').forEach((d, k) => d.classList.toggle('on', k === hp.i));
   }
   function openPages(i, fromDrag) {
@@ -5340,7 +5355,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   }
   function closePages(fromBack) {
     if (!hp.on) return;
-    hp.on = false;
+    hp.on = false; hp.cover = false; kick(); hpFollow();
     hp.el.style.transition = ''; hp.el.style.transform = 'translateX(100%)';
     if (!fromBack) dropLayer('homePages');
     setTimeout(() => { if (!hp.on) hp.el.hidden = true; }, 400);
@@ -5414,7 +5429,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     hpSync();
   }
   window.cardsPicked = (ok) => { if (ok) { hideOverlay($('sheet')); openCards(); } else toast('No folder picked.'); };
-  function closeCards(fromBack) { if (cw.el.hidden) return; cw.el.hidden = true; if (!fromBack) dropLayer('cardWallet'); hpSync(); }
+  function closeCards(fromBack) { if (cw.el.hidden) return; cw.el.hidden = true; if (!fromBack) dropLayer('cardWallet'); hpSync(); kick(); }
+  // v83 (battery): the Earth is hidden behind the home pages or the card wallet, so frame() skips drawing it
+  function hpCovered() { return !!(hp.cover || (cw.el && !cw.el.hidden)); }
   function cardShow() {
     const c = cw.list[cw.i]; if (!c) return;
     cw.view.querySelector('img').src = 'card/' + cw.i + '?t=' + cw.stamp;
@@ -6169,6 +6186,14 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const top = layers.pop();
     if (top) closeTop(top);
   });
+  // v83 (bug: Home did nothing while the app was in front, e.g. on a home page): the Android app calls sunHome() then;
+  // like Pixel's own home screen, everything open closes and the start screen (the Earth) shows
+  window.sunHome = () => {
+    let steps = 0;
+    while (layers.length) { const top = layers.pop(); if (top.h) steps++; closeTop(top); }
+    if (steps) { ignorePops++; try { history.go(-steps); } catch (e) { ignorePops--; } }
+    if (S.startScreen === 'planet' && !planet.on) showPlanet(true);
+  };
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || !layers.length) return;
     const top = layers[layers.length - 1];
@@ -6195,6 +6220,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     lastFocus = document.activeElement;
     el.hidden = false;
     pushLayer(el.id);
+    hpSync();  // v83: a widget hides while a card or menu is open
     const f = el.querySelector('[data-autofocus]');
     if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} }
   }
@@ -6205,6 +6231,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     if (el.id === 'lookEdit') { leLift(false); save(); app.classList.remove('editing'); }
     if (el.id === 'watchCatch') { st.watch = false; app.classList.remove('watch'); kick(); }
     if (!fromBack) dropLayer(el.id);
+    hpSync();  // v83: and comes back when it closes
     if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
   }
   function openSheet(title, text, href, send, actions) {
@@ -6333,7 +6360,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -6451,8 +6478,12 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       out.push({ name: n, where: onSun ? 'Sun' : 'Moon · Apps' });
     });
     FUNCS.forEach((g) => g.items.forEach((n) => out.push({ name: n, where: 'Moon · ' + g.name })));
+    // v83 (user): Android app: every app on the phone too (like Pixel's app list), except the ones already on Sun/Moon
+    const mine = APP_LIST.map((a) => a.pkg).filter(Boolean);
+    srPhone.forEach((x) => { if (mine.indexOf(x.p) === -1 && !BY[x.l]) out.push({ name: x.l, where: 'On your phone', pkg: x.p }); });
     return out;
   }
+  let srPhone = [];  // the phone's apps, read each time Search opens (apps may be new or gone)
   function renderResults() {
     const q = $('searchInput').value.trim().toLowerCase();
     const box = $('results');
@@ -6461,7 +6492,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     if (!q) {  // v55: Recent moved here from its corner: your last apps first
       const rec = S.recent.map((n) => hits.find((r) => r.name === n)).filter(Boolean).map((r) => ({ name: r.name, where: 'Recent · ' + r.where }));
       // v69: then all your apps A-Z (functions show when you type)
-      const az = hits.filter((r) => BY[r.name] && S.recent.indexOf(r.name) === -1).sort((x, y) => x.name.localeCompare(y.name));
+      const az = hits.filter((r) => (BY[r.name] || r.pkg) && S.recent.indexOf(r.name) === -1).sort((x, y) => x.name.localeCompare(y.name));
       hits = rec.concat(az);
     } else hits = hits.slice(0, 14);
     if (!hits.length) {
@@ -6483,17 +6514,18 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       b.className = 'res';
       // v60: the app's round icon (its picture or first letter); functions get a small moon
       const ini = document.createElement('span'); ini.className = 'ini'; ini.setAttribute('aria-hidden', 'true');
-      if (BY[r.name]) fillIcon(ini, BY[r.name]); else ini.textContent = '☾';
+      if (r.pkg) { const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.src = 'appicon/' + r.pkg + '.png'; ini.appendChild(im); }
+      else if (BY[r.name]) fillIcon(ini, BY[r.name]); else ini.textContent = '☾';
       const s1 = document.createElement('span'); s1.className = 'rn'; s1.textContent = r.name;
       const s2 = document.createElement('small'); s2.textContent = r.where;
       b.appendChild(ini); b.appendChild(s1); b.appendChild(s2);
-      b.addEventListener('click', () => openResult(r.name));
+      b.addEventListener('click', () => openResult(r.name, r.pkg));
       box.appendChild(b);
     });
     // v39: when only one result matches, it opens after a short pause (typing more cancels it)
     clearTimeout(soloT);
-    if (q && hits.length === 1 && BY[hits[0].name]) soloT = setTimeout(() => openResult(hits[0].name), 600);  // v63: apps only
-    firstHit = hits[0] ? hits[0].name : '';
+    if (q && hits.length === 1 && (BY[hits[0].name] || hits[0].pkg)) soloT = setTimeout(() => openResult(hits[0].name, hits[0].pkg), 600);  // v63: apps only
+    firstHit = hits[0] || null;
     azBuild();
   }
   // v71: letter strip. Slide along the right edge: the letters near the finger grow like a wave, a glass lens
@@ -6520,11 +6552,12 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   $('azStrip').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); try { $('azStrip').setPointerCapture(e.pointerId); } catch (x) {} azAt(e.clientY); });
   $('azStrip').addEventListener('pointermove', (e) => { if (e.buttons || e.pointerType === 'touch') { e.stopPropagation(); azAt(e.clientY); } });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((t) => $('azStrip').addEventListener(t, azEnd));
-  let soloT = 0, firstHit = '';
-  function openResult(name) {
+  let soloT = 0, firstHit = null;
+  function openResult(name, pkg) {
     clearTimeout(soloT);
     if ($('search').hidden) return;
     hideOverlay($('search'));
+    if (pkg) { hapt('press'); if (!SunAndroid.launch(pkg)) toast(name + ' is not on this phone any more.'); return; }  // v83: a phone app
     setTimeout(() => {
       goTo(name);
       if (BY[name]) openApp(BY[name]);
@@ -6537,13 +6570,17 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const mi = LIST.findIndex((it) => it.name === name);
     if (mi !== -1) { goMoon(); tween('pos', mi, 520); }
   }
-  function openSearch() { $('searchInput').value = ''; renderResults(); showOverlay($('search')); }
+  function openSearch() {
+    srPhone = [];
+    if (window.SunAndroid && SunAndroid.apps) { try { srPhone = JSON.parse(SunAndroid.apps()); } catch (e) {} }  // v83
+    $('searchInput').value = ''; renderResults(); showOverlay($('search'));
+  }
   $('sunSearch').addEventListener('click', openSearch);
   $('moonSearch').addEventListener('click', openSearch);
   $('moonEvent').addEventListener('click', openEvents);
   $('searchClose').addEventListener('click', () => hideOverlay($('search')));
   $('searchInput').addEventListener('input', renderResults);
-  $('searchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && firstHit) { e.preventDefault(); openResult(firstHit); } });
+  $('searchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && firstHit) { e.preventDefault(); openResult(firstHit.name, firstHit.pkg); } });
 
   /* ---------- Edit dial ---------- */
   const ICON_UP = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>';
