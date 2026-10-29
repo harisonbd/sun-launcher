@@ -381,6 +381,16 @@ details.more > fieldset, details.more > .btn { margin-top: 16px; width: 100%; }
 .awhere button.on { background: var(--sun); border-color: var(--sun); color: var(--sun-ink); }
 .aqa { display: flex; gap: 8px; }
 .aqa .ainp { min-height: 44px; font-size: 15px; }
+/* v75 (user: cluttered, words over other things): real space under the quick-actions label, colours wrap
+   instead of running off the edge, a ring on the dark colour, a smaller title and a darker panel */
+#afQA { display: flex; flex-direction: column; gap: 8px; }
+#afQA .afl { margin: 0 0 2px; }
+.aqa[hidden] { display: none; }
+#afIcons { flex-wrap: wrap; row-gap: 10px; }
+.asw[data-c="#2b2b2b"] { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); }
+.asw[data-c="#2b2b2b"].on { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35), 0 0 0 3px var(--panel), 0 0 0 5px var(--ink); }
+#app #appForm .sheet h2 { font-size: 24px; }
+#app.fx #appForm .sheet { --gl1: rgba(8, 12, 26, .78); --gl2: rgba(8, 12, 26, .9); }
 .aerr { color: #ff9b8c; font-size: 14px; margin: 0; }
 .aerr:empty { display: none; }
 .btn.danger { color: #ff9b8c; }
@@ -579,6 +589,147 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 #planetScreen .pnote, #planetScreen .pnote.above, #planetScreen .ptimer, #planetScreen .ptimer.above { top: auto; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
 #planetScreen .pchips.above { top: calc(16px + env(safe-area-inset-top, 0px)); }
 #app:has(#planetScreen:not(.away):not([hidden]) .pchips.above) .watchbtn { top: auto; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+/* v76 (user): the screen picker at the bottom is off unless turned on in Settings; "swipe up · Moon" stays */
+#app.strip-off .vs-nm, #app.strip-off .vs-dots, #app.strip-off .vs-peek { display: none; }
+#app.strip-off .vstrip { min-height: 30px; }
+/* v76 (user: black bars in the Android app): the sky fills the whole screen, under the phone's status bar and
+   navigation bar; only the buttons near the edges move away from them. The Android app sets --bar-top and
+   --bar-bottom (in CSS px); a browser gives env(); on a plain web page both are 0. */
+/* the page frame (head of index.html) pads :root by env(safe-area-*): with WebView 156 that shrank the whole app (black bars) */
+:root { padding-top: 0; padding-bottom: 0; }
+:root { --st: max(env(safe-area-inset-top, 0px), var(--bar-top, 0px)); --sb: max(env(safe-area-inset-bottom, 0px), var(--bar-bottom, 0px)); }
+.to-planet { top: calc(12px + var(--st)); }
+.viewbtn { top: calc(30px + var(--st)); }
+.clockchip { top: calc(84px + var(--st)); }
+.handle.top { top: calc(10px + var(--st)); }
+.roundbtn, .mini-sun, .watchbtn { top: calc(16px + var(--st)); }
+#app.one-mode .watchbtn { top: calc(100px + var(--st)); }
+.speedmeter { top: calc(70px + var(--st)); }
+.search-panel { padding-top: calc(16px + var(--st)); padding-bottom: calc(16px + var(--sb)); }
+.tmpanel { padding-top: calc(18px + var(--st)); padding-bottom: calc(14px + var(--sb)); }
+.tmclose { top: calc(12px + var(--st)); }
+#planetScreen .pchips.above { top: calc(16px + var(--st)); }
+.planet-handle { bottom: calc(22px + var(--sb)); }
+.corner.bl, .corner.br { bottom: calc(16px + var(--sb)); }
+.handle.bottom, .vstrip { bottom: calc(14px + var(--sb)); }
+.favbar { bottom: calc(100px + var(--sb)); }
+.toast { bottom: calc(120px + var(--sb)); }
+.updatebar { bottom: calc(190px + var(--sb)); }
+.sheet { padding-bottom: calc(26px + var(--sb)); }
+#sheet .sheet, #edit .sheet, #appForm .sheet { margin-bottom: calc(10px + var(--sb)); }
+#planetScreen .pnote, #planetScreen .pnote.above, #planetScreen .ptimer, #planetScreen .ptimer.above { bottom: calc(90px + var(--sb)); }
+#app:has(#planetScreen:not(.away):not([hidden]) .pchips.above) .watchbtn { top: auto; bottom: calc(26px + var(--sb)); }
+/* v78: "From my phone" in Add app, and the list of the phone's apps */
+.aphone { min-height: 48px; border-radius: 14px; border: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+.aphone[hidden] { display: none; }
+#phoneApps .sheet { width: auto; flex: 1; margin: 0 10px calc(10px + var(--sb)); border-radius: 28px; padding-bottom: 22px; max-height: 82%; }
+#app #phoneApps .sheet h2 { font-size: 24px; }
+.palist { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; overflow-y: auto; min-height: 120px; }
+.paapp { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 2px; border: none; border-radius: 14px; background: transparent; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
+.paapp img { width: 48px; height: 48px; border-radius: 50%; }
+.paapp span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.paapp:active { background: rgba(255, 255, 255, .08); }
+/* v78 (user): the time, the chips and the eye can be dragged on the Earth (classes set in chipsUpdate) */
+#planetScreen .pchips.bottom { top: auto; bottom: calc(92px + var(--sb)); }
+#planetScreen.chips-bottom .pnote, #planetScreen.chips-bottom .pnote.above, #planetScreen.chips-bottom .ptimer, #planetScreen.chips-bottom .ptimer.above { bottom: calc(140px + var(--sb)); }
+#planetScreen.time-bottom .pnote, #planetScreen.time-bottom .pnote.above, #planetScreen.time-bottom .ptimer, #planetScreen.time-bottom .ptimer.above { top: calc(var(--st) + 72px); bottom: auto; }
+#planetScreen.time-bottom:has(.pchips.above) .pnote, #planetScreen.time-bottom:has(.pchips.above) .ptimer { top: calc(var(--st) + 118px); }
+#app:has(#planetScreen.eye-bottom:not(.away):not([hidden])) .watchbtn { top: auto; bottom: calc(26px + var(--sb)); }
+.watchbtn.lift { box-shadow: 0 0 0 2px var(--sun); transition: none; }
+.dzones { position: absolute; inset: 0; pointer-events: none; display: none; z-index: 1; }
+.dzones.on { display: block; }
+.dzone { position: absolute; left: 12px; right: 12px; border: 1.5px dashed rgba(255, 210, 122, .75); border-radius: 18px; background: rgba(255, 210, 122, .06);
+  color: #FFD27A; font-size: 12px; text-align: center; padding-top: 4px; box-sizing: border-box; }
+.dzone.eye { right: auto; width: 76px; }
+.tghost { position: absolute; left: 0; right: 0; transform: translateY(-50%); text-align: center; pointer-events: none; display: none; z-index: 3;
+  font-size: 92px; font-weight: 200; color: #F5EFE3; line-height: 1; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .6)); }
+.tghost.on { display: block; }
+.tghost.bold { font-weight: 600; }
+.tghost.glass { font-weight: 600; color: rgba(255, 255, 255, .16); -webkit-text-stroke: 1px rgba(255, 255, 255, .55); }
+.tghost.soft { color: rgba(245, 239, 227, .5); }
+.tghost.analog { left: 50%; right: auto; width: 110px; height: 110px; margin-left: -55px; border-radius: 50%; border: 1.2px solid rgba(245, 239, 227, .6); background: rgba(20, 28, 50, .35); }
+/* v79 (user: mock/home-pages.html, starry sky): the 2 home pages, right of the Earth */
+.homepages { position: absolute; inset: 0; z-index: 860; overflow: hidden; transform: translateX(100%); transition: transform .38s cubic-bezier(.2, .8, .2, 1); touch-action: none;
+  background: radial-gradient(1px 1px at 40px 90px, #fffa, transparent), radial-gradient(1px 1px at 300px 140px, #fff9, transparent),
+    radial-gradient(1px 1px at 200px 380px, #fff8, transparent), radial-gradient(1.2px 1.2px at 80px 520px, #fffa, transparent),
+    radial-gradient(1px 1px at 330px 600px, #fff8, transparent), radial-gradient(1px 1px at 150px 700px, #fff7, transparent),
+    radial-gradient(1px 1px at 260px 260px, #fff9, transparent), radial-gradient(1px 1px at 20px 330px, #fff8, transparent),
+    radial-gradient(1px 1px at 120px 180px, #fff6, transparent), radial-gradient(1px 1px at 350px 420px, #fff7, transparent),
+    radial-gradient(ellipse 120% 60% at 50% 120%, #1c2a52 0%, #0a0f22 55%, #04060c 100%); }
+.homepages[hidden] { display: none; }
+.hptrack { display: flex; height: 100%; transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
+.hppage { flex: none; width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: calc(var(--st) + 12px) 8px calc(var(--sb) + 52px); }
+.hprows { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 18px; padding-bottom: 18px; }
+.hprow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); justify-items: center; }
+.hprow.clockrow { grid-template-columns: 1fr 3fr 1fr; align-items: center; }
+.hpside { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+.hpclock { text-align: center; color: #d7e3ff; text-shadow: 0 1px 10px #0008; }
+.hpclock .hpcd { display: block; font-size: 15px; color: #fff; }
+.hpclock .hpct { display: block; font-size: 64px; font-weight: 300; line-height: 1.05; }
+.hpapp { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 72px; border: none; background: transparent; color: #fff; font: inherit; padding: 0; cursor: pointer; }
+.hpapp.empty { opacity: 0; min-height: 76px; }  /* v82: invisible, but a hold adds an app there */
+.hpic { width: 54px; height: 54px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
+.hpic > img { width: 100%; height: 100%; }
+.hpic.folder { grid-template-columns: 1fr 1fr; gap: 3px; padding: 9px; box-sizing: border-box; background: rgba(20, 28, 50, .8); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+.hpic.folder img { width: 16px; height: 16px; border-radius: 50%; }
+.hpic.cards { background: #8E2DE2; }
+.hpname { max-width: 72px; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 4px #000c; }
+.hpapp:active .hpic { transform: scale(.94); }
+.hpdock { padding: 6px 0 0; }
+.hpwidget { margin: 0 6px; border-radius: 28px; color: #fff; display: flex; align-items: center; gap: 10px; }
+.hpwidget.search { height: 48px; padding: 0 18px; background: rgba(30, 36, 52, .9); cursor: pointer; }
+.hpwidget.search b { font-size: 20px; color: #8ab4f8; }
+.hpwidget.search span { color: #9aa3b5; }
+.hpwidget.weather { flex-direction: column; align-items: flex-start; gap: 4px; padding: 0 10px; }
+.hpwidget.weather b { font-size: 19px; font-weight: 600; }
+.hpwidget.weather span { font-size: 13px; color: #c9cfdc; }
+.hpwidget.music { height: 72px; justify-content: center; background: rgba(90, 60, 110, .55); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); font-size: 13px; color: #e6dcef; }
+.hprows > .hpwidget.weather { margin-bottom: auto; }
+.hpdots { position: absolute; left: 0; right: 0; bottom: calc(var(--sb) + 14px); display: flex; justify-content: center; align-items: center; gap: 9px; }
+.hpdots button { border: none; background: transparent; color: #fff; font: inherit; font-size: 12px; padding: 8px 4px; cursor: pointer; text-shadow: 0 1px 4px #000c; }
+.hpdots i { width: 7px; height: 7px; border-radius: 4px; background: rgba(255, 255, 255, .45); cursor: pointer; transition: width .2s; }
+.hpdots i.on { width: 20px; background: #fff; }
+.hpfolder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 4px; justify-items: center; padding: 6px 0; }
+/* v79: more stars on the home pages: a small star tile repeated over the whole sky */
+.homepages::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .8;
+  background: radial-gradient(1px 1px at 20px 30px, #fff9, transparent), radial-gradient(1px 1px at 90px 120px, #fff7, transparent),
+    radial-gradient(1.2px 1.2px at 150px 60px, #fffb, transparent), radial-gradient(1px 1px at 60px 190px, #fff6, transparent),
+    radial-gradient(1px 1px at 130px 170px, #fff8, transparent), radial-gradient(.8px .8px at 170px 100px, #fff6, transparent);
+  background-size: 180px 220px; }
+/* v80: real widgets: the place stays empty under the widget (Android draws it on top); "+ widget" only while empty */
+.hpwidget.has > *, .hpclock.has > * { visibility: hidden; }
+.hpwidget em, .hpclock em { font-style: normal; font-size: 11px; color: rgba(255, 255, 255, .45); }
+.hpwidget.search em { margin-left: auto; }
+.hpclock em { display: block; margin-top: 2px; }
+.hpwidget.weather { min-height: 84px; cursor: pointer; }
+.hpwidget.music { height: 110px; cursor: pointer; }
+.hpwidget.search { height: 56px; }
+.hpclock { min-height: 150px; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
+.hpwlist { display: flex; flex-direction: column; gap: 4px; max-height: 46vh; overflow-y: auto; }
+.hpwitem { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 4px 8px; border: none; border-radius: 14px; background: transparent; color: var(--ink); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
+.hpwitem img { width: 32px; height: 32px; border-radius: 50%; flex: none; }
+.hpwitem.first { background: rgba(255, 210, 122, .1); }
+/* v81 (user: mock/cards.html): the card wallet, a grid on the starry sky; a card full screen on white */
+.cwallet { position: absolute; inset: 0; z-index: 880; overflow-y: auto; box-sizing: border-box; padding: calc(var(--st) + 14px) 14px calc(var(--sb) + 20px);
+  background: radial-gradient(ellipse 120% 60% at 50% 120%, #1c2a52 0%, #0a0f22 55%, #04060c 100%); }
+.cwallet[hidden], .cview[hidden] { display: none; }
+.cwhead { display: flex; align-items: center; gap: 10px; margin: 0 4px 16px; }
+.cwhead h2 { margin: 0; flex: 1; font-size: 30px; font-weight: 300; color: #fff; }
+.cwfolder { border: 1px solid rgba(255, 255, 255, .2); border-radius: 18px; background: transparent; color: #c9cfdc; font: inherit; font-size: 13px; padding: 7px 12px; cursor: pointer; }
+.cwclose { width: 44px; height: 44px; border: none; border-radius: 22px; background: rgba(255, 255, 255, .08); color: #fff; font-size: 18px; cursor: pointer; }
+.cwgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cwcard { display: flex; flex-direction: column; border: none; padding: 0; border-radius: 16px; overflow: hidden; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.cwcard img { width: 100%; height: 130px; object-fit: cover; object-position: top; background: #fff; }
+.cwcard span { padding: 8px 12px 10px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cwempty { color: #c9cfdc; text-align: center; margin-top: 40px; }
+.cview { position: absolute; inset: 0; z-index: 890; background: #fff; color: #222; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: calc(var(--st) + 24px) 18px calc(var(--sb) + 20px); touch-action: none; }
+.cvname { font-size: 26px; }
+.cvbright { font-size: 13px; color: #8a6d00; margin: 4px 0 14px; }
+.cview img { flex: 1; min-height: 0; max-width: 100%; object-fit: contain; border-radius: 14px; }
+.cvdots { display: flex; gap: 6px; margin: 14px 0 8px; min-height: 7px; }
+.cvdots i { width: 7px; height: 7px; border-radius: 4px; background: #ccc; }
+.cvdots i.on { width: 18px; background: #555; }
+.cvhint { font-size: 13px; color: #777; }
 </style>
 
 <div id="app">
@@ -751,6 +902,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   <div id="appForm" class="overlay" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="afTitle">
       <h2 id="afTitle">Add app</h2>
+      <!-- v78: pick an app installed on the phone (Android app only) -->
+      <button type="button" class="aphone" id="afPhone" hidden>📱 From my phone</button>
       <div class="afl">Link</div>
       <div class="arow"><input class="ainp" id="afLink" type="url" inputmode="url" autocomplete="off" placeholder="https://… or yoursite.com"><button type="button" class="apaste" id="afPaste">Paste</button></div>
       <div class="afl">Name</div>
@@ -766,6 +919,16 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       </div>
       <p class="aerr" id="afErr" role="alert"></p>
       <div class="row"><button type="button" class="btn danger" id="afRemove">Remove</button><button type="button" class="btn" id="afCancel">Cancel</button><button type="button" class="btn primary" id="afSave">Add</button></div>
+    </div>
+  </div>
+
+  <!-- v78: the apps on the phone, to add to the Sun or the Moon -->
+  <div id="phoneApps" class="overlay" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="paTitle">
+      <h2 id="paTitle">From my phone</h2>
+      <input class="ainp" id="paFind" type="search" placeholder="Search your apps" autocomplete="off" aria-label="Search your apps">
+      <div class="palist" id="paList"></div>
+      <div class="row"><button type="button" class="btn" id="paCancel">Cancel</button></div>
     </div>
   </div>
 
@@ -863,6 +1026,28 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
           <input type="radio" name="seasons" id="se-meteo" value="meteo"><label for="se-meteo">Meteorological</label>
         </div>
         <p class="helpline">Winter snow, spring blossoms, a brighter summer Milky Way, autumn leaves. Astronomical: the equinoxes and solstices (about 20 Mar, 21 Jun, 23 Sep, 21 Dec). Meteorological: 1 Mar, 1 Jun, 1 Sep, 1 Dec.</p>
+      </fieldset>
+      <!-- v78 (user): clock styles; the time, the chips and the eye can be moved on the Earth -->
+      <fieldset>
+        <legend>Clock style</legend>
+        <div class="seg">
+          <input type="radio" name="clockStyle" id="cs-thin" value="thin"><label for="cs-thin">Thin</label>
+          <input type="radio" name="clockStyle" id="cs-bold" value="bold"><label for="cs-bold">Bold</label>
+          <input type="radio" name="clockStyle" id="cs-analog" value="analog"><label for="cs-analog">Analog</label>
+          <input type="radio" name="clockStyle" id="cs-glass" value="glass"><label for="cs-glass">Glass</label>
+          <input type="radio" name="clockStyle" id="cs-soft" value="soft"><label for="cs-soft">Soft</label>
+        </div>
+        <p class="helpline">On the Earth, hold the time, the chips or the eye for a moment, then drag it: it snaps to the top, under the time or the bottom.</p>
+        <button type="button" class="btn" id="placesBack">Put the time, chips and eye back</button>
+      </fieldset>
+      <!-- v76 (user): the screen picker at the bottom only when wanted -->
+      <fieldset>
+        <legend>Change screen from the bottom</legend>
+        <div class="seg">
+          <input type="radio" name="strip" id="sp-off" value="off"><label for="sp-off">Off</label>
+          <input type="radio" name="strip" id="sp-on" value="on"><label for="sp-on">On</label>
+        </div>
+        <p class="helpline">On: ‹ Dial › and dots at the bottom; slide them to change the Sun or Moon screen. Off: the screen stays as it is; change it here in Settings.</p>
       </fieldset>
       <!-- the old pickers: hidden, still the source of truth for the radios (pairs, sun screen, sun style, moon look) -->
       <div id="oldPickers" hidden>
@@ -1117,7 +1302,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v73';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v82';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1151,7 +1336,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const short = (Array.isArray(o.short) ? o.short : []).map((q) => typeof q === 'string' ? { label: q, href: '' } : q)
       .filter((q) => q && typeof q.label === 'string' && q.label.trim()).slice(0, 3).map((q) => ({ label: q.label.trim().slice(0, 30), href: webLink(q.href) }));
     return { name: name, hint: typeof o.hint === 'string' ? o.hint.slice(0, 60) : '', href: webLink(o.href), icon: webLink(o.icon),
-      color: /^#[0-9a-f]{6}$/i.test(o.color || '') ? o.color : '', short: short };
+      color: /^#[0-9a-f]{6}$/i.test(o.color || '') ? o.color : '', short: short,
+      // v78: an app installed on the phone (Android app only), by its package name, e.g. com.whatsapp
+      pkg: typeof o.pkg === 'string' && /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/.test(o.pkg) ? o.pkg : '' };
   }
   function loadApps() {
     let list = Array.isArray(S.apps) ? S.apps.map(cleanApp).filter(Boolean) : BASE_APPS.map(cleanApp);
@@ -1193,7 +1380,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'astro', useWeek: {} };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'off', useWeek: {}, seasonsOff74: 0, strip: 'off', clockStyle: 'thin', timePos: 'top', eyePos: 'top', homePages: null, homeDock: null };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -1214,9 +1401,16 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   if (['flat', 'diagonal', 'custom'].indexOf(S.dir) === -1) S.dir = 'flat';  // v46: Sideways and Rolodex left Settings (the look editor tilts and turns)
   S.favs = (S.favs || []).filter((n) => typeof n === 'string').slice(0, 5);
   if (['small', 'normal', 'large'].indexOf(S.textSize) === -1) S.textSize = 'normal';
-  if (S.chipsPos !== 'above') S.chipsPos = 'below';  // v66: chip row under the time (or above the date)
+  if (['above', 'below', 'bottom'].indexOf(S.chipsPos) === -1) S.chipsPos = 'below';  // v66: chip row under the time (or above the date); v78: or at the bottom
+  // v78 (user): hold and drag the time (top/bottom) and the eye (top/bottom) on the Earth; 5 clock styles
+  if (S.timePos !== 'bottom') S.timePos = 'top';
+  if (S.eyePos !== 'bottom') S.eyePos = 'top';
+  if (['thin', 'bold', 'analog', 'glass', 'soft'].indexOf(S.clockStyle) === -1) S.clockStyle = 'thin';
   if (S.notes !== 'off') S.notes = 'on';
-  if (['off', 'astro', 'meteo'].indexOf(S.seasons) === -1) S.seasons = 'astro';  // v67: seasons look (Settings)  // v66: one short note under the chips when something matters
+  if (S.strip !== 'on') S.strip = 'off';  // v76 (user): the screen picker at the bottom (‹ Dial ›) only when turned on in Settings
+  if (['off', 'astro', 'meteo'].indexOf(S.seasons) === -1) S.seasons = 'off';  // v67: seasons look (Settings); v74 (user): off unless picked  // v66: one short note under the chips when something matters
+  // v74 (user): seasons off once for everyone, also where Astronomical was saved before; turning them on again stays
+  if (!S.seasonsOff74) { S.seasons = 'off'; S.seasonsOff74 = 1; save(); }
   S.visits = (S.visits || 0) + 1;
   let showTips = S.visits <= 3 && S.tips === 'on';
   // 23 Oct: Rolodex moon removed (user); Real moon phase and Minimal moon added from the early mockups.
@@ -1548,7 +1742,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
           const px = cx + (r() - 0.5) * cw, py = cy - Math.abs(r() - 0.5) * cw * 0.35, pr = cw * (0.18 + r() * 0.22);
           const g = k.createRadialGradient(px, py - pr * 0.3, 0, px, py, pr);
           g.addColorStop(0, 'rgba(' + rgb + ',' + a + ')'); g.addColorStop(0.6, 'rgba(' + rgb + ',' + (a * 0.6) + ')'); g.addColorStop(1, 'rgba(' + rgb + ',0)');
-          k.fillStyle = g; k.beginPath(); k.arc(px, py, pr, 0, 7); k.fill();
+          // v75 (bug: clouds cut by a straight line): the strip wraps around, so a puff over one end is drawn at the other end too
+          k.fillStyle = g;
+          [0, -w, w].forEach((sh) => { if (sh && px - pr > 0 && px + pr < w) return; k.save(); k.translate(sh, 0); k.beginPath(); k.arc(px, py, pr, 0, 7); k.fill(); k.restore(); });
         }
       }
     }
@@ -2560,9 +2756,14 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const dt = last.t - first.t;
     return dt > 0 ? (last.v - first.v) / dt : 0;
   }
+  // v77: the phone's top bar height (CSS --st); the titles drawn on the canvas move down with the handles above them
+  const stProbe = document.createElement('div');
+  stProbe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;top:var(--st);height:var(--sb);width:0';  // v78: height = bottom bar
+  app.appendChild(stProbe);
   function resize() {
     const r = app.getBoundingClientRect();
     st.W = r.width; st.H = r.height;
+    st.top = stProbe.offsetTop || 0; st.bot = stProbe.offsetHeight || 0;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     st.dpr = dpr;
     [sunCv, moonCv, $('planetCanvas')].forEach((c) => {
@@ -3108,13 +3309,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     if (fx && look !== 'neon' && look !== 'blackhole' && look !== 'eclipse') {
       c.save();
       c.globalCompositeOperation = 'lighter';
-      const fl = 0.3 * light;
-      const lg = c.createLinearGradient(cx - W * 0.48, cy, cx + W * 0.48, cy);
-      lg.addColorStop(0, 'rgba(255, 248, 230, 0)');
-      lg.addColorStop(0.5, 'rgba(255, 248, 230,' + fl.toFixed(3) + ')');
-      lg.addColorStop(1, 'rgba(255, 248, 230, 0)');
-      c.fillStyle = lg;
-      c.fillRect(cx - W * 0.48, cy - 1.2, W * 0.96, 2.4);
+      // v77 (user): the thin flare line across the sun is gone (it looked like a crack); the faint lens circles stay
       [[0.9, 7, 0.08], [1.6, 15, 0.05], [2.3, 9, 0.07]].forEach((gk) => {
         const gx = cx + (W / 2 - cx) * gk[0] + 40 * gk[0], gy = cy + 70 * gk[0];
         c.beginPath(); c.arc(gx, gy, gk[1], 0, 2 * Math.PI);
@@ -3249,7 +3444,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       // like B. Minimal moon: big date, sun at the top-right edge, three short lines, the day curve, a plain list
       const T = tuneOf('sun:minimal'), R = 128 * k * T.size, bx = W - 30 * k + T.x * W, by = H * (0.215 + T.y);
       sunAt(bx, by, R, { glow: 0.6, margin: 1.3, tex: 'sun4k', detail: hd ? 0.25 : 0.45 }); bodyAt.sun = { x: bx, y: by, r: R };  // v47: sharper (user)
-      txt(DAYS_LONG[today.getDay()], 24, H * 0.125, 12, 600, muted, 'left', true);
+      txt(DAYS_LONG[today.getDay()], 24, H * 0.125 + st.top, 12, 600, muted, 'left', true);
       txt(MONTHS_LONG[today.getMonth()], 22, H * 0.175, 50, 300, '#F5EFE3');
       txt(String(today.getDate()), 24, H * 0.245, 50, 600, '#F5EFE3');
       const sn = sunToday();
@@ -3321,8 +3516,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       sunAt(sc.sx, sc.sy, sc.R, { glow: 0.9, margin: 1.5 }); bodyAt.sun = { x: sc.sx, y: sc.sy, r: sc.R };
       ringHalf(true);
       if (hzR.on) drawnHills(c, W, H);
-      txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
-      txt('Apps', W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Sun menu', W / 2, H * 0.125 + st.top, 12, 600, muted, 'center', true);
+      txt('Apps', W / 2, H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
       if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
       const s0 = ringPlace(sc, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
@@ -3354,8 +3549,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       rings(false);
       sunAt(sx, sy, R, { glow: 0.9, margin: 1.7 });
       rings(true);
-      txt('Sun menu', W / 2, H * 0.125, 12, 600, muted, 'center', true);
-      txt(APPS[front].name, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Sun menu', W / 2, H * 0.125 + st.top, 12, 600, muted, 'center', true);
+      txt(APPS[front].name, W / 2, H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
       if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
       place((d, isF) => {
         const q = ringPlace(sc, Math.PI / 2 + d * (Math.PI * 2 / 12)), f = (q[2] + 1) / 2, ad = Math.abs(d), mA = 6;
@@ -3379,7 +3574,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         c.strokeStyle = 'rgba(255, 226, 190, ' + ((major ? 0.8 : 0.35) * fa2).toFixed(3) + ')'; c.lineWidth = major ? 1.6 : 1; c.stroke();
       }
       c.restore();
-      txt('Sun', 24, H * 0.125, 12, 600, muted, 'left', true);
+      txt('Sun', 24, H * 0.125 + st.top, 12, 600, muted, 'left', true);
       txt(DAYS[today.getDay()] + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()], 24, H * 0.165, 28, 300, '#F5EFE3');
       txt(sol.title + ' · ' + (front + 1) + ' of ' + n, 24, H * 0.2, 13, 400, muted);
       if (!S.pins.length) txt('Turn the dial · tap to open', W / 2, H * 0.875, 12.5, 400, muted, 'center');
@@ -3843,8 +4038,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         else GLB.draw(c, sx, sy, R, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: -0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.2 });
       }
       ringHalf(true);
-      txt('Moon menu', W / 2, H * 0.125, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      if (cur) txt(cur.group, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Moon menu', W / 2, H * 0.125 + st.top, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      if (cur) txt(cur.group, W / 2, H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
       txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       const s0 = ringPlace(scene, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
@@ -3853,8 +4048,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const k = W / 390, sx = W / 2, sy = H * 0.49, R = 76 * k, roll = -0.3, pitch = -0.42;
       const ok1 = PG.need('saturn', 'saturn.jpg'), ok2 = PG.need('ring', 'saturn-ring.png');
       if (ok1 && ok2) PG.draw(c, sx, sy, R, { mode: 'planet', tex: 'saturn', rings: 'ring', roll: roll, pitch: pitch, light: [-0.75, 0.4, 0.55], tint: '#EADBB8', expo: 1.25, margin: 1.3, rot: 0.4 });
-      txt('Moon menu', W / 2, H * 0.125, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      if (cur) txt(cur.group, W / 2, H * 0.16, 24, 500, '#F5EFE3', 'center');
+      txt('Moon menu', W / 2, H * 0.125 + st.top, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      if (cur) txt(cur.group, W / 2, H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
       txt('Swipe sideways to turn the rings · tap to open', W / 2, H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R * 2.36, sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll) };
       const s0 = ringPlace(scene, Math.PI / 2);
@@ -4070,6 +4265,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     // 1 (v36): the real moon in the sky above the Earth, in its real phase, where it is now as seen from Vienna
     // (v36-v50 it was placed from the city's sky; v51 from its real direction from the Earth, see below)
     const mpos = moonAltAz(d), mnNow = moonIllum(d), yTop = cy - R;
+    planetTop = cy - R * 1.07;  // v78: the top of the Earth's air; a sideways swipe above it goes to the home pages
     planetMoon = null; planetSun = null;
     // v51 (user): the moon is placed by its real direction from the Earth, the same way as the sun, so it turns with
     // the Earth (spin, Watch) and moves with the time; it shows only while it is on our side (mvz > 0), fading out behind.
@@ -4088,7 +4284,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const airY = cy - Math.sqrt(Math.max(0, R * R * 1.07 * 1.07 - (mx - cx) * (mx - cx)));
       // and never on the time chips (H * 0.3, 36 px tall) unless Watch hides them; if there is no room, the gap to the Earth wins
       // v66: with the chips above the date, the time sits lower; the moon stays under it
-      const chipLow = st.watch ? H * 0.1 : S.chipsPos === 'above' ? H * 0.32 + 48 * k + mr + 8 : H * 0.3 + 18 + mr + 8;
+      // v78: the lowest point of the time and the chips at the top (the time and the chips can move, see planetLayout)
+      const PL = planetLayout(W, H, k), chipLow = st.watch ? H * 0.1 : PL.topLow + mr + 8;
       const my0 = Math.min(Math.max(H * 0.42, chipLow), airY - mr - 10), my = (limbM + mr + 6) + (my0 - (limbM + mr + 6)) * mRise;
       c.save(); c.globalAlpha = 1 - mSink;
       const mg = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3.2); mg.addColorStop(0, 'rgba(210, 222, 245, ' + (0.12 + 0.18 * mnNow.fraction).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(210, 222, 245, 0)');
@@ -4096,7 +4293,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       c.restore();
       GLB.draw(c, mx, my, mr, { mode: 'moon', light: realMoonLight(mnNow.phase), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0.6, margin: 1.6 });
       if (spec.kind === 'lunar' || spec.kind === 'super') specialMoon(c, mx, my, mr, spec, 1 - mSink);  // v68
-      if (mSink < 0.5) planetMoon = { x: mx, y: my };
+      // v76 (bug: a low moon looked whole but ignored taps): only its glow fades, so it answers while its middle is above the Earth's edge
+      if (my < limbM) planetMoon = { x: mx, y: my };
     }
     {
       const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad, lv = toView([Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)]);
@@ -4143,7 +4341,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
           const vg = c.createRadialGradient(vx, vy, 0, vx, vy, 14); vg.addColorStop(0, 'rgba(255, 214, 140, 0.95)'); vg.addColorStop(1, 'rgba(255, 214, 140, 0)');
           c.fillStyle = vg; c.beginPath(); c.arc(vx, vy, 14, 0, 2 * Math.PI); c.fill(); c.restore();
           c.font = '600 11.5px ' + (getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif'); c.fillStyle = 'rgba(255, 236, 200, 0.95)'; c.textAlign = 'left'; c.textBaseline = 'middle';
-          if (CITY) { c.shadowColor = '#000'; c.shadowBlur = 6; c.fillText(CITY, vx + 12, vy - 2); c.shadowBlur = 0; }
+          // v78: no city name where the time sits at the bottom (the glowing dot stays)
+          const underTime = S.timePos === 'bottom' && !st.watch && vy > H - st.bot - 280 && vy < H - st.bot - 70;
+          if (CITY && !underTime) { c.shadowColor = '#000'; c.shadowBlur = 6; c.fillText(CITY, vx + 12, vy - 2); c.shadowBlur = 0; }
         }
       }
     }
@@ -4151,18 +4351,65 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif';
     const T = (s, y, size, weight, col) => { c.font = weight + ' ' + size + 'px ' + font; c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s, W / 2, y); };
     const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const day = DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()];
     if (planet.calm) {
       // charging mode: a bigger, softer clock and no chips; between 22:00 and 6:00 the whole screen is a bit darker
-      T(DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()], H * 0.13, 18, 400, 'rgba(240, 242, 248, 0.7)');
-      T(hm, H * 0.24, Math.round(124 * k), 200, 'rgba(245, 239, 227, 0.92)');
+      T(day, H * 0.13, 18, 400, 'rgba(240, 242, 248, 0.7)');
+      drawClock(c, d, hm, W / 2, H * 0.24, Math.round(124 * k), font, 0.92);
+      planetTime = { y0: H * 0.08, y1: H * 0.32 };
       const hr = d.getHours();
       if (hr >= 22 || hr < 6) { c.fillStyle = 'rgba(0, 0, 0, 0.35)'; c.fillRect(0, 0, W, H); }
       return;
     }
-    const up = S.chipsPos === 'above';  // v66: chips above the date: date and time a bit lower
-    T(DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()], up ? H * 0.235 : H * 0.115, 17, 500, 'rgba(240, 242, 248, 0.85)');
-    T(hm, up ? H * 0.32 : H * 0.2, Math.round(96 * k), 200, '#F5EFE3');
+    const PL = planetLayout(W, H, k);
+    planetTime = { y0: PL.dateY - 16, y1: PL.timeY + 52 * k };  // v78: the time's area, for its double-tap and hold-to-move
+    if (!st.timeDrag) {  // while the time is dragged, a copy follows the finger instead
+      T(day, PL.dateY, 17, 500, 'rgba(240, 242, 248, 0.85)');
+      drawClock(c, d, hm, W / 2, PL.timeY, Math.round(96 * k), font, 1);
+    }
     chipsUpdate(d);  // v66: the chips are HTML now (icons, taps, drag); only their text changes here
+  }
+  /* v78 (user, mock/move-and-clocks.html): the time (top or bottom), the chips (above the time, under it, or at the
+     bottom) and the eye (top or bottom) can be held and dragged on the Earth. This gives the date and time heights and
+     the lowest point of what sits at the top (the moon stays under it). */
+  function planetLayout(W, H, k) {
+    const chips = S.timePos === 'bottom' && S.chipsPos === 'below' ? 'bottom' : S.chipsPos;
+    if (S.timePos === 'bottom') {
+      const timeY = H - st.bot - (chips === 'bottom' ? 188 : 142) * Math.min(1, k + 0.1);
+      return { chips: chips, dateY: timeY - 64 * k, timeY: timeY, topLow: chips === 'above' ? st.top + 60 : st.top + 30 };
+    }
+    if (chips === 'above') return { chips: chips, dateY: H * 0.235, timeY: H * 0.32, topLow: H * 0.32 + 48 * k };
+    return { chips: chips, dateY: H * 0.115, timeY: H * 0.2, topLow: chips === 'below' ? H * 0.3 + 18 : H * 0.2 + 50 * k };
+  }
+  /* v78 (user, mock/clock-glass.html): clock styles. Thin (as before), Bold, Glass (frosted, the sky shows through),
+     Soft (thin and half see-through) and Analog (a thin ring with hands). size = the height of the numbers. */
+  function drawClock(c, d, hm, x, y, size, font, alpha) {
+    const s = S.clockStyle;
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
+    if (s === 'analog') {
+      const r = size * 0.56, h = (d.getHours() % 12 + d.getMinutes() / 60) * Math.PI / 6, m = d.getMinutes() * Math.PI / 30;
+      c.globalAlpha = alpha;
+      c.fillStyle = 'rgba(20, 28, 50, 0.35)'; c.strokeStyle = 'rgba(245, 239, 227, 0.4)'; c.lineWidth = 1.2;
+      c.beginPath(); c.arc(x, y, r, 0, 2 * Math.PI); c.fill(); c.stroke();
+      c.strokeStyle = 'rgba(245, 239, 227, 0.7)'; c.lineWidth = 1.5;
+      for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; c.beginPath(); c.moveTo(x + r * 0.86 * Math.sin(a), y - r * 0.86 * Math.cos(a)); c.lineTo(x + r * 0.95 * Math.sin(a), y - r * 0.95 * Math.cos(a)); c.stroke(); }
+      const hand = (a, len, w) => { c.lineWidth = w; c.lineCap = 'round'; c.beginPath(); c.moveTo(x, y); c.lineTo(x + len * Math.sin(a), y - len * Math.cos(a)); c.stroke(); };
+      c.strokeStyle = '#F5EFE3'; hand(h, r * 0.5, 3.5); hand(m, r * 0.78, 2);
+      c.fillStyle = '#FFD27A'; c.beginPath(); c.arc(x, y, 3.5, 0, 2 * Math.PI); c.fill();
+    } else if (s === 'glass') {
+      c.font = '600 ' + size + 'px ' + font;
+      c.shadowColor = 'rgba(0, 0, 0, 0.25)'; c.shadowBlur = 20;
+      c.fillStyle = 'rgba(255, 255, 255, ' + (0.16 * alpha).toFixed(3) + ')'; c.fillText(hm, x, y);
+      c.shadowBlur = 0; c.strokeStyle = 'rgba(255, 255, 255, ' + (0.55 * alpha).toFixed(3) + ')'; c.lineWidth = 1; c.strokeText(hm, x, y);
+    } else if (s === 'soft') {
+      c.font = '200 ' + size + 'px ' + font;
+      c.shadowColor = 'rgba(255, 240, 210, 0.3)'; c.shadowBlur = 22;
+      c.fillStyle = 'rgba(245, 239, 227, ' + (0.5 * alpha).toFixed(3) + ')'; c.fillText(hm, x, y);
+    } else {
+      c.font = (s === 'bold' ? '600 ' : '200 ') + size + 'px ' + font;
+      c.fillStyle = 'rgba(245, 239, 227, ' + alpha + ')'; c.fillText(hm, x, y);
+    }
+    c.restore();
   }
   // v60: tap the moon on the Earth = a small card (phase, light, rise and set, next full moon) with a way to the Moon menu
   function moonCard() {
@@ -4246,7 +4493,11 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   function setIcon(el, key, html) { if (el.dataset.k !== key) { el.dataset.k = key; el.innerHTML = html; } }
   function chipsUpdate(d) {
     const box = $('pChips'); if (!box) return;
-    box.classList.toggle('above', S.chipsPos === 'above'); $('pNote').classList.toggle('above', S.chipsPos === 'above');
+    // v78: where the chips, the time and the eye are (CSS places the chips, the note and the eye from these)
+    const pos = S.timePos === 'bottom' && S.chipsPos === 'below' ? 'bottom' : S.chipsPos, ps = $('planetScreen');
+    box.classList.toggle('above', pos === 'above'); box.classList.toggle('bottom', pos === 'bottom'); $('pNote').classList.toggle('above', pos === 'above');
+    ps.classList.toggle('chips-bottom', pos === 'bottom'); ps.classList.toggle('time-bottom', S.timePos === 'bottom');
+    ps.classList.toggle('eye-bottom', S.eyePos === 'bottom' || pos === 'above');
     const sn = sunToday(), mn = moonNow(), nowH = d.getHours() + d.getMinutes() / 60;
     const soon = (h) => { const m = Math.ceil((h - nowH) * 60); return m > 0 && m <= 60 ? 'in ' + m + ' min' : fmtHour(h); };  // v60
     setIcon($('pcRiseI'), 'rise', icon('rise')); setText('pcRiseT', soon(sn.rise));
@@ -4347,6 +4598,26 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       + (g ? 'Golden hour from ' + hm(g) : '') + (dark ? ' · dark at ' + hm(dark) : '') + '\n'
       + 'Tomorrow ' + (diff === 0 ? 'about the same' : Math.abs(diff) + ' min ' + (diff > 0 ? 'longer' : 'shorter')) + (dst ? ' · the clocks change tonight' : ''));
   }
+  /* v78: while the time, the chips or the eye is dragged on the Earth, the places it can go light up (dashed) */
+  const dz = document.createElement('div'); dz.className = 'dzones'; dz.setAttribute('aria-hidden', 'true');
+  $('planetScreen').appendChild(dz);
+  function showZones(kind) {
+    const H = st.H, top = S.timePos === 'top', z = [];
+    if (kind === 'chips') {
+      z.push([top ? 'Above the time' : 'At the top', st.top + 8, 52]);
+      if (top) z.push(['Under the time', H * 0.3 - 28, 56]);
+      z.push([top ? 'Bottom' : 'Under the time', H - st.bot - 148, 56]);
+    } else if (kind === 'time') {
+      z.push(['Top', st.top + 40, H * 0.28 - st.top - 40]);
+      z.push(['Bottom', H - st.bot - 280, 190]);
+    } else {
+      z.push(['', st.top + 8, 64, 'eye']); z.push(['', H - st.bot - 90, 64, 'eye']);
+    }
+    dz.textContent = '';
+    z.forEach((q) => { const d = document.createElement('div'); d.className = 'dzone' + (q[3] ? ' eye' : ''); d.textContent = q[0]; d.style.top = Math.round(q[1]) + 'px'; d.style.height = Math.round(q[2]) + 'px'; dz.appendChild(d); });
+    dz.classList.add('on');
+  }
+  function hideZones() { dz.classList.remove('on'); }
   let chipDrag = null, chipNoClick = false;
   (() => {
     const row = $('pChips'); if (!row) return;
@@ -4359,7 +4630,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     row.addEventListener('pointerdown', (e) => {
       e.stopPropagation();  // the Earth's own swipe and hold do not start from the chips
       const scr = $('planetScreen').getBoundingClientRect();
-      chipDrag = { y0: e.clientY, id: e.pointerId, top: scr.top, H: scr.height, on: false, t: setTimeout(() => { chipDrag.on = true; row.classList.add('lift'); hapt('press'); try { row.setPointerCapture(e.pointerId); } catch (er) {} }, 450) };
+      chipDrag = { y0: e.clientY, id: e.pointerId, top: scr.top, H: scr.height, on: false, t: setTimeout(() => { chipDrag.on = true; row.classList.add('lift'); showZones('chips'); hapt('press'); try { row.setPointerCapture(e.pointerId); } catch (er) {} }, 450) };
     });
     row.addEventListener('pointermove', (e) => {
       if (!chipDrag) return;
@@ -4370,9 +4641,11 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       if (!chipDrag) return;
       clearTimeout(chipDrag.t);
       if (chipDrag.on) {
-        const y = (e.clientY - chipDrag.top) / chipDrag.H, pos = y < 0.2 ? 'above' : 'below';
+        // v78: three places: above the time, under it, or at the bottom (with the time at the bottom: top or bottom)
+        const y = (e.clientY - chipDrag.top) / chipDrag.H, pos = y < 0.2 ? 'above' : y > 0.62 || S.timePos === 'bottom' ? (y < 0.45 ? 'above' : 'bottom') : 'below';
+        hideZones();
         row.classList.remove('lift'); row.style.transform = '';
-        if (pos !== S.chipsPos) { S.chipsPos = pos; save(); hapt('detent'); toast(pos === 'above' ? 'Chips above the date.' : 'Chips under the time.'); }
+        if (pos !== S.chipsPos) { S.chipsPos = pos; save(); hapt('detent'); toast(pos === 'above' ? 'Chips at the top.' : pos === 'bottom' ? 'Chips at the bottom.' : 'Chips under the time.'); }
         chipNoClick = true; setTimeout(() => { chipNoClick = false; }, 350);
         kick();
       }
@@ -4539,7 +4812,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     kickLater();
   }
   // 3 (v36): tap Vienna on the Earth (or the moon in the sky) for a short card
-  let planetSpot = null, planetMoon = null, planetSun = null;
+  let planetSpot = null, planetMoon = null, planetSun = null, planetTime = null, planetTop = 0;
   function viennaCard() {
     const sn = sunToday(), mn = moonNow(), w = S.weather === 'real' && WX ? WX : null, len = sn.set - sn.rise;
     const ev = skyEvents().find((e) => !e.minor), sol = SOL ? solarInfo() : null;
@@ -4873,6 +5146,379 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) tmTick(); });
   // after the rest of the code has loaded (toast lives in 3-ui.js)
   setTimeout(() => { tmLoop(); tmTick(); }, 0);
+  /* ---------- Home pages (v79, user: mock/home-pages.html, notes: project-notes/home-pages.md) ----------
+     The user's 2 old Pixel home pages, on a starry sky, reached by a sideways swipe in the sky of the Earth (the
+     Earth itself still spins). Android app only: apps, folders and "Cards" open through SunAndroid. The widget rows
+     keep their places for the real widgets (next step). S.homePages = [page, page]; a page = { rows: [row] }; a row is
+     { w: 'weather' | 'music' | 'search' }, { clock: 1, left: [item, item], right: [item, item] } or { c: [5 items] };
+     an item is { l: label, p: package }, { f: folder name, items: [...] }, { cards: 1 } or null (an empty place). */
+  // v82 (privacy): the first layout (the user's own apps) is NOT in this public code; it is inside the Android app only
+  // (android/app/src/main/assets/home-plan.json, served as home-plan.json). An empty layout is used when it is missing.
+  const HP_EMPTY = { dock: [], pages: [{ rows: [{ w: 'weather' }, { w: 'music' }, { c: [null, null, { cards: 1 }, null, null] }] }, { rows: [{ w: 'search' }, { clock: 1, left: [], right: [] }] }] };
+  function hpPlan() {
+    try { const x = new XMLHttpRequest(); x.open('GET', 'home-plan.json', false); x.send(); if (x.status === 200) return JSON.parse(x.responseText); } catch (e) {}
+    return HP_EMPTY;
+  }
+  const hpAndroid = () => !!(window.SunAndroid && SunAndroid.apps && SunAndroid.launch);
+  let hpApps = null;  // the phone's apps [{ l, p }]
+  function hpFind(name) {
+    if (!hpApps) { try { hpApps = JSON.parse(SunAndroid.apps()); } catch (e) { hpApps = []; } }
+    const n = name.toLowerCase();
+    const a = hpApps.find((x) => x.l.toLowerCase() === n) || hpApps.find((x) => x.l.toLowerCase().indexOf(n) === 0) || hpApps.find((x) => x.l.toLowerCase().indexOf(n) !== -1);
+    return a ? { l: a.l, p: a.p } : null;
+  }
+  // first time: build the pages from the plan with the phone's real apps (an app that is not found is left out)
+  function hpPages() {
+    if (Array.isArray(S.homePages) && S.homePages.length === 2) return S.homePages;
+    const item = (x) => !x ? null : typeof x === 'string' ? hpFind(x) : x.cards ? { cards: 1 }
+      : { f: x.f, items: x.n.map(hpFind).filter(Boolean).filter((a, i, l) => l.findIndex((b) => b.p === a.p) === i) };
+    const plan = hpPlan();
+    S.homePages = plan.pages.map((pg) => ({ rows: pg.rows.map((r) => r.w ? { w: r.w } : r.clock ? { clock: 1, left: r.left.map(hpFind), right: r.right.map(hpFind) } : { c: r.c.map(item) }) }));
+    S.homeDock = plan.dock.map(hpFind);
+    save();
+    return S.homePages;
+  }
+
+  const hp = { on: false, i: 0, el: null, track: null };
+  // loc (v82) = where the item sits: { list, i } (the array holding it and its place), pg (page), folder (when inside one)
+  function hpIcon(a, loc) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'hpapp';
+    if (loc) onHold(b, () => hpEditItem(a, loc));
+    if (!a) { b.classList.add('empty'); b.tabIndex = -1; b.setAttribute('aria-label', 'Empty place, hold to add an app'); return b; }
+    const ic = document.createElement('span'); ic.className = 'hpic';
+    if (a.f) {  // a folder: its first 4 apps, small
+      ic.classList.add('folder');
+      a.items.slice(0, 4).forEach((x) => { const im = document.createElement('img'); im.alt = ''; im.src = 'appicon/' + x.p + '.png'; ic.appendChild(im); });
+    } else if (a.cards) {
+      ic.classList.add('cards'); ic.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7h6l2 2h10v9H3z"/></svg>';
+    } else { const im = document.createElement('img'); im.alt = ''; im.src = 'appicon/' + a.p + '.png'; ic.appendChild(im); }
+    const nm = document.createElement('span'); nm.className = 'hpname'; nm.textContent = a.f || (a.cards ? 'Cards' : a.l);
+    b.append(ic, nm);
+    b.addEventListener('click', () => {
+      if (hp.noClick) return;
+      hapt('press');
+      if (a.f) hpFolder(a);
+      else if (a.cards) { if (SunAndroid.cardsList) openCards(); else SunAndroid.openFolder('Pictures/Cards'); }  // v81: the app's own card wallet
+      else if (!SunAndroid.launch(a.p)) toast(a.l + ' is not on this phone any more.');
+    });
+    return b;
+  }
+  function hpWidget(kind) {
+    // v79: the widget's place; v80: a real Android widget can sit in it (tap the place to pick one)
+    const d = document.createElement('div'); d.className = 'hpwidget ' + kind; d.dataset.slot = kind;
+    if (kind === 'search') d.innerHTML = '<b>G</b><span>Search</span><em>＋ widget</em>';
+    else if (kind === 'weather') d.innerHTML = '<b class="hpwx"></b><span class="hpwx2"></span>';
+    else d.innerHTML = '<span>＋ Tap to add the music widget</span>';
+    d.addEventListener('click', () => {
+      if (hp.noClick) return;
+      if (kind === 'search' && !SunAndroid.widgetList) { SunAndroid.launch('com.google.android.googlequicksearchbox'); return; }
+      hpPickWidget(kind);
+    });
+    return d;
+  }
+  /* ---- v80: real widgets. The page keeps the place; Android draws the widget on top of it (Widgets.kt). ---- */
+  const HP_WIDGET_FIRST = { weather: ['com.google.android.googlequicksearchbox', 'com.google.android.apps.weather'], music: ['com.google.android.apps.youtube.music', 'com.spotify.music'],
+    search: ['com.google.android.googlequicksearchbox'], clock: ['com.google.android.deskclock'] };
+  const HP_WIDGET_NAME = { weather: 'weather', music: 'music', search: 'search bar', clock: 'clock' };
+  let hpSlots = [];
+  const hpWidgets = () => !!(window.SunAndroid && SunAndroid.widgetPlace);
+  function hpPickWidget(slot) {
+    if (!hpWidgets()) return;
+    let list = []; try { list = JSON.parse(SunAndroid.widgetList()); } catch (e) {}
+    const first = HP_WIDGET_FIRST[slot] || [], rank = (w) => { const i = first.indexOf(w.p); return i === -1 ? 99 : i; };
+    list.sort((a, b) => rank(a) - rank(b) || a.l.localeCompare(b.l));
+    const has = hpSlots.indexOf(slot) !== -1;
+    openSheet('Widget: ' + HP_WIDGET_NAME[slot], has ? 'Pick another widget for this place, or remove it.' : 'Pick a widget for this place. Android asks once if the app may show it.', '', false,
+      has ? [{ label: 'Remove this widget', run: () => { SunAndroid.widgetRemove(slot); hpSlots = hpSlots.filter((s) => s !== slot); hpMarkSlots(); } }] : []);
+    const x = $('sheetExtra'); x.textContent = '';
+    const box = document.createElement('div'); box.className = 'hpwlist';
+    list.forEach((w) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'hpwitem' + (rank(w) < 99 ? ' first' : '');
+      const im = document.createElement('img'); im.alt = ''; im.src = 'appicon/' + w.p + '.png';
+      const nm = document.createElement('span'); nm.textContent = w.l;
+      b.append(im, nm);
+      b.addEventListener('click', () => { hideOverlay($('sheet')); SunAndroid.widgetAdd(slot, w.p, w.c); });
+      box.appendChild(b);
+    });
+    x.appendChild(box); x.hidden = false;
+  }
+  // Android tells when a widget is in (or was not allowed)
+  window.hpWidgetReady = (slot, ok) => {
+    if (ok) { if (hpSlots.indexOf(slot) === -1) hpSlots.push(slot); hpMarkSlots(); toast('Widget added.'); }
+    else toast('The widget was not added.');
+  };
+  function hpMarkSlots() {
+    if (!hp.el) return;
+    hp.el.querySelectorAll('[data-slot]').forEach((e) => e.classList.toggle('has', hpSlots.indexOf(e.dataset.slot) !== -1));
+    hpSync();
+  }
+  // tells Android where each widget's place is now (also while the pages slide); hidden when a card is open
+  function hpSync() {
+    if (!hpWidgets() || !hp.el) return;
+    const shown = !hp.el.hidden && !document.querySelector('.overlay:not([hidden]), .cwallet:not([hidden])'), out = [];
+    hpSlots.forEach((s) => {
+      const e = hp.el.querySelector('[data-slot="' + s + '"]'); if (!e) return;
+      const r = e.getBoundingClientRect(), v = shown && r.width > 0 && r.right > 0 && r.left < innerWidth;
+      out.push({ s: s, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), v: v });
+    });
+    if (out.length) SunAndroid.widgetPlace(JSON.stringify(out));
+  }
+  // while the pages are on screen (or sliding), follow them every frame; once they are gone, one last "hide"
+  let hpLoop = 0;
+  function hpFollow() {
+    if (hpLoop) return;
+    const step = () => { hpSync(); hpLoop = hp.el.hidden ? 0 : requestAnimationFrame(step); };
+    hpLoop = requestAnimationFrame(step);
+  }
+  function hpRender() {
+    const pages = hpPages(), track = hp.track;
+    track.textContent = '';
+    pages.forEach((pg) => {
+      const page = document.createElement('div'); page.className = 'hppage';
+      const rows = document.createElement('div'); rows.className = 'hprows';
+      pg.rows.forEach((r) => {
+        if (r.w) { rows.appendChild(hpWidget(r.w)); return; }
+        const row = document.createElement('div'); row.className = 'hprow';
+        if (r.clock) {
+          const side = (l) => { const s = document.createElement('div'); s.className = 'hpside'; l.forEach((a, k) => s.appendChild(hpIcon(a, { list: l, i: k, pg: pg }))); return s; };
+          const ck = document.createElement('div'); ck.className = 'hpclock'; ck.dataset.slot = 'clock'; ck.innerHTML = '<span class="hpcd"></span><b class="hpct"></b><em>＋ widget</em>';
+          ck.addEventListener('click', () => { if (!hp.noClick) hpPickWidget('clock'); });
+          row.classList.add('clockrow'); row.append(side(r.left), ck, side(r.right));
+        } else r.c.forEach((a, k) => row.appendChild(hpIcon(a, { list: r.c, i: k, pg: pg })));
+        rows.appendChild(row);
+      });
+      page.appendChild(rows);
+      const dock = document.createElement('div'); dock.className = 'hprow hpdock';
+      (S.homeDock || []).forEach((a, k) => dock.appendChild(hpIcon(a, { list: S.homeDock, i: k, pg: pg })));
+      onHold(page, () => hpEditPage(pg), '.hpapp, .hpclock, .hpwidget, .hpdots');  // v82: hold the empty sky
+      page.appendChild(dock);
+      track.appendChild(page);
+    });
+    hpTick();
+    if (hpWidgets()) { try { hpSlots = JSON.parse(SunAndroid.widgetSlots()); } catch (e) { hpSlots = []; } }
+    hpMarkSlots();
+  }
+  // the clock and weather text on the pages (once a minute)
+  function hpTick() {
+    if (!hp.el) return;
+    const d = new Date(), hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    hp.el.querySelectorAll('.hpct').forEach((e) => { e.textContent = hm; });
+    hp.el.querySelectorAll('.hpcd').forEach((e) => { e.textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; });
+    const w = S.weather === 'real' && WX ? WX : null;
+    hp.el.querySelectorAll('.hpwx').forEach((e) => { e.textContent = w ? Math.round(w.temp) + '° · ' + wxText(w.code) : (CITY || 'Weather'); });
+    hp.el.querySelectorAll('.hpwx2').forEach((e) => { e.textContent = '＋ Tap to add the weather widget'; });
+  }
+  setInterval(() => { if (hp.on) hpTick(); }, 30000);
+
+  // a folder opens as a small glass panel; a tap on an app opens it
+  function hpFolder(f) {
+    openSheet(f.f, '', '', false);
+    const x = $('sheetExtra'); x.textContent = '';
+    const grid = document.createElement('div'); grid.className = 'hpfolder';
+    f.items.forEach((a, k) => { const b = hpIcon(a, { list: f.items, i: k, folder: f }); b.addEventListener('click', () => { if (!hp.noClick) hideOverlay($('sheet')); }); grid.appendChild(b); });
+    x.appendChild(grid); x.hidden = false;
+  }
+
+  // show page i (0, 1); -1 = back to the Earth
+  function hpPlace(dx, anim) {
+    hp.track.style.transition = anim ? '' : 'none';
+    hp.el.style.transition = anim ? '' : 'none';
+    const W = st.W;
+    if (hp.i === 0 && dx > 0) { hp.el.style.transform = 'translateX(' + dx + 'px)'; hp.track.style.transform = 'translateX(0)'; }
+    else { hp.el.style.transform = 'translateX(0)'; hp.track.style.transform = 'translateX(' + clamp(-hp.i * W + dx, -W * 1.15, 0) + 'px)'; }
+    hp.el.querySelectorAll('.hpdots i').forEach((d, k) => d.classList.toggle('on', k === hp.i));
+  }
+  function openPages(i, fromDrag) {
+    if (!hpAndroid()) return false;
+    if (!hp.el.children.length || !hp.track.children.length) hpRender();
+    hp.el.hidden = false; hpFollow();
+    if (!hp.on) { hp.on = true; pushLayer('homePages'); }
+    hp.i = i || 0;
+    if (!fromDrag) { hp.el.style.transition = 'none'; hp.el.style.transform = 'translateX(100%)'; void hp.el.offsetWidth; }
+    hpTick(); hpPlace(0, true); hapt('swipe');
+    return true;
+  }
+  function closePages(fromBack) {
+    if (!hp.on) return;
+    hp.on = false;
+    hp.el.style.transition = ''; hp.el.style.transform = 'translateX(100%)';
+    if (!fromBack) dropLayer('homePages');
+    setTimeout(() => { if (!hp.on) hp.el.hidden = true; }, 400);
+    hapt('swipe');
+  }
+  // the Earth's sideways swipe in the sky (3-ui.js): the first page follows the finger from the right edge
+  function pagesDrag(dx) {
+    if (!hpAndroid()) return;
+    if (!hp.track.children.length) hpRender();
+    hp.el.hidden = false; hpFollow(); hp.i = 0;
+    hp.el.style.transition = 'none'; hp.track.style.transform = 'translateX(0)';
+    hp.el.style.transform = 'translateX(' + Math.max(0, st.W + Math.min(0, dx)) + 'px)';
+  }
+  function pagesDragEnd(dx, v) {
+    if (!hpAndroid()) return;
+    if (dx < -st.W * 0.25 || v < -0.5) openPages(0, true);
+    else { hp.el.style.transition = ''; hp.el.style.transform = 'translateX(100%)'; setTimeout(() => { if (!hp.on) hp.el.hidden = true; }, 400); }
+  }
+
+  (() => {
+    const el = document.createElement('div'); el.id = 'homePages'; el.className = 'homepages'; el.hidden = true;
+    el.setAttribute('aria-label', 'Your home pages');
+    el.innerHTML = '<div class="hptrack"></div><div class="hpdots" role="group" aria-label="Pages"><button type="button" aria-label="Back to the Earth">‹ Earth</button><i role="button" aria-label="Page 1"></i><i role="button" aria-label="Page 2"></i></div>';
+    $('app').appendChild(el);
+    hp.el = el; hp.track = el.querySelector('.hptrack');
+    const dots = el.querySelectorAll('.hpdots i');
+    el.querySelector('.hpdots button').addEventListener('click', () => closePages());
+    dots.forEach((d, k) => d.addEventListener('click', () => { hp.i = k; hpPlace(0, true); hapt('detent'); }));
+    // swipe sideways between the pages; past page 1 to the right = back to the Earth
+    let p = null;
+    el.addEventListener('pointerdown', (e) => { if (e.isPrimary) p = { x: e.clientX, y: e.clientY, t: performance.now(), mode: '' }; });
+    el.addEventListener('pointermove', (e) => {
+      if (!p) return;
+      const dx = e.clientX - p.x, dy = e.clientY - p.y;
+      if (!p.mode && Math.hypot(dx, dy) > 10) p.mode = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y';
+      if (p.mode === 'x') { hp.noClick = true; hpPlace(dx, false); }
+    });
+    const end = (e) => {
+      if (!p) return;
+      const dx = e.clientX - p.x, v = dx / Math.max(1, performance.now() - p.t), mode = p.mode; p = null;
+      setTimeout(() => { hp.noClick = false; }, 50);
+      if (mode !== 'x') return;
+      const go = dx < -st.W * 0.2 || v < -0.5 ? 1 : dx > st.W * 0.2 || v > 0.5 ? -1 : 0;
+      if (go === -1 && hp.i === 0) { closePages(); return; }
+      hp.i = clamp(hp.i + go, 0, 1); hpPlace(0, true); if (go) hapt('detent');
+    };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  })();
+
+  /* ---------- Card wallet (v81, user: mock/cards.html) ----------
+     The pictures of one folder (normally Pictures › Cards), picked once with Android's folder picker. A grid with the
+     name under each card; a tap shows the card full screen on white at full brightness; swipe for the next one. */
+  const cw = { list: [], i: 0, el: null, view: null, stamp: 0 };
+  function openCards() {
+    if (!SunAndroid.cardsReady()) {
+      openSheet('Cards', 'Pick the folder with your card pictures (Pictures › Cards). Android opens its folder picker: tap "Use this folder", then "Allow". The app can then see only that folder.', '', false,
+        [{ label: 'Pick the folder', run: () => SunAndroid.cardsPick() }]);
+      return;
+    }
+    try { cw.list = JSON.parse(SunAndroid.cardsList()); } catch (e) { cw.list = []; }
+    cw.stamp = Date.now();
+    const grid = cw.el.querySelector('.cwgrid'); grid.textContent = '';
+    cw.list.forEach((c, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'cwcard';
+      const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.src = 'card/' + i + '?t=' + cw.stamp;
+      const nm = document.createElement('span'); nm.textContent = c.n;
+      b.append(im, nm); b.addEventListener('click', () => openCard(i)); grid.appendChild(b);
+    });
+    cw.el.querySelector('.cwempty').hidden = cw.list.length > 0;
+    if (cw.el.hidden) { cw.el.hidden = false; pushLayer('cardWallet'); }
+    hpSync();
+  }
+  window.cardsPicked = (ok) => { if (ok) { hideOverlay($('sheet')); openCards(); } else toast('No folder picked.'); };
+  function closeCards(fromBack) { if (cw.el.hidden) return; cw.el.hidden = true; if (!fromBack) dropLayer('cardWallet'); hpSync(); }
+  function cardShow() {
+    const c = cw.list[cw.i]; if (!c) return;
+    cw.view.querySelector('img').src = 'card/' + cw.i + '?t=' + cw.stamp;
+    cw.view.querySelector('.cvname').textContent = c.n;
+    const dots = cw.view.querySelector('.cvdots'); dots.textContent = '';
+    if (cw.list.length > 1) cw.list.forEach((x, k) => { const d = document.createElement('i'); if (k === cw.i) d.className = 'on'; dots.appendChild(d); });
+  }
+  function openCard(i) { cw.i = i; cardShow(); cw.view.hidden = false; pushLayer('cardView'); SunAndroid.bright(true); hapt('press'); }
+  function closeCard(fromBack) { if (cw.view.hidden) return; cw.view.hidden = true; SunAndroid.bright(false); if (!fromBack) dropLayer('cardView'); }
+  (() => {
+    const el = document.createElement('div'); el.id = 'cardWallet'; el.className = 'cwallet'; el.hidden = true;
+    el.innerHTML = '<div class="cwhead"><h2>Cards</h2><button type="button" class="cwfolder">Change folder</button><button type="button" class="cwclose" aria-label="Close">✕</button></div>'
+      + '<div class="cwgrid"></div><p class="cwempty" hidden>No pictures in this folder yet. Put screenshots of your cards there, then open Cards again.</p>';
+    const view = document.createElement('div'); view.id = 'cardView'; view.className = 'cview'; view.hidden = true;
+    view.innerHTML = '<div class="cvname"></div><div class="cvbright">☀ Full brightness while a card is open</div><img alt="Card"><div class="cvdots"></div><div class="cvhint">Swipe sideways for the next card · Back to close</div>';
+    $('app').append(el, view);
+    cw.el = el; cw.view = view;
+    el.querySelector('.cwclose').addEventListener('click', () => closeCards());
+    el.querySelector('.cwfolder').addEventListener('click', () => SunAndroid.cardsPick());
+    let p = null;
+    view.addEventListener('pointerdown', (e) => { if (e.isPrimary) p = { x: e.clientX, y: e.clientY }; });
+    const end = (e) => {
+      if (!p) return;
+      const dx = e.clientX - p.x, dy = e.clientY - p.y; p = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { cw.i = (cw.i + (dx < 0 ? 1 : -1) + cw.list.length) % cw.list.length; cardShow(); hapt('detent'); }
+    };
+    view.addEventListener('pointerup', end); view.addEventListener('pointercancel', () => { p = null; });
+  })();
+
+  /* ---------- Changing the home pages (v82, user) ----------
+     Hold an app: move it left or right, put it in a folder, or remove it from the page. Hold an empty place: add an
+     app there. Hold a folder: rename it, add an app, or remove the folder (its apps go to empty places on the page).
+     Inside a folder, hold an app: take it out. Hold the empty sky: add a row, or make a new folder. */
+  let paPick = null;  // 3-ui.js: what to do with the app picked in the phone's app list
+  // a hold (0.5 s without moving) on el; skip = parts of el that have their own hold
+  function onHold(el, fn, skip) {
+    let t = 0, x = 0, y = 0;
+    const stop = () => { clearTimeout(t); t = 0; };
+    el.addEventListener('pointerdown', (e) => {
+      if (!e.isPrimary || (skip && e.target.closest(skip))) return;
+      x = e.clientX; y = e.clientY; stop();
+      t = setTimeout(() => { t = 0; hp.noClick = true; setTimeout(() => { hp.noClick = false; }, 600); hapt('press'); fn(); }, 500);
+    });
+    el.addEventListener('pointermove', (e) => { if (t && Math.hypot(e.clientX - x, e.clientY - y) > 10) stop(); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((n) => el.addEventListener(n, stop));
+  }
+  function hpChanged(reopen) {
+    save(); hpRender(); hpPlace(0, false);
+    if (reopen) setTimeout(() => hpFolder(reopen), 120);
+  }
+  const hpName = (a) => a.f || (a.cards ? 'Cards' : a.l);
+  function hpAskName(old) {
+    const n = window.prompt('Folder name', old || '');
+    return n && n.trim() ? n.trim().slice(0, 20) : '';
+  }
+  // all folders on both pages (to put an app into one)
+  function hpAllFolders() {
+    const out = [];
+    hpPages().forEach((pg) => pg.rows.forEach((r) => (r.c || []).forEach((a) => { if (a && a.f) out.push(a); })));
+    return out;
+  }
+  // the first empty place on a page (a new row is added when there is none)
+  function hpEmptyCell(pg) {
+    for (const r of pg.rows) if (r.c) { const k = r.c.indexOf(null); if (k !== -1) return { list: r.c, i: k }; }
+    const row = { c: [null, null, null, null, null] }; pg.rows.push(row);
+    return { list: row.c, i: 0 };
+  }
+  function hpEditItem(a, loc) {
+    const L = loc.list, i = loc.i;
+    if (loc.folder) {  // an app inside a folder
+      openSheet(a.l, 'In the folder ' + loc.folder.f + '.', '', false, [{ label: 'Take out of the folder', run: () => { L.splice(i, 1); hpChanged(loc.folder); } }]);
+      return;
+    }
+    if (!a) {
+      openSheet('Empty place', '', '', false, [{ label: 'Add an app here', run: () => openPhoneApps((x) => { L[i] = { l: x.l, p: x.p }; hpChanged(); }) }]);
+      return;
+    }
+    const acts = [];
+    if (i > 0) acts.push({ label: '← Move left', run: () => { L[i] = L[i - 1]; L[i - 1] = a; hpChanged(); } });
+    if (i < L.length - 1) acts.push({ label: 'Move right →', run: () => { L[i] = L[i + 1]; L[i + 1] = a; hpChanged(); } });
+    if (a.f) {
+      acts.push({ label: 'Rename the folder', run: () => { const n = hpAskName(a.f); if (n) { a.f = n; hpChanged(); } } });
+      acts.push({ label: 'Add an app to the folder', run: () => openPhoneApps((x) => { if (!a.items.some((y) => y.p === x.p)) a.items.push({ l: x.l, p: x.p }); hpChanged(a); }) });
+      acts.push({ label: 'Remove the folder', run: () => {
+        L[i] = null;
+        let lost = 0; a.items.forEach((x) => { const c = loc.pg ? hpEmptyCell(loc.pg) : null; if (c) c.list[c.i] = x; else lost++; });
+        hpChanged(); if (lost) toast(lost + ' apps had no place; they are still on your phone.');
+      } });
+    } else if (!a.cards) {
+      acts.push({ label: 'Put in a folder', run: () => {
+        const fs = hpAllFolders();
+        openSheet('Put ' + a.l + ' in…', '', '', false, fs.map((f) => ({ label: f.f, run: () => { f.items.push(a); L[i] = null; hpChanged(); } }))
+          .concat([{ label: '＋ New folder', run: () => { const n = hpAskName(''); if (n) { L[i] = { f: n, items: [a] }; hpChanged(); } } }]));
+      } });
+    }
+    acts.push({ label: 'Remove from this page', run: () => { L[i] = null; hpChanged(); toast(hpName(a) + ' is off the page (still on your phone).'); } });
+    openSheet(hpName(a), 'Change this page.', '', false, acts);
+  }
+  function hpEditPage(pg) {
+    openSheet('This page', 'Hold an app or an empty place to change it.', '', false, [
+      { label: 'Add a row of empty places', run: () => { pg.rows.push({ c: [null, null, null, null, null] }); hpChanged(); } },
+      { label: 'Make a new folder', run: () => { const n = hpAskName(''); if (n) { const c = hpEmptyCell(pg); c.list[c.i] = { f: n, items: [] }; hpChanged(); } } }
+    ]);
+  }
   /* ---------- Gestures ---------- */
   let drag = null, bubbleTimer = 0;
   const pts = new Map();
@@ -5077,14 +5723,32 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       p0 = { x: e.clientX, y: e.clientY, id: e.pointerId, mode: '' }; el.classList.add('dragging');
       // v53: hold the Earth (0.7 s, without moving) = Watch, like holding the sun or moon opens its editor
       clearTimeout(holdT); held = false;
-      if (!st.watch && !e.target.closest('button')) holdT = setTimeout(() => { if (p0 && !p0.mode) { held = true; setWatch(true); } }, 700);
+      // v78: hold the time (0.45 s) = pick it up and drag it to the top or the bottom
+      const r0 = el.getBoundingClientRect(), y0 = e.clientY - r0.top;
+      const onTime = !st.watch && !planet.calm && planetTime && y0 > planetTime.y0 && y0 < planetTime.y1 && !e.target.closest('button, .pchips');
+      if (onTime) holdT = setTimeout(() => { if (p0 && !p0.mode) { p0.mode = 'time'; timeGhost(true, e.clientY - r0.top); hapt('press'); } }, 450);
+      else if (!st.watch && !e.target.closest('button')) holdT = setTimeout(() => { if (p0 && !p0.mode) { held = true; setWatch(true); } }, 700);
     });
+    // v78: while the time is dragged, a copy of it follows the finger and the canvas leaves it out
+    const ghost = document.createElement('div'); ghost.className = 'tghost'; ghost.setAttribute('aria-hidden', 'true'); el.appendChild(ghost);
+    function timeGhost(on, y) {
+      st.timeDrag = on;
+      if (on) {
+        const d = new Date(); ghost.textContent = S.clockStyle === 'analog' ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        ghost.className = 'tghost on ' + S.clockStyle; ghost.style.top = Math.round(y) + 'px'; showZones('time');
+      } else { ghost.className = 'tghost'; hideZones(); }
+      kick();
+    }
     window.addEventListener('pointermove', (e) => { if (p0 && e.pointerId === p0.id && Math.hypot(e.clientX - p0.x, e.clientY - p0.y) > 10) clearTimeout(holdT); });
     window.addEventListener('pointermove', (e) => {
       if (!p0 || e.pointerId !== p0.id) return;
       const dx = e.clientX - p0.x, dy0 = e.clientY - p0.y;
+      if (p0.mode === 'time') { ghost.style.top = Math.round(e.clientY - el.getBoundingClientRect().top) + 'px'; return; }  // v78
       // v37: decide once: sideways = spin the Earth (fidget spinner), up = swipe to the sun
       if (!p0.mode && Math.hypot(dx, dy0) > 10) p0.mode = Math.abs(dx) > Math.abs(dy0) * 1.2 ? 'spin' : 'swipe';
+      // v79 (user, option A): sideways in the sky (above the Earth's air) = the home pages; on the Earth = spin
+      if (p0.mode === 'spin' && !spin.drag && !st.watch && hpAndroid() && p0.y - el.getBoundingClientRect().top < planetTop) { p0.mode = 'pages'; p0.t = performance.now(); }
+      if (p0.mode === 'pages') { pagesDrag(dx); return; }
       if (p0.mode === 'spin') {
         const now = performance.now();
         if (!spin.drag) { spin.drag = { off0: spin.off - dx * 0.12, samples: [] }; spin.vel = 0; }
@@ -5095,8 +5759,26 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       }
       const dy = Math.min(0, dy0); el.style.transform = 'translateY(' + dy + 'px)';
     });
+    // v76 (bug: the moon card closed at once on the phone): a card opened when the finger lifts; the phone's click
+    // came right after on the same spot, now the dark area around the card, which closes it. Skip that one click.
+    const eatClick = () => {
+      const f = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      window.addEventListener('click', f, { capture: true, once: true });
+      setTimeout(() => window.removeEventListener('click', f, true), 500);
+    };
     const up = (e) => {
       if (!p0 || e.pointerId !== p0.id) return;
+      if (p0.mode === 'time') {  // v78: let go of the time: it snaps to the top or the bottom
+        const pos = e.clientY - el.getBoundingClientRect().top < st.H * 0.5 ? 'top' : 'bottom';
+        p0 = null; el.classList.remove('dragging'); timeGhost(false);
+        if (pos !== S.timePos) { S.timePos = pos; save(); hapt('detent'); toast(pos === 'top' ? 'Time at the top.' : 'Time at the bottom.'); }
+        return;
+      }
+      if (p0.mode === 'pages') {  // v79: let go: the home pages open, or slide back out
+        const dx = e.clientX - p0.x; pagesDragEnd(dx, dx / Math.max(1, performance.now() - p0.t));
+        p0 = null; el.classList.remove('dragging'); clearTimeout(holdT);
+        return;
+      }
       if (p0.mode === 'spin') {
         // let go: keep the speed of the last moves, then it slows down like a fidget spinner
         const v = velocity(spin.drag ? spin.drag.samples : []);
@@ -5112,14 +5794,14 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       if (st.watch && tap) setWatch(false);  // v47: Watch on the Earth: a tap comes back (a drag still spins it)
       else if (dy < -st.H * 0.12) { if (st.watch) setWatch(false); setCalm(false); hidePlanet(); }
       // double-tap the clock: charging mode on / off by hand (v37)
-      else if (tap && ty > st.H * 0.08 && ty < st.H * 0.27) {
+      else if (tap && planetTime && ty > planetTime.y0 && ty < planetTime.y1) {  // v78: wherever the time is
         const tn = performance.now();
         if (tn - lastClockTap < 380) { setCalm(!planet.calm, false); hapt('press'); lastClockTap = 0; } else lastClockTap = tn;
       }
       // a tap on Vienna opens the Vienna card (v36); a tap on the moon in the sky opens the moon menu (v38, user)
-      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetMoon && Math.hypot(tx - planetMoon.x, ty - planetMoon.y) < 44) { hapt('press'); moonCard(); }
+      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetMoon && Math.hypot(tx - planetMoon.x, ty - planetMoon.y) < 44) { hapt('press'); eatClick(); moonCard(); }
       else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSun && Math.hypot(tx - planetSun.x, ty - planetSun.y) < 44) { hapt('press'); setCalm(false); hidePlanet(); goSun(); }
-      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSpot && Math.hypot(tx - planetSpot.x, ty - planetSpot.y) < 44) { hapt('press'); viennaCard(); }
+      else if (tap && !(e.target && e.target.closest && e.target.closest('button')) && planetSpot && Math.hypot(tx - planetSpot.x, ty - planetSpot.y) < 44) { hapt('press'); eatClick(); viennaCard(); }
       // v53: double-tap the empty sky or Earth = Watch (the clock keeps its own double-tap for the night clock)
       else if (tap) {
         const tn = performance.now();
@@ -5356,7 +6038,35 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     if (on) { hapt('press'); pushLayer('watchCatch'); } else dropLayer('watchCatch');
     kick();
   }
-  $('watchBtn').addEventListener('click', () => setWatch(true));
+  // v78: on the Earth, hold the eye (0.45 s) and drag it to the top or the bottom; a plain tap still starts Watch
+  let eyeDrag = null, eyeNoClick = false;
+  $('watchBtn').addEventListener('click', () => { if (!eyeNoClick) setWatch(true); });
+  $('watchBtn').addEventListener('pointerdown', (e) => {
+    if (!planet.on || st.watch) return;
+    const b = $('watchBtn');
+    eyeDrag = { y0: e.clientY, id: e.pointerId, on: false, t: setTimeout(() => {
+      eyeDrag.on = true; b.classList.add('lift'); showZones('eye'); hapt('press'); try { b.setPointerCapture(e.pointerId); } catch (er) {}
+    }, 450) };
+  });
+  $('watchBtn').addEventListener('pointermove', (e) => {
+    if (!eyeDrag) return;
+    if (!eyeDrag.on) { if (Math.abs(e.clientY - eyeDrag.y0) > 10) { clearTimeout(eyeDrag.t); eyeDrag = null; } return; }
+    $('watchBtn').style.transform = 'translateY(' + (e.clientY - eyeDrag.y0) + 'px)';
+  });
+  const eyeEnd = (e) => {
+    if (!eyeDrag) return;
+    clearTimeout(eyeDrag.t);
+    if (eyeDrag.on) {
+      const b = $('watchBtn'), y = e.clientY - $('app').getBoundingClientRect().top, pos = y < st.H * 0.5 ? 'top' : 'bottom';
+      b.classList.remove('lift'); b.style.transform = ''; hideZones();
+      eyeNoClick = true; setTimeout(() => { eyeNoClick = false; }, 350);
+      if (pos === 'top' && S.chipsPos === 'above') toast('The chips are at the top, so the eye stays at the bottom.');
+      else if (pos !== S.eyePos) { S.eyePos = pos; save(); hapt('detent'); toast(pos === 'top' ? 'Eye at the top.' : 'Eye at the bottom.'); }
+      kick();
+    }
+    eyeDrag = null;
+  };
+  $('watchBtn').addEventListener('pointerup', eyeEnd); $('watchBtn').addEventListener('pointercancel', eyeEnd);
   $('watchCatch').addEventListener('pointerdown', (e) => { e.preventDefault(); setWatch(false); });
   // v47: the button sits in the top row next to Search on every screen (the bottom row covered apps, user screenshots)
   // double-tap on empty sky (Sun and Moon screens) also starts Watch
@@ -5448,6 +6158,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     if (top.name === 'planetScreen') hidePlanet(true);
     else if (top.name === 'moon') goSun(true);
     else if (top.name === 'camera') closeCamera(true);
+    else if (top.name === 'homePages') closePages(true);  // v79
+    else if (top.name === 'cardWallet') closeCards(true);  // v81
+    else if (top.name === 'cardView') closeCard(true);
     else if (top.name === 'watchCatch') setWatch(false);  // v59: on the Earth #watchCatch is hidden, so hideOverlay did nothing
     else { const el = $(top.name); if (el) hideOverlay(el, true); }
   }
@@ -5545,6 +6258,12 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     pushRecent(a.name);
     countUse(a.name);
     maybePinTip(a.name);  // v46
+    // v78: an app on the phone opens through the Android app
+    if (a.pkg && !a.href) {
+      if (window.SunAndroid && SunAndroid.launch) { hapt('press'); if (!SunAndroid.launch(a.pkg)) toast(a.name + ' is not on this phone any more.'); }
+      else openSheet(a.name, 'This is an app on your phone. It opens from the Earth Overview Menu app on Android.', '', false);
+      return;
+    }
     if (a.href) { hapt('press'); const w = window.open(a.href, '_blank'); if (w) w.opener = null; else location.href = a.href; return; }
     if (a.name === 'Timer') { hapt('press'); openTimer(); return; }  // v72: the built-in timer
     openSheet(a.name, 'Link not set yet: [' + a.name + ' address].', '', false);
@@ -5614,7 +6333,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v73 · Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -5919,6 +6638,10 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const a = name ? BY[name] : null;
     af.editing = a ? a.name : null; af.nameTouched = !!a;
     af.color = a ? a.color : ''; af.useSite = !!(a && a.icon); af.site = a && a.icon ? a.icon : ''; af.where = 'sun';
+    af.pkg = a ? a.pkg || '' : '';  // v78
+    $('afPhone').hidden = !(window.SunAndroid && SunAndroid.apps);
+    $('afSite').textContent = af.pkg ? 'App icon' : 'Site icon';
+    $('afLink').placeholder = af.pkg ? 'App on your phone (' + af.pkg + ')' : 'https://… or yoursite.com';
     $('afTitle').textContent = a ? 'Edit app' : 'Add app';
     $('afSave').textContent = a ? 'Save' : 'Add';
     $('afRemove').hidden = !a; $('afQA').hidden = !a; $('afWhere').hidden = !!a; $('afWhereL').hidden = !!a;
@@ -5926,6 +6649,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     $('afWhere').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.w === 'sun'));
     $('afSite').hidden = !af.site;
     $('afQA').querySelectorAll('.aqa').forEach((r, i) => { const q = a && a.short[i]; r.children[0].value = q ? q.label : ''; r.children[1].value = q ? q.href : ''; });
+    afRows();
     if (!$('afIcons').querySelector('.asw')) AF_COLORS.forEach((c) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'asw'; b.dataset.c = c; b.style.background = c || 'var(--line)';
       b.setAttribute('aria-label', c ? 'Letter on colour ' + c : 'Letter, plain');
@@ -5937,12 +6661,53 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     $('afRemove').textContent = 'Remove'; af.armed = false;
     showOverlay($('appForm'));  // on top of Edit dial (Save goes back to the list)
   }
+  // v78: "From my phone": a list of the phone's apps (with search); a tap fills in the name and the app's own icon
+  let phoneList = null;
+  function paRender() {
+    const q = $('paFind').value.trim().toLowerCase(), box = $('paList');
+    box.textContent = '';
+    phoneList.filter((x) => !q || x.l.toLowerCase().indexOf(q) !== -1).forEach((x) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'paapp';
+      const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.src = 'appicon/' + x.p + '.png';
+      const nm = document.createElement('span'); nm.textContent = x.l;
+      b.append(im, nm);
+      b.addEventListener('click', () => {
+        if (paPick) { const f = paPick; paPick = null; hideOverlay($('phoneApps')); f(x); return; }  // v82: a home page asked for an app
+        af.pkg = x.p; af.site = new URL('appicon/' + x.p + '.png', location.href).href; af.useSite = true;
+        $('afLink').value = ''; $('afLink').placeholder = 'App on your phone (' + x.p + ')';
+        $('afName').value = x.l.slice(0, 30); af.nameTouched = true; $('afErr').textContent = '';
+        $('afSite').hidden = false; $('afSite').textContent = 'App icon';
+        hideOverlay($('phoneApps')); afPreview();
+      });
+      box.appendChild(b);
+    });
+  }
+  // the phone's app list; v82: also for the home pages (pick = what to do with the chosen app)
+  function openPhoneApps(pick) {
+    paPick = pick || null;
+    try { phoneList = JSON.parse(SunAndroid.apps()); } catch (e) { phoneList = []; }
+    $('paFind').value = ''; paRender(); showOverlay($('phoneApps'));
+  }
+  $('afPhone').addEventListener('click', () => openPhoneApps());
+  $('paFind').addEventListener('input', paRender);
+  $('paCancel').addEventListener('click', () => hideOverlay($('phoneApps')));
+  $('phoneApps').addEventListener('click', (e) => { if (e.target === $('phoneApps')) hideOverlay($('phoneApps')); });
   $('afLink').addEventListener('input', () => {
+    if ($('afLink').value.trim()) af.pkg = '';  // v78: a typed link replaces a phone app
     const href = webLink($('afLink').value);
     if (href && !af.nameTouched) $('afName').value = guessName(href);
     if (href) afFindIcon(href);
     afPreview();
   });
+  // v75 (user: cluttered): only the quick actions in use and one empty row show; typing in it shows the next one
+  function afRows() {
+    let empty = 0;
+    $('afQA').querySelectorAll('.aqa').forEach((r) => {
+      const used = r.children[0].value.trim() || r.children[1].value.trim();
+      r.hidden = !used && empty++ > 0 && !r.contains(document.activeElement);
+    });
+  }
+  $('afQA').addEventListener('input', afRows);
   $('afName').addEventListener('input', () => { af.nameTouched = true; afPreview(); });
   $('afSite').addEventListener('click', () => { af.useSite = true; afPreview(); });
   $('afWhere').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; af.where = b.dataset.w; $('afWhere').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); });
@@ -5963,7 +6728,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   $('afSave').addEventListener('click', () => {
     const href = webLink($('afLink').value), name = $('afName').value.trim().slice(0, 30), err = $('afErr');
     if ($('afLink').value.trim() && !href) { err.textContent = 'This link does not work here. Use a web link (https://…).'; return; }
-    if (!href && !af.editing) { err.textContent = 'Paste the app\'s link first.'; return; }
+    if (!href && !af.editing && !af.pkg) { err.textContent = 'Paste the app\'s link first.'; return; }
     if (!name) { err.textContent = 'Give the app a name.'; return; }
     if (APP_LIST.some((x) => x.name.toLowerCase() === name.toLowerCase() && x.name !== af.editing)) { err.textContent = 'You already have an app called "' + name + '".'; return; }
     const icon = af.useSite ? af.site : '', list = APP_LIST.slice();
@@ -5972,13 +6737,13 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const short = Array.prototype.map.call($('afQA').querySelectorAll('.aqa'), (r) => ({ label: r.children[0].value, href: r.children[1].value }));
       const bad = short.find((q) => q.label.trim() && q.href.trim() && !webLink(q.href));
       if (bad) { err.textContent = 'The link of "' + bad.label.trim() + '" is not a web link.'; return; }
-      list[i] = { name: name, hint: old.hint, href: href, icon: icon, color: af.color, short: short };
+      list[i] = { name: name, hint: old.hint, href: href, icon: icon, color: af.color, short: short, pkg: href ? '' : af.pkg };
       if (ICONS[old.name] && name !== old.name) ICONS[name] = ICONS[old.name];  // a built-in picture follows a rename
       if (name !== old.name) renameEverywhere(old.name, name);
       saveApps(list); toast('Saved.');
     } else {
       let host = ''; try { host = new URL(href).hostname.replace(/^www\./, ''); } catch (e) {}
-      list.push({ name: name, hint: host, href: href, icon: icon, color: af.color, short: [] });
+      list.push({ name: name, hint: href ? host : 'On your phone', href: href, icon: icon, color: af.color, short: [], pkg: href ? '' : af.pkg });
       saveApps(list);
       S.order.push(name);
       if (af.where === 'moon' && S.mode === 'two') S.onMoon.push(name);
@@ -6043,7 +6808,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons'];
+  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons', 'strip', 'clockStyle'];
+  $('placesBack').addEventListener('click', () => { S.timePos = 'top'; S.chipsPos = 'below'; S.eyePos = 'top'; save(); kick(); toast('Time, chips and eye are back in their first places.'); });  // v78
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
@@ -6143,7 +6909,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     el.querySelector('.vs-next').addEventListener('click', () => step(1));
     let p0 = null, holdT = 0;
     const showPeek = () => {
-      const g = vsGroup(kind); if (g.length < 2) return;
+      const g = vsGroup(kind); if (g.length < 2 || S.strip !== 'on') return;
       peek.textContent = '';
       g.forEach((v) => {
         const d = document.createElement('div'); d.dataset.v = v;
@@ -6164,7 +6930,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const dx = e.clientX - p0.x, dy = e.clientY - p0.y;
       if (!p0.mode && Math.hypot(dx, dy) > 10) {
         clearTimeout(holdT);
-        if (Math.abs(dx) >= Math.abs(dy)) p0.mode = 'slide';
+        if (Math.abs(dx) >= Math.abs(dy)) p0.mode = S.strip === 'on' ? 'slide' : 'none';
         else if (kind === 'sun' && dy < 0 && S.mode === 'two') {  // a swipe up from here still opens the Moon
           const down = p0.down; p0 = null;
           try { el.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -6182,7 +6948,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', end);
   });
-  setTimeout(vsRender, 0);  // first fill, once the app has started
+  // v76 (user: "only from Settings, so the screen stays fixed"): Off hides ‹ name › and the dots; "swipe up · Moon" stays
+  function stripUI() { $('app').classList.toggle('strip-off', S.strip !== 'on'); }
+  setTimeout(() => { stripUI(); vsRender(); }, 0);  // first fill, once the app has started
   const pvMoonPos = (m) => ({ dots: '100% 50%', arc: '100% 50%', crescent: '30% 50%', small: '100% 50%', dial: '0% 50%', phase: '50% 15%', minimal: '100% 20%', dial3d: '50% 50%', moondial: '50% 50%' }[m] || '50% 45%');
   function pvTap(name, value) {
     const r = Array.prototype.find.call(form.elements[name], (x) => x.value === value);
@@ -6336,6 +7104,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   form.addEventListener('submit', (e) => e.preventDefault());
   function afterChange(prevMode, prevDir) {
     save();
+    stripUI();  // v76
     renderPicks();  // v48
     applyLight();
     if (S.mode !== prevMode) { st.pos = 0; buildFacets(); buildItems(); applyMode(); }
