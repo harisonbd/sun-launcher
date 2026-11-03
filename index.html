@@ -732,6 +732,21 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 .cvhint { font-size: 13px; color: #777; }
 /* v87: the fly-through covers everything (cards and menus included) until it ends or is tapped */
 .flycv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1000; background: #000; touch-action: none; }
+
+/* v93 (user, mockup): a phone held sideways. The ring or the Earth on one side, the words and buttons on the other. Same test as landQuery in 2-screens.js. */
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: none; }
+  #app.land .info { left: 52%; right: 16px; }
+  #app.land .corner { bottom: 12px; width: 64px; height: 64px; }
+  #app.land .corner.bl { left: 52%; }
+  #app.land .handle.top, #app.land .handle.bottom, #app.land .to-planet { left: 30%; }
+  #app.land .planet-handle { left: 78%; bottom: 8px; }
+  #app.land #pChips { left: 16px; right: auto; top: 62%; width: 40%; flex-wrap: wrap; justify-content: flex-start; }
+  #app.land .pnote { left: 16px; top: 82%; transform: none; max-width: 40%; }
+  #app.land .vstrip { left: 30%; }
+  #app.land .favbar { left: 52%; bottom: 84px; justify-content: flex-start; }
+  #app.land .sheet { max-width: 560px; margin: 0 auto; max-height: 94%; }
+}
 </style>
 
 <div id="app">
@@ -1321,7 +1336,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v92';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v93';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1596,6 +1611,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   let hzCache = { k: '', v: null };
   function hzState() {
     const none = { on: false, sink: 0, night: 0, flip: 0, fl: 1 };
+    if (st.land) return none;  // v93: sideways: no hills to set behind
     if (S.sunSet !== 'on' || S.mode === 'one' || (S.sunView !== 'dial' && S.sunView !== 'ring')) return none;
     if (S.sunView === 'dial' && ['flat', 'diagonal', 'custom'].indexOf(S.dir) === -1) return none;
     if (!$('lookEdit').hidden) return none;
@@ -1805,7 +1821,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const az = Math.atan2(Math.sin(Hh), Math.cos(Hh) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi));
     // v51: sub = where on Earth the moon is straight overhead (Earth screen: the moon turns with the Earth, like the sun)
     const subLon = (((ra - rad * (280.16 + 360.9856235 * d)) / rad) % 360 + 540) % 360 - 180;
-    return { alt: alt / rad, az: az / rad + 180, sub: { lat: dec / rad, lon: subLon } };
+    // v93: q = parallactic angle: how far the moon's north is turned from straight up, seen from your place
+    const q = Math.atan2(Math.sin(Hh), Math.tan(phi) * Math.cos(dec) - Math.sin(dec) * Math.cos(Hh));
+    return { alt: alt / rad, az: az / rad + 180, q: q, sub: { lat: dec / rad, lon: subLon } };
   }
   function moonIllum(date) {
     const rad = Math.PI / 180, e = rad * 23.4397, d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545;
@@ -1820,7 +1838,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const phi = Math.acos(Math.sin(sdec) * Math.sin(mdec) + Math.cos(sdec) * Math.cos(mdec) * Math.cos(sra - mra));
     const inc = Math.atan2(sdist * Math.sin(phi), dist - sdist * Math.cos(phi));
     const ang = Math.atan2(Math.cos(sdec) * Math.sin(sra - mra), Math.sin(sdec) * Math.cos(mdec) - Math.cos(sdec) * Math.sin(mdec) * Math.cos(sra - mra));
-    return { fraction: (1 + Math.cos(inc)) / 2, phase: 0.5 + 0.5 * inc * (ang < 0 ? -1 : 1) / Math.PI };
+    return { fraction: (1 + Math.cos(inc)) / 2, phase: 0.5 + 0.5 * inc * (ang < 0 ? -1 : 1) / Math.PI, angle: ang };
   }
   let moonMemo = { k: null, v: null };
   function moonNow() {
@@ -1828,12 +1846,20 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     if (moonMemo.k !== k) moonMemo = { k: k, v: moonIllum(new Date()) };
     return moonMemo.v;
   }
-  // Light direction for the moon drawing: lit on the right when waxing, full from the front, left when waning.
-  function moonLight(fixed) {
-    if (S.moonPhase !== 'real') return fixed;
-    const th = moonNow().phase * 2 * Math.PI;
-    return [Math.sin(th), 0.1, -Math.cos(th)];
+  // v93 (user: the lit side must be astronomically right): the moon as seen from your place at that time. The lit side
+  // (angle minus q = from straight up, anticlockwise) and the surface (roll) both turn with the sky; the amount lit is real.
+  function moonView(date) {
+    const ill = moonIllum(date), q = moonAltAz(date).q, z = ill.angle - q, lz = 2 * ill.fraction - 1, s = Math.sqrt(Math.max(0, 1 - lz * lz));
+    return { light: [-Math.sin(z) * s, Math.cos(z) * s, lz], roll: -q };
   }
+  let moonViewMemo = { k: null, v: null };
+  function moonViewNow() {
+    const k = Math.floor(Date.now() / 60000);
+    if (moonViewMemo.k !== k) moonViewMemo = { k: k, v: moonView(new Date()) };
+    return moonViewMemo.v;
+  }
+  function moonLight(fixed) { return S.moonPhase === 'real' ? moonViewNow().light : fixed; }
+  function moonRoll() { return S.moonPhase === 'real' ? moonViewNow().roll : 0; }
   // moonlight washes out faint stars: 0 at new moon ... 1 at full moon (only with the real phase)
   function moonFrSky() { return S.moonPhase === 'real' ? moonNow().fraction : 0; }
   // v60: moonrise and moonset for one day (10-minute steps, then in between; null when it does not rise or set that day)
@@ -2808,7 +2834,14 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const stProbe = document.createElement('div');
   stProbe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;top:var(--st);height:var(--sb);width:0';  // v78: height = bottom bar
   app.appendChild(stProbe);
+  // v93 (user, mockup): a phone held sideways: the ring or the Earth on one side, the words on the other. Same test as in style.css.
+  const landQuery = window.matchMedia('(orientation: landscape) and (max-height: 520px)');
+  function kOf(W) { return st.land ? st.H / 470 : W / 390; }
+  function midX(W) { return st.land ? W * 0.3 : W / 2; }
+  function txtX(W) { return st.land ? W * 0.72 : W / 2; }
   function resize() {
+    st.land = landQuery.matches;
+    app.classList.toggle('land', st.land);
     const r = app.getBoundingClientRect();
     st.W = r.width; st.H = r.height;
     st.top = stProbe.offsetTop || 0; st.bot = stProbe.offsetHeight || 0;
@@ -2851,6 +2884,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   function frontDeg() { return currentTilt() >= 0 ? 180 : 0; }
   function presetGeo(dir) {
     const W = st.W, H = st.H, base = Math.min(W * 0.36, 150, H * 0.17);
+    if (st.land && dir !== 'tall' && dir !== 'rolodex' && dir !== 'edge') return { cxf: 0.3, cyf: 0.47, R: H * 0.33, roll: 0 };
     if (dir === 'upright') return { cxf: 0.45, cyf: 0.43, R: base, roll: -90 };
     if (dir === 'diagonal') return { cxf: 0.5, cyf: 0.4, R: base * 0.93, roll: -45 };
     if (dir === 'tall') return { cxf: 0.33, cyf: 0.5, R: Math.min(H * 0.34, 290), roll: -90 };
@@ -2859,13 +2893,13 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     return { cxf: 0.5, cyf: 0.41, R: base, roll: 0 };
   }
   function sunGeo() {
-    const p = S.dir === 'custom' && S.custom ? S.custom : presetGeo(S.dir);
+    const p = S.dir === 'custom' && S.custom && !st.land ? S.custom : presetGeo(S.dir);
     const g = { cx: st.W * p.cxf, cy: st.H * p.cyf - st.lift, R: p.R, roll: p.roll, tilt: currentTilt() };
     const hz = hzState();
     if (hz.on) g.cy += (hzY() - g.cy) * hz.sink + 50 * S.size / 100 * 0.9 * hz.night;  // v45: down to the hills
     // v45: as it gets dark the ring lifts off the sun, so all apps stay above the hills (the sun stays down)
     g.ry = hz.on ? hz.night * Math.max(0, g.cy + p.R * Math.abs(Math.cos(g.tilt * Math.PI / 180)) + 30 - (hzY() - 30)) : 0;
-    if (S.liveSun === 'on' && (S.dir === 'flat' || S.dir === 'diagonal')) { const ls = liveSun().v; g.cx += ls[0] * st.W; g.cy += ls[1] * st.H; }
+    if (S.liveSun === 'on' && !st.land && (S.dir === 'flat' || S.dir === 'diagonal')) { const ls = liveSun().v; g.cx += ls[0] * st.W; g.cy += ls[1] * st.H; }
     const T = g.tilt * Math.PI / 180, rho = g.roll * Math.PI / 180;
     const cosT = Math.cos(T), sinT = Math.sin(T), cr = Math.cos(rho), sr = Math.sin(rho), P = Math.max(700, p.R * 4);
     g.cr = cr; g.sr = sr; g.sinT = sinT;
@@ -3404,7 +3438,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     let maxY = 0, minY = H;
     for (let m = 0; m < 24; m++) { const pm = G.polar(G.R, m / 24 * 2 * Math.PI); if (pm[1] > maxY) maxY = pm[1]; if (pm[1] < minY) minY = pm[1]; }
     let top = maxY + 26, showInfo = true;
-    if (top + 130 > H - 110) { top = 100; showInfo = minY - 70 > 240; }
+    if (st.land) top = H * 0.26;
+    else if (top + 130 > H - 110) { top = 100; showInfo = minY - 70 > 240; }
     $('sunInfo').style.top = Math.round(top) + 'px';
     if ($('sunInfo').hidden !== !showInfo) { $('sunInfo').hidden = !showInfo; $('clockChip').hidden = !(st.demo || !showInfo); $('clockChip').textContent = clockText(); }
     $('sunTip').hidden = !showTips;
@@ -3426,7 +3461,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     return { top: H * 0.22, bottom: H * 0.86, row: 40 };
   }
   function sunScene(c, W, H, v, now, look) {
-    const n = APPS.length, pos = (frontDeg() - st.rot) / (360 / n), front = frontIndex(), k = W / 390;
+    const n = APPS.length, pos = (frontDeg() - st.rot) / (360 / n), front = frontIndex(), k = kOf(W);
     const font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'system-ui, sans-serif';
     const muted = 'rgba(232, 222, 210, 0.78)';
     const txt = (s, x, y, size, weight, col, align, caps) => {
@@ -3547,7 +3582,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       // Sun ring (v35, user: "a 1:1 copy of the Moon dial, with the sun"): the same tilt, ring, pills, title and hint as
       // the Moon dial in moonScene; only the moon is the sun and the colours are warm
       const T = tuneOf('sun:ring'), rd = Math.PI / 180;
-      const sc = { sx: W / 2 + T.x * W, sy: H * 0.47 + T.y * H, R: 92 * k * T.size, sp: Math.sin(-0.45 - T.tilt * rd), cr: Math.cos(-0.18 + T.turn * rd), sr: Math.sin(-0.18 + T.turn * rd) };
+      const sc = { sx: midX(W) + T.x * W, sy: H * 0.47 + T.y * H, R: 92 * k * T.size, sp: Math.sin(-0.45 - T.tilt * rd), cr: Math.cos(-0.18 + T.turn * rd), sr: Math.sin(-0.18 + T.turn * rd) };
       sc.rr = 92 * k * 1.75 * T.ring;
       const hzR = hzState();
       if (hzR.on) {  // v45: sets behind the hills; after sunset the ring lifts off the sun so all apps stay above
@@ -3564,9 +3599,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       sunAt(sc.sx, sc.sy, sc.R, { glow: 0.9, margin: 1.5 }); bodyAt.sun = { x: sc.sx, y: sc.sy, r: sc.R };
       ringHalf(true);
       if (hzR.on) drawnHills(c, W, H);
-      txt('Sun menu', W / 2, H * 0.125 + st.top, 12, 600, muted, 'center', true);
-      txt('Apps', W / 2, H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
-      if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
+      txt('Sun menu', txtX(W), st.land ? H * 0.3 : H * 0.125 + st.top, 12, 600, muted, 'center', true);
+      txt('Apps', txtX(W), st.land ? H * 0.4 : H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
+      if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', txtX(W), st.land ? H * 0.52 : H * 0.83, 12.5, 400, muted, 'center');
       const s0 = ringPlace(sc, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
       place((d, isF, el) => {
@@ -3582,7 +3617,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     } else if (v === 'rings') {
       // v34 partners of Moon dial and Saturn rings. Sun ring: the sun with a thin tilted ring, the apps as round icons
       // on it, the front one a pill. Ringed sun: a smaller sun with wide Saturn-like rings, the apps as pills on the outer edge.
-      const rg = v === 'rings', k = W / 390, sx = W / 2, sy = H * 0.47, R = (rg ? 64 : 70) * k, roll = rg ? -0.3 : 0, pitch = rg ? -0.42 : -0.7;
+      const rg = v === 'rings', k = kOf(W), sx = midX(W), sy = H * 0.47, R = (rg ? 64 : 70) * k, roll = rg ? -0.3 : 0, pitch = rg ? -0.42 : -0.7;
       const sc = { sx: sx, sy: sy, R: R, rr: R * (rg ? 2.6 : 2.15), sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll) };
       const half = (front, rr, col, lw) => {
         c.beginPath();
@@ -3597,9 +3632,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       rings(false);
       sunAt(sx, sy, R, { glow: 0.9, margin: 1.7 });
       rings(true);
-      txt('Sun menu', W / 2, H * 0.125 + st.top, 12, 600, muted, 'center', true);
-      txt(APPS[front].name, W / 2, H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
-      if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, muted, 'center');
+      txt('Sun menu', txtX(W), st.land ? H * 0.3 : H * 0.125 + st.top, 12, 600, muted, 'center', true);
+      txt(APPS[front].name, txtX(W), st.land ? H * 0.4 : H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
+      if (!S.pins.length) txt('Swipe sideways to turn the ring · tap to open', txtX(W), st.land ? H * 0.52 : H * 0.83, 12.5, 400, muted, 'center');
       place((d, isF) => {
         const q = ringPlace(sc, Math.PI / 2 + d * (Math.PI * 2 / 12)), f = (q[2] + 1) / 2, ad = Math.abs(d), mA = 6;
         const behind = q[2] < 0 && Math.hypot(q[0] - sx, q[1] - sy) < R * 1.15;
@@ -3824,12 +3859,12 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         const s2 = sr * 0.36, sx2 = W * 0.82 + G.dx + mx;
         bodyAt.moon = { x: sx2, y: by, r: s2 };
         c.save(); c.globalCompositeOperation = 'lighter'; const hg = c.createRadialGradient(sx2, by, s2 * 0.8, sx2, by, s2 * 3.4); hg.addColorStop(0, 'rgba(210, 222, 245, 0.35)'); hg.addColorStop(1, 'rgba(210, 222, 245, 0)'); c.fillStyle = hg; c.fillRect(0, 0, W, H); c.restore();
-        if (GLB.ok) GLB.draw(c, sx2, by, s2, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: wob - 0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.4 });
+        if (GLB.ok) GLB.draw(c, sx2, by, s2, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), roll: moonRoll(), rot: wob - 0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.4 });
       }
     } else if (GLB.ok && (look === 'arc' || look === 'dots' || look === 'ring')) {
-      GLB.draw(c, G.Ix + mx, cy + my, look === 'ring' ? G.rIn * 0.92 : G.Ri * 1.02, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: wob - 0.3, shine: 0.17, expo: 1.3, glow: 0.7, margin: 1.15 });
+      GLB.draw(c, G.Ix + mx, cy + my, look === 'ring' ? G.rIn * 0.92 : G.Ri * 1.02, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), roll: moonRoll(), rot: wob - 0.3, shine: 0.17, expo: 1.3, glow: 0.7, margin: 1.15 });
     } else if (GLB.ok && look === 'rolodex') {
-      GLB.draw(c, W + 34 + mx, cy - 24 + my, Math.min(170, H * 0.21), { mode: 'moon', light: moonLight([-0.62, 0.32, 0.7]), rot: wob, shine: 0.1, expo: 1.2, glow: 0.8, margin: 1.15 });
+      GLB.draw(c, W + 34 + mx, cy - 24 + my, Math.min(170, H * 0.21), { mode: 'moon', light: moonLight([-0.62, 0.32, 0.7]), roll: moonRoll(), rot: wob, shine: 0.1, expo: 1.2, glow: 0.8, margin: 1.15 });
     }
     c.save();
     if (look === 'crescent' && GLB.ok) {
@@ -4000,7 +4035,6 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const X = s.rr * Math.cos(th), Z = s.rr * Math.sin(th), qy = Z * s.sp * (s.fl == null ? 1 : s.fl);
     return [s.sx + X * s.cr - qy * s.sr, s.sy - (s.ry || 0) - (X * s.sr + qy * s.cr), Z / s.rr];
   }
-  function realMoonLight(p) { const th = p * 2 * Math.PI; return [Math.sin(th), 0.1, -Math.cos(th)]; }
   let phaseRow = null;
   function moonScene(c, W, H, look, now, live, cur, G, night) {
     const mn = moonNow(), font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'system-ui, sans-serif';
@@ -4024,7 +4058,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const T = tuneOf('moon:phase'), r = Math.min(W * 0.27, H * 0.12) * T.size, mx = W / 2 + T.x * W, my = H * (0.215 + T.y);
       bodyAt.moon = { x: mx, y: my, r: r };
       glow(mx, my, r, (0.08 + 0.12 * sm.fraction).toFixed(3));
-      if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(sm.phase), rot: -0.2, shine: 0.07, expo: 1.3, glow: 1, margin: 1.25 });
+      if (GLB.ok) GLB.draw(c, mx, my, r, Object.assign({ mode: 'moon', rot: 0, shine: 0.07, expo: 1.3, glow: 1, margin: 1.25 }, sel ? moonView(selD) : moonViewNow()));
       txt(sel ? DAYS_LONG[selD.getDay()] + ' night' + inCity(' in ') : 'Tonight' + inCity(' in '), W / 2, H * 0.365, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
       txt(moonPhaseName(sm.phase).replace(/^./, (s) => s.toUpperCase()), W / 2, H * 0.402, 28, 600, '#F5EFE3', 'center');
       txt(Math.round(sm.fraction * 100) + ' % lit · ' + (sel ? 'tap Today to go back' : fullTxt), W / 2, H * 0.437, 14, 400, 'rgba(195, 204, 221, 0.9)', 'center');
@@ -4040,16 +4074,16 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       phaseRow = { y: rowY, gap: gap, cx: W / 2 };
       for (let i = 0; i < 7; i++) {
         const d = new Date(today); d.setDate(d.getDate() + i); d.setHours(21, 0, 0, 0);
-        const x = W / 2 + (i - 3) * gap, p = moonIllum(d).phase;
+        const x = W / 2 + (i - 3) * gap;
         if (i === sel) { c.beginPath(); c.arc(x, rowY, 19, 0, 2 * Math.PI); c.strokeStyle = 'rgba(245, 239, 227, 0.8)'; c.lineWidth = 1.5; c.stroke(); }
-        if (GLB.ok) GLB.draw(c, x, rowY, 14, { mode: 'moon', light: realMoonLight(p), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0, margin: 1.3 });
+        if (GLB.ok) GLB.draw(c, x, rowY, 14, Object.assign({ mode: 'moon', rot: 0, shine: 0.1, expo: 1.3, glow: 0, margin: 1.3 }, moonView(d)));
         txt(i === 0 ? 'Today' : DAYS[d.getDay()], x, rowY + 28, 12, i === sel ? 700 : 500, i === sel ? '#F5EFE3' : 'rgba(195, 204, 221, 0.8)', 'center');
         if (sameDay(d, ev.full) || sameDay(d, ev.nw)) txt(sameDay(d, ev.full) ? 'Full' : 'New', x, rowY + 44, 11, 700, '#FFC94D', 'center');
       }
       listY = Math.max(H * 0.8, rowY + 96); rowGap = 58; cards = true;  // v53: stays below the moved row
     } else if (look === 'dial') {
       // A: huge moon at the left edge, a ticked dial that turns with the list, items along the dial
-      const k = W / 390, T = tuneOf('moon:dial'), C0 = -150 * k + T.x * W, C1 = H * (0.53 + T.y), R = 262 * k;
+      const k = kOf(W), T = tuneOf('moon:dial'), C0 = -150 * k + T.x * W, C1 = H * (0.53 + T.y), R = 262 * k;
       bodyAt.moon = { x: C0, y: C1, r: R * T.size };
       if (GLB.ok) GLB.draw(c, C0, C1, R * T.size, { mode: 'moon', light: [0.86, 0.12, 0.5], rot: 0.2, shine: 0.05, expo: 1.3, glow: 0.3, margin: 1.05 });
       c.save(); c.lineCap = 'round';
@@ -4069,7 +4103,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     } else if (look === 'moondial' || look === 'dial3d') {
       // Moon dial (was Swap, 22 Oct): the moon with a thin glowing ring; the menu items sit on the ring like on Saturn.
       // Moon 3D dial (v34, partner of the Sun dial): flatter tilt like the sun dial, items as round initials, the chosen one a pill
-      const d3 = look === 'dial3d', k = W / 390, T = tuneOf('moon:' + look), rd = Math.PI / 180, sx = W / 2 + T.x * W, sy = H * 0.47 + T.y * H;
+      const d3 = look === 'dial3d', k = kOf(W), T = tuneOf('moon:' + look), rd = Math.PI / 180, sx = midX(W) + T.x * W, sy = H * 0.47 + T.y * H;
       const R0 = (d3 ? 66 : 92) * k, R = R0 * T.size, roll = (d3 ? 0 : -0.18) + T.turn * rd, pitch = (d3 ? -0.7 : -0.45) - T.tilt * rd;
       scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R0 * (d3 ? 2.15 : 1.75) * T.ring, sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll), maxAd: d3 ? 6 : 2.6, step: d3 ? 12 : 12 };
       const ringHalf = (front) => {
@@ -4082,23 +4116,23 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       bodyAt.moon = { x: sx, y: sy, r: R };
       glow(sx, sy, R, (0.08 + 0.1 * mn.fraction).toFixed(3));
       if (GLB.ok) {
-        if (S.moonDial === 'phase') GLB.draw(c, sx, sy, R, { mode: 'moon', light: realMoonLight(mn.phase), rot: -0.2, shine: 0.12, expo: 1.35, glow: 0.5, margin: 1.2 });
-        else GLB.draw(c, sx, sy, R, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), rot: -0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.2 });
+        if (S.moonDial === 'phase') GLB.draw(c, sx, sy, R, Object.assign({ mode: 'moon', rot: 0, shine: 0.12, expo: 1.35, glow: 0.5, margin: 1.2 }, moonViewNow()));
+        else GLB.draw(c, sx, sy, R, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), roll: moonRoll(), rot: -0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.2 });
       }
       ringHalf(true);
-      txt('Moon menu', W / 2, H * 0.125 + st.top, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      if (cur) txt(cur.group, W / 2, H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
-      txt('Swipe sideways to turn the ring · tap to open', W / 2, H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
+      txt('Moon menu', txtX(W), st.land ? H * 0.3 : H * 0.125 + st.top, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      if (cur) txt(cur.group, txtX(W), st.land ? H * 0.4 : H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
+      txt('Swipe sideways to turn the ring · tap to open', txtX(W), st.land ? H * 0.52 : H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       const s0 = ringPlace(scene, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
     } else if (look === 'saturn') {
       // F: Saturn with real rings; the menu items sit on the ring and turn with a sideways swipe
-      const k = W / 390, sx = W / 2, sy = H * 0.49, R = 76 * k, roll = -0.3, pitch = -0.42;
+      const k = kOf(W), sx = midX(W), sy = H * 0.49, R = 76 * k, roll = -0.3, pitch = -0.42;
       const ok1 = PG.need('saturn', 'saturn.jpg'), ok2 = PG.need('ring', 'saturn-ring.png');
       if (ok1 && ok2) PG.draw(c, sx, sy, R, { mode: 'planet', tex: 'saturn', rings: 'ring', roll: roll, pitch: pitch, light: [-0.75, 0.4, 0.55], tint: '#EADBB8', expo: 1.25, margin: 1.3, rot: 0.4 });
-      txt('Moon menu', W / 2, H * 0.125 + st.top, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      if (cur) txt(cur.group, W / 2, H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
-      txt('Swipe sideways to turn the rings · tap to open', W / 2, H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
+      txt('Moon menu', txtX(W), st.land ? H * 0.3 : H * 0.125 + st.top, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
+      if (cur) txt(cur.group, txtX(W), st.land ? H * 0.4 : H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
+      txt('Swipe sideways to turn the rings · tap to open', txtX(W), st.land ? H * 0.52 : H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       scene = { kind: 'ring', sx: sx, sy: sy, R: R, rr: R * 2.36, sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll) };
       const s0 = ringPlace(scene, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
@@ -4107,7 +4141,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       const T = tuneOf('moon:minimal'), r = H * 0.19 * T.size, mx = W * (0.9 + T.x), my = H * (0.25 + T.y);
       bodyAt.moon = { x: mx, y: my, r: r };
       glow(mx, my, r, (0.05 + 0.08 * mn.fraction).toFixed(3));
-      if (GLB.ok) GLB.draw(c, mx, my, r, { mode: 'moon', light: realMoonLight(mn.phase), rot: 0, shine: 0.035, expo: 1.25, glow: 0.6, margin: 1.06 });
+      if (GLB.ok) GLB.draw(c, mx, my, r, Object.assign({ mode: 'moon', rot: 0, shine: 0.035, expo: 1.25, glow: 0.6, margin: 1.06 }, moonViewNow()));
       txt(DAYS_LONG[today.getDay()], 24, H * 0.115, 12, 600, 'rgba(195, 204, 221, 0.85)', 'left', true);
       txt(MONTHS_LONG[today.getMonth()], 22, H * 0.165, 44, 300, '#F5EFE3', 'left');
       txt(String(today.getDate()), 22, H * 0.23, 40, 700, '#F5EFE3', 'left');
@@ -4290,7 +4324,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     c.strokeStyle = 'rgba(120, 180, 255, 0.35)'; c.lineWidth = 3; c.beginPath(); c.arc(cx, cy, R + 1.5, 0, 2 * Math.PI); c.stroke();
   }
   function renderPlanet(now) {
-    const c = $('planetCanvas').getContext('2d'), W = st.W, H = st.H, k = W / 390;
+    const c = $('planetCanvas').getContext('2d'), W = st.W, H = st.H, k = kOf(W);
     c.clearRect(0, 0, W, H);
     const spec = specialNow();  // v68: special sky days
     // v46 (user): real stars (NASA star map), the drawn ones only until the map has loaded
@@ -4306,7 +4340,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     // v47: your place in front: the globe turns (centerLon) and tilts (pitch) so the city sits at Vienna's old height;
     // (v50 put it in the middle; v52, user: back to the old spot, 15.6° left of the middle)
     // v47: on shorter screens the Earth sits lower, so the moon fits between the time chips and the Earth's air
-    const R = 520 * k, cx = W / 2, cy = Math.max(H * 1.197, H * 0.3 + 18 + 30 * k + 24 + R * 1.07), centerLon = LON + 15.6 - spin.off, ss = subsolar(d), rad = Math.PI / 180;
+    const R = st.land ? H : 520 * k, cx = st.land ? W * 0.78 : W / 2, cy = st.land ? H * 1.28 : Math.max(H * 1.197, H * 0.3 + 18 + 30 * k + 24 + R * 1.07), span = st.land ? W - cx - 34 : W / 2 - 34, skyY = st.land ? H * 0.11 : H * 0.42, centerLon = LON + 15.6 - spin.off, ss = subsolar(d), rad = Math.PI / 180;
     const pitch = (48.2 - LAT) * rad, cp = Math.cos(pitch), sp = Math.sin(pitch);
     const toView = (b) => [b[0], b[1] * cp + b[2] * sp, -b[1] * sp + b[2] * cp];  // globe -> screen (inverse of the shader's tilt)
     const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
@@ -4321,6 +4355,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     planetMoon = null; planetSun = null;
     // v51 (user): the moon is placed by its real direction from the Earth, the same way as the sun, so it turns with
     // the Earth (spin, Watch) and moves with the time; it shows only while it is on our side (mvz > 0), fading out behind.
+    const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad, lv = toView([Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)]);
+    const sink = clamp((0.05 - lv[2]) / 0.25, 0, 1), sr = 13 * k, sx = cx + clamp(lv[0], -1, 1) * span, limbY = cy - Math.sqrt(Math.max(0, R * R - (sx - cx) * (sx - cx)));
+    const sy = (limbY - 8 - Math.max(0, lv[2]) * (limbY - 8 - skyY)) * (1 - sink) + (limbY + sr + 6) * sink;
     const mdl = (mpos.sub.lon - centerLon) * rad, mdec = mpos.sub.lat * rad;
     // v55 (user: it rose straight up, then went sideways): the moon now moves on one smooth curve. Its side position
     // follows the turn angle (not mv[0], which hardly changes near the edge), and it sinks over a longer stretch
@@ -4331,35 +4368,35 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     // at one height, so all its up and down came in the short sink.
     const mRise = clamp((mv[2] + 0.2) / 1.2, 0, 1), mt = 1 - clamp((mv[2] + 0.2) / 0.35, 0, 1), mSink = mt * mt * (3 - 2 * mt), mSide = Math.atan2(mv[0], mv[2]) / (Math.PI / 2);
     if (mRise > 0 && GLB.ok) {  // v53 (mockup C): the moon also sets behind the Earth's edge, its glow fading
-      const mx = cx + clamp(mSide, -1.2, 1.2) * (W / 2 - 34), mr = 15 * k * (spec.kind === 'super' ? 1.16 : 1), limbM = cy - Math.sqrt(Math.max(0, R * R - (mx - cx) * (mx - cx)));
+      const mx = cx + clamp(mSide, -1.2, 1.2) * span, mr = 15 * k * (spec.kind === 'super' ? 1.16 : 1), limbM = cy - Math.sqrt(Math.max(0, R * R - (mx - cx) * (mx - cx)));
       // v47 (user): always a small gap (~10 px) between the moon and the Earth's glowing air
       const airY = cy - Math.sqrt(Math.max(0, R * R * 1.07 * 1.07 - (mx - cx) * (mx - cx)));
       // and never on the time chips (H * 0.3, 36 px tall) unless Watch hides them; if there is no room, the gap to the Earth wins
       // v66: with the chips above the date, the time sits lower; the moon stays under it
       // v78: the lowest point of the time and the chips at the top (the time and the chips can move, see planetLayout)
       const PL = planetLayout(W, H, k), chipLow = st.watch ? H * 0.1 : PL.topLow + mr + 8;
-      const my0 = Math.min(Math.max(H * 0.42, chipLow), airY - mr - 10), my = (limbM + mr + 6) + (my0 - (limbM + mr + 6)) * mRise;
+      const my0 = Math.min(Math.max(skyY, chipLow), airY - mr - 10), my = (limbM + mr + 6) + (my0 - (limbM + mr + 6)) * mRise;
       c.save(); c.globalAlpha = 1 - mSink;
       const mg = c.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3.2); mg.addColorStop(0, 'rgba(210, 222, 245, ' + (0.12 + 0.18 * mnNow.fraction).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(210, 222, 245, 0)');
       c.fillStyle = mg; c.fillRect(mx - mr * 3.3, my - mr * 3.3, mr * 6.6, mr * 6.6);
       c.restore();
-      GLB.draw(c, mx, my, mr, { mode: 'moon', light: realMoonLight(mnNow.phase), rot: -0.2, shine: 0.1, expo: 1.3, glow: 0.6, margin: 1.6 });
+      // v93 (user): the amount lit is real, and the lit side faces the sun on the screen; once the sun is hidden, its true direction
+      const tv = Math.hypot(lv[0], lv[1]) || 1, ds = Math.hypot(sx - mx, sy - my) || 1, keep = ds > mr ? 1 - sink : 0;
+      const lx0 = lv[0] / tv * (1 - keep) + (sx - mx) / ds * keep, ly0 = lv[1] / tv * (1 - keep) - (sy - my) / ds * keep, ln = Math.hypot(lx0, ly0) || 1;
+      const lz = 2 * mnNow.fraction - 1, ls = Math.sqrt(Math.max(0, 1 - lz * lz));
+      GLB.draw(c, mx, my, mr, { mode: 'moon', light: [lx0 / ln * ls, ly0 / ln * ls, lz], rot: 0, shine: 0.1, expo: 1.3, glow: 0.6, margin: 1.6 });
       if (spec.kind === 'lunar' || spec.kind === 'super') specialMoon(c, mx, my, mr, spec, 1 - mSink);  // v68
       // v76 (bug: a low moon looked whole but ignored taps): only its glow fades, so it answers while its middle is above the Earth's edge
       if (my < limbM) planetMoon = { x: mx, y: my };
     }
     {
-      const dl = (ss.lon - centerLon) * rad, dec = ss.lat * rad, lv = toView([Math.sin(dl) * Math.cos(dec), Math.sin(dec), Math.cos(dl) * Math.cos(dec)]);
       // v41: the far sun, seen from space (user): always on the side the light comes from (lv). Sun in front of us
       // (our side is in day): up in the sky; behind the Earth (night): low behind the edge, only its glow peeks out.
       // Drawn before the Earth, so the Earth covers it.
       // v53 (user, mockup C): as the sun goes behind the Earth (lv[2] from 0.05 down to -0.2, sink 0 -> 1) it sinks
       // behind the Earth's edge and the Earth (drawn after it) hides it; its glow fades with it, so nothing peeks on the
       // dark side (v49 wish). It comes back up the same way at sunrise.
-      const sink = clamp((0.05 - lv[2]) / 0.25, 0, 1);
       if (GLB.ok && sink < 1) {
-        const sx = cx + clamp(lv[0], -1, 1) * (W / 2 - 34), limbY = cy - Math.sqrt(Math.max(0, R * R - (sx - cx) * (sx - cx))), sr = 13 * k;
-        const sy = (limbY - 8 - Math.max(0, lv[2]) * (limbY - 8 - H * 0.42)) * (1 - sink) + (limbY + sr + 6) * sink;
         c.save(); c.globalAlpha = 1 - sink;
         const sg = c.createRadialGradient(sx, sy, sr * 0.8, sx, sy, sr * 4.5); sg.addColorStop(0, 'rgba(255, 214, 150, 0.35)'); sg.addColorStop(1, 'rgba(255, 214, 150, 0)');
         c.fillStyle = sg; c.fillRect(sx - sr * 4.6, sy - sr * 4.6, sr * 9.2, sr * 9.2);
@@ -4401,13 +4438,13 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     }
     if (st.watch) return;  // v46: Watch: only the Earth, moon, sun and stars
     const font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif';
-    const T = (s, y, size, weight, col) => { c.font = weight + ' ' + size + 'px ' + font; c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s, W / 2, y); };
+    const T = (s, y, size, weight, col) => { c.font = weight + ' ' + size + 'px ' + font; c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s, st.land ? W * 0.21 : W / 2, y); };
     const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const day = DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()];
     if (planet.calm) {
       // charging mode: a bigger, softer clock and no chips; between 22:00 and 6:00 the whole screen is a bit darker
       T(day, H * 0.13, 18, 400, 'rgba(240, 242, 248, 0.7)');
-      drawClock(c, d, hm, W / 2, H * 0.24, Math.round(124 * k), font, 0.92);
+      drawClock(c, d, hm, st.land ? W * 0.21 : W / 2, st.land ? H * 0.45 : H * 0.24, Math.round((st.land ? 96 : 124) * k), font, 0.92);
       planetTime = { y0: H * 0.13 + 14, y1: H * 0.32 };
       planetDate = { y0: H * 0.13 - 22, y1: H * 0.13 + 14 };  // v87: the date line: 7 taps = the fly-through
       const hr = d.getHours();
@@ -4419,7 +4456,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     planetDate = { y0: PL.dateY - 22, y1: PL.dateY + 14 };  // v87 (user): the date line above the time: 7 taps = the fly-through
     if (!st.timeDrag) {  // while the time is dragged, a copy follows the finger instead
       T(day, PL.dateY, 17, 500, 'rgba(240, 242, 248, 0.85)');
-      drawClock(c, d, hm, W / 2, PL.timeY, Math.round(96 * k), font, 1);
+      drawClock(c, d, hm, st.land ? W * 0.21 : W / 2, PL.timeY, Math.round(96 * k), font, 1);
     }
     chipsUpdate(d);  // v66: the chips are HTML now (icons, taps, drag); only their text changes here
   }
@@ -4427,6 +4464,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
      bottom) and the eye (top or bottom) can be held and dragged on the Earth. This gives the date and time heights and
      the lowest point of what sits at the top (the moon stays under it). */
   function planetLayout(W, H, k) {
+    if (st.land) return { chips: 'below', dateY: H * 0.24, timeY: H * 0.43, topLow: 0 };
     const chips = S.timePos === 'bottom' && S.chipsPos === 'below' ? 'bottom' : S.chipsPos;
     if (S.timePos === 'bottom') {
       const timeY = H - st.bot - (chips === 'bottom' ? 188 : 142) * Math.min(1, k + 0.1);
@@ -6133,7 +6171,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       clearTimeout(holdT); held = false;
       // v78: hold the time (0.45 s) = pick it up and drag it to the top or the bottom
       const r0 = el.getBoundingClientRect(), y0 = e.clientY - r0.top;
-      const onTime = !st.watch && !planet.calm && planetTime && y0 > planetTime.y0 && y0 < planetTime.y1 && !e.target.closest('button, .pchips');
+      const onTime = !st.watch && !planet.calm && !st.land && planetTime && y0 > planetTime.y0 && y0 < planetTime.y1 && !e.target.closest('button, .pchips');
       if (onTime) holdT = setTimeout(() => { if (p0 && !p0.mode) { p0.mode = 'time'; timeGhost(true, e.clientY - r0.top); hapt('press'); } }, 450);
       else if (!st.watch && !e.target.closest('button')) holdT = setTimeout(() => { if (p0 && !p0.mode) { held = true; setWatch(true); } }, 700);
     });
@@ -6202,13 +6240,13 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       if (st.watch && tap) setWatch(false);  // v47: Watch on the Earth: a tap comes back (a drag still spins it)
       else if (dy < -st.H * 0.12) { if (st.watch) setWatch(false); setCalm(false); hidePlanet(); }
       // v87 (user): 7 quick taps on the date line above the time = the fly-through (each tap within 0.6 s of the last)
-      else if (tap && planetDate && ty > planetDate.y0 && ty < planetDate.y1) {
+      else if (tap && planetDate && ty > planetDate.y0 && ty < planetDate.y1 && (!st.land || tx < st.W * 0.48)) {
         const tn = performance.now();
         dateTaps = tn - lastDateTap < 600 ? dateTaps + 1 : 1; lastDateTap = tn;
         if (dateTaps >= 7) { dateTaps = 0; eatClick(); startFly(); }
       }
       // double-tap the clock: charging mode on / off by hand (v37)
-      else if (tap && planetTime && ty > planetTime.y0 && ty < planetTime.y1) {  // v78: wherever the time is
+      else if (tap && planetTime && ty > planetTime.y0 && ty < planetTime.y1 && (!st.land || tx < st.W * 0.48)) {  // v78: wherever the time is
         const tn = performance.now();
         if (tn - lastClockTap < 380) { setCalm(!planet.calm, false); hapt('press'); lastClockTap = 0; } else lastClockTap = tn;
       }
@@ -6760,7 +6798,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v92 · A flick on the Sun ring no longer seems to spin backward. The map says the city (Vienna), not the district. My sound for the flight can be sharpened. v90 · My location stays fresh (at most 10 min old, with a second try by GPS). The hidden flight: truer sizes, a slow wide turn, an asteroid belt, a steady zoom into your city, your own sound if you like.\nv89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v93 · The Moon is lit from the real direction of the Sun. New layout for a phone held sideways. v92 · A flick on the Sun ring no longer seems to spin backward. The map says the city (Vienna), not the district. My sound for the flight can be sharpened. v90 · My location stays fresh (at most 10 min old, with a second try by GPS). The hidden flight: truer sizes, a slow wide turn, an asteroid belt, a steady zoom into your city, your own sound if you like.\nv89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
