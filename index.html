@@ -1316,7 +1316,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v90';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v91';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -2426,7 +2426,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         if (src.indexOf('%%') === 0 || loading[k]) return;  // not built yet (playground file) or already asked for
         loading[k] = true;
         const im = new Image();
-        im.onload = () => {
+        // v91 (bug: the first open felt slow; 1.2 s of freezes as the big maps arrived): the picture is unpacked off to the side first
+        const up = () => {
           const t = gl.createTexture();
           gl.bindTexture(gl.TEXTURE_2D, t);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
@@ -2440,6 +2441,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
           tex[k] = t; loaded[k] = true; kickLater();
         };
         im.src = src;
+        if (im.decode) im.decode().then(up, () => { im.onload = up; if (im.complete && im.naturalWidth) up(); }); else im.onload = up;
     }
     // 4k sun (v33): only for the very big suns, only if this phone's graphics chip takes 4096-pixel maps
     out.need = (k, src) => { if (gl.getParameter(gl.MAX_TEXTURE_SIZE) >= 4096) loadTex(k, src); return !!loaded[k]; };
@@ -2609,7 +2611,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       if (!init() || WANT[key]) return false;
       WANT[key] = true;
       const im = new Image();
-      im.onload = () => {
+      const up = () => {  // v91: unpacked off to the side first, see loadTex
         const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
         gl.generateMipmap(gl.TEXTURE_2D);
@@ -2619,8 +2621,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         TEX[key] = t; kickLater();
       };
-      im.onerror = () => { WANT[key] = false; };
       im.src = url;
+      if (im.decode) im.decode().then(up, () => { WANT[key] = false; }); else { im.onload = up; im.onerror = () => { WANT[key] = false; }; }
       return false;
     };
     const rgb = (h) => { const n = parseInt(h.replace('#', ''), 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
@@ -4303,7 +4305,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const toView = (b) => [b[0], b[1] * cp + b[2] * sp, -b[1] * sp + b[2] * cp];  // globe -> screen (inverse of the shader's tilt)
     const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
     // v42: sharper 8k day map (NASA 21600 px, made smaller), only where the phone can hold it; the 4k map shows until it arrives
-    const dayTex = ok && PG.big() && PG.need('earth8', 'earth-day-8k.jpg') ? 'earth8' : 'earth';
+    // v91 (first open felt slow): the 8k map only after 8 s and 3 s without a touch; the 4k map shows until it is ready
+    if (!earth8Go && performance.now() > 8000 && performance.now() - lastTouch > 3000) earth8Go = true;
+    const dayTex = ok && earth8Go && PG.big() && PG.need('earth8', 'earth-day-8k.jpg') ? 'earth8' : 'earth';
     // 1 (v36): the real moon in the sky above the Earth, in its real phase, where it is now as seen from Vienna
     // (v36-v50 it was placed from the city's sky; v51 from its real direction from the Earth, see below)
     const mpos = moonAltAz(d), mnNow = moonIllum(d), yTop = cy - R;
@@ -4856,7 +4860,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     kickLater();
   }
   // 3 (v36): tap Vienna on the Earth (or the moon in the sky) for a short card
-  let planetSpot = null, planetMoon = null, planetSun = null, planetTime = null, planetTop = 0, planetDate = null;
+  let planetSpot = null, planetMoon = null, planetSun = null, planetTime = null, planetTop = 0, planetDate = null, earth8Go = false;
   function viennaCard() {
     const sn = sunToday(), mn = moonNow(), w = S.weather === 'real' && WX ? WX : null, len = sn.set - sn.rise;
     const ev = skyEvents().find((e) => !e.minor), sol = SOL ? solarInfo() : null;
@@ -5627,7 +5631,12 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const w0 = performance.now();
     const wait = () => {
       if (!fly.on) return;
-      if (flyLoadAll() || performance.now() - w0 > 6000) { fly.t0 = performance.now(); fly.raf = requestAnimationFrame(flyFrame); return; }
+      if (flyLoadAll() || performance.now() - w0 > 6000) {
+        // v91 (a 0.3 s hitch when the city map first appeared): the big map and the rocks are prepared before we leave
+        if (fly.city.complete && fly.city.naturalWidth) fly.c.drawImage(fly.city, 0, 0, 1, 1);
+        if (!fly.sprites) flySprites();
+        fly.t0 = performance.now(); fly.raf = requestAnimationFrame(flyFrame); return;
+      }
       flyLoading((performance.now() - w0) / 1000);
       fly.raf = requestAnimationFrame(wait);
     };
