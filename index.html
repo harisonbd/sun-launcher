@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.open-meteo.com https://services.swpc.noaa.gov https://celestrak.org; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.maps.eox.at; media-src 'self' blob:; connect-src 'self' https://api.open-meteo.com https://services.swpc.noaa.gov https://celestrak.org; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#0B1430">
 <title>Sun Launcher</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -849,6 +849,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     </div>
     <button type="button" class="shutter" id="shutter" aria-label="Take a photo"><span></span></button>
     <input type="file" id="importInput" accept=".json,application/json" hidden>
+    <input type="file" id="flyFile" accept="audio/*" hidden>
       <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
     <div class="cam-hint">Take a photo, then pick an app</div>
   </div>
@@ -1056,9 +1057,11 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         <legend>Fly home sound</legend>
         <div class="seg">
           <input type="radio" name="flySound" id="fs-off" value="off"><label for="fs-off">Off</label>
-          <input type="radio" name="flySound" id="fs-on" value="on"><label for="fs-on">On</label>
+          <input type="radio" name="flySound" id="fs-on" value="on"><label for="fs-on">Riff</label>
+          <input type="radio" name="flySound" id="fs-own" value="own"><label for="fs-own">My sound</label>
         </div>
-        <p class="helpline">A hidden flight past the planets has its own guitar riff. On: it plays with the flight.</p>
+        <button type="button" class="btn" id="flyPick">Choose a sound file</button>
+        <p class="helpline" id="flyPickLine">Riff: the flight's own guitar riff. My sound: a sound file from your phone; it stays on your phone.</p>
       </fieldset>
       <!-- the old pickers: hidden, still the source of truth for the radios (pairs, sun screen, sun style, moon look) -->
       <div id="oldPickers" hidden>
@@ -1313,7 +1316,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v89';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v90';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1418,7 +1421,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   if (S.eyePos !== 'bottom') S.eyePos = 'top';
   if (['thin', 'bold', 'analog', 'glass', 'soft'].indexOf(S.clockStyle) === -1) S.clockStyle = 'thin';
   if (S.notes !== 'off') S.notes = 'on';
-  if (S.flySound !== 'on') S.flySound = 'off';  // v87: sound for the fly-through
+  if (['off', 'on', 'own'].indexOf(S.flySound) === -1) S.flySound = 'off';  // v87: sound for the fly-through; v90: 'own' = a file you picked
   if (S.strip !== 'on') S.strip = 'off';  // v76 (user): the screen picker at the bottom (‹ Dial ›) only when turned on in Settings
   if (['off', 'astro', 'meteo'].indexOf(S.seasons) === -1) S.seasons = 'off';  // v67: seasons look (Settings); v74 (user): off unless picked  // v66: one short note under the chips when something matters
   // v74 (user): seasons off once for everyone, also where Astronomical was saved before; turning them on again stays
@@ -2032,20 +2035,31 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       ? (S.place ? 'Now: ' + (S.place.city || 'no big city nearby') + ' (' + S.place.lat.toFixed(1) + '°, ' + S.place.lon.toFixed(1) + '°). ' : 'Asking the phone for your location… ') + 'Your position stays on this phone (weather: rounded to about 10 km).'
       : 'Sun, moon, weather and the Earth follow Vienna. Pick My location to use where you are (the phone asks first).';
   }
-  function locate(ask) {
-    if (S.loc !== 'gps') return;
-    if (!navigator.geolocation) { toast('This browser cannot tell the location.'); return; }
-    navigator.geolocation.getCurrentPosition((pos) => {
+  // v90 (user: in Edinburgh it still showed Vienna): a position at most 10 min old (was 1 h), and if the quick way fails,
+  // one more try with the phone's GPS. done() runs when it is settled (the fly-through waits for it).
+  function locate(ask, done) {
+    const end = () => { if (done) done(); };
+    if (S.loc !== 'gps') { end(); return; }
+    if (!navigator.geolocation) { toast('This browser cannot tell the location.'); end(); return; }
+    const got = (pos) => {
       const lat = Math.round(pos.coords.latitude * 100) / 100, lon = Math.round(pos.coords.longitude * 100) / 100;
       nearestCity(lat, lon).then((city) => {
         const moved = !S.place || Math.abs(S.place.lat - lat) > 0.05 || Math.abs(S.place.lon - lon) > 0.05;
         S.place = { lat: lat, lon: lon, city: city, t: Date.now() };
         applyPlace(); save(); locLine(); kick();
         if (moved) { WX = null; wxFetch(true); if (ask) toast(city ? 'Location: ' + city : 'Location found (no big city nearby).'); }
+        end();
       });
-    }, () => {
-      if (ask) { toast('Location not allowed: using Vienna.'); S.loc = 'fixed'; applyPlace(); save(); if (typeof fillForm === 'function') fillForm(); locLine(); kick(); }
-    }, { enableHighAccuracy: false, maximumAge: 3600000, timeout: 15000 });
+    };
+    const failed = (err) => {
+      if (ask && err && err.code === 1) { toast('Location not allowed: using Vienna.'); S.loc = 'fixed'; applyPlace(); save(); if (typeof fillForm === 'function') fillForm(); locLine(); kick(); }
+      else if (ask) toast('No location yet: keeping the last place.');
+      end();
+    };
+    navigator.geolocation.getCurrentPosition(got, (err) => {
+      if (err && err.code === 1) { failed(err); return; }
+      navigator.geolocation.getCurrentPosition(got, failed, { enableHighAccuracy: true, maximumAge: 600000, timeout: 20000 });
+    }, { enableHighAccuracy: false, maximumAge: 600000, timeout: 8000 });
   }
 
   /* ---------- Weather (Settings > Weather > Real): Open-Meteo, no key, Vienna's fixed position, every 30 min ---------- */
@@ -5559,27 +5573,27 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     ]);
   }
   /* ---------- Fly home (v87, user: an easter egg in the spirit of an old TV intro; mock/flyby.html) ----------
-     About 26 s: from beyond Neptune past every planet towards the Sun, then we turn around, pass the Moon and dive to
-     the Earth, which turns until your city faces us; a close look at the city, its name, then back to the Earth screen.
-     Our own pictures and our own music (no video or tune from the series). Start: triple-tap the date on the Earth, or
-     search "aquila". A tap or Back skips it. Sound: Settings > Fly home sound (S.flySound, off by default). */
-  const fly = { on: false, t0: 0, raf: 0, cv: null, c: null, W: 0, H: 0, audio: null, near: null, stars: null, city: null };
-  const FLY_TOTAL = 26;
+     About 34 s: from beyond Neptune past the giant planets, through the asteroid belt, past Mars, Venus and Mercury
+     towards the Sun; a slow wide turn; the small Moon beside the Earth; then one steady zoom into your city.
+     Our own pictures and our own riff, or a sound file the user picks from their phone (it stays on the phone).
+     Start: 7 taps on the date on the Earth, or search "aquila". A tap or Back skips it.
+     v90 (user): true-ish sizes (the Moon 27 % of the Earth), a 6 s turn, a belt of rocks, satellite tiles over the city. */
+  const fly = { on: false, t0: 0, raf: 0, cv: null, c: null, W: 0, H: 0, audio: null, own: null, near: null, stars: null, city: null, rocks: null, sprites: null, tiles: null };
+  const FLY_TOTAL = 34, FLY_TURN0 = 18.5, FLY_TURN1 = 24.5, FLY_ZOOM0 = 23.5, FLY_ZOOM1 = 32.5;
   const flyEase = (x) => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x);
+  const flySoft = (x) => { x = x < 0 ? 0 : x > 1 ? 1 : x; return x * x * x * (x * (x * 6 - 15) + 10); };  // very soft start and end
   const flyLerp = (a, b, k) => a + (b - a) * k;
   const flyNorm = (v) => { const l = Math.hypot(v[0], v[1], v[2]); return v.map((q) => q / l); };
-  // each planet flies past: t0..t1 seconds, ox/oy side offset, rad size, L sunlight seen from the camera, spin turns/s.
-  // We fly towards the Sun, so the outer planets are lit from ahead (crescents). gl: 'pg' planet engine, 'glb' airless
+  // each planet flies past: t0..t1 seconds, ox/oy the side it passes on, rad its size (giants biggest, rocky ones small),
+  // L sunlight seen from the camera (we fly towards the Sun, so crescents), spin turns/s, arc = its path bends a little
   const FLY_PASS = [
-    // v88: each pass a bit longer, so the slow fade-in from far away fits
-    { t0: 0.0, t1: 4.2, tex: 'neptune', ox: 0.55, oy: -0.25, rad: 0.7, L: [-0.55, 0.15, -0.35], spin: 0.05 },
-    { t0: 2.4, t1: 6.6, tex: 'uranus', ox: -0.6, oy: 0.2, rad: 0.7, L: [0.5, 0.2, -0.3], spin: -0.04, roll: 1.4 },
-    { t0: 4.8, t1: 9.6, tex: 'saturn', ox: 0.75, oy: 0.15, rad: 0.6, L: [-0.6, 0.35, -0.2], spin: 0.06, rings: 'ring', roll: -0.35, pitch: -0.42 },
-    { t0: 7.8, t1: 12.0, tex: 'jupiter', ox: -0.8, oy: -0.2, rad: 1.0, L: [0.55, 0.25, -0.25], spin: 0.08 },
-    { t0: 10.4, t1: 13.8, tex: 'mars', ox: 0.5, oy: 0.25, rad: 0.45, L: [-0.5, 0.2, -0.3], spin: 0.05 },
-    { t0: 12.4, t1: 15.6, tex: 'venus', ox: -0.45, oy: -0.12, rad: 0.5, L: [0.4, 0.15, -0.6], spin: 0.02 },
-    { t0: 14.0, t1: 17.0, tex: 'mercury', ox: 0.35, oy: 0.15, rad: 0.35, L: [-0.3, 0.1, -0.7], spin: 0.03, airless: true },
-    { t0: 17.4, t1: 20.8, tex: 'moon', ox: -0.55, oy: -0.3, rad: 0.45, L: [-0.4, 0.3, 0.85], spin: 0.02, airless: true }
+    { t0: 0.0, t1: 4.4, tex: 'neptune', ox: 0.55, oy: -0.25, rad: 0.62, L: [-0.55, 0.15, -0.35], spin: 0.05, arc: 0.05 },
+    { t0: 2.6, t1: 7.0, tex: 'uranus', ox: -0.6, oy: 0.2, rad: 0.62, L: [0.5, 0.2, -0.3], spin: -0.04, roll: 1.4, arc: -0.05 },
+    { t0: 5.0, t1: 10.4, tex: 'saturn', ox: 0.75, oy: 0.15, rad: 0.85, L: [-0.6, 0.35, -0.2], spin: 0.06, rings: 'ring', roll: -0.35, pitch: -0.42, arc: 0.07 },
+    { t0: 8.4, t1: 13.4, tex: 'jupiter', ox: -0.8, oy: -0.2, rad: 1.05, L: [0.55, 0.25, -0.25], spin: 0.08, arc: -0.07 },
+    { t0: 14.2, t1: 17.6, tex: 'mars', ox: 0.5, oy: 0.25, rad: 0.36, L: [-0.5, 0.2, -0.3], spin: 0.05, arc: 0.05 },
+    { t0: 15.6, t1: 19.0, tex: 'venus', ox: -0.45, oy: -0.12, rad: 0.46, L: [0.4, 0.15, -0.6], spin: 0.02, arc: -0.04 },
+    { t0: 17.2, t1: 20.4, tex: 'mercury', ox: 0.35, oy: 0.15, rad: 0.28, L: [-0.3, 0.1, -0.7], spin: 0.03, airless: true, arc: 0.03 }
   ];
   const FLY_MAPS = { neptune: 'planet-neptune.jpg', uranus: 'planet-uranus.jpg', saturn: 'saturn.jpg', ring: 'saturn-ring.png', jupiter: 'planet-jupiter.jpg',
     mars: 'planet-mars.jpg', venus: 'planet-venus.jpg', earth: 'earth-day.jpg', earthN: 'earth-night.jpg', earthC: 'earth-clouds.jpg' };
@@ -5597,12 +5611,18 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     fly.c = fly.cv.getContext('2d');
     flySize();
     fly.near = Array.from({ length: 260 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
+    fly.rocks = Array.from({ length: 90 }, () => ({ a: Math.random() * 6.283, d: 0.25 + Math.random() * 1.5, z: Math.random(), r: 0.008 + Math.pow(Math.random(), 3) * 0.034, s: Math.floor(Math.random() * 5), spin: (Math.random() - 0.5) * 2.4 }));
     if (!fly.stars) { fly.stars = new Image(); fly.stars.src = 'stars-4k.jpg'; }
     if (!fly.city) { fly.city = new Image(); fly.city.src = PG.big() ? 'earth-day-8k.jpg' : 'earth-day.jpg'; }
     fly.cv.addEventListener('pointerdown', () => endFly());
     pushLayer('flyby');
     hapt('press');
     if (S.flySound === 'on') flyMusic();  // started here, inside the tap, so the phone allows sound
+    else if (S.flySound === 'own') flyOwnSound();
+    // the place first (a fresh GPS look, at most 3 s), then the city's satellite pictures for that place
+    let placed = false;
+    const place = () => { if (!placed) { placed = true; if (fly.on) flyLoadTiles(); } };
+    locate(false, place); setTimeout(place, 3000);
     // wait for the maps (max 6 s: on a slow line it starts anyway and the planets appear as they arrive)
     const w0 = performance.now();
     const wait = () => {
@@ -5630,6 +5650,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     fly.on = false;
     cancelAnimationFrame(fly.raf);
     if (fly.audio) { const a = fly.audio; fly.audio = null; try { a.g.gain.cancelScheduledValues(a.ctx.currentTime); a.g.gain.setTargetAtTime(0, a.ctx.currentTime, 0.15); setTimeout(() => a.ctx.close(), 800); } catch (e) {} }
+    if (fly.own) { const o = fly.own; fly.own = null; o.pause(); try { URL.revokeObjectURL(o.src); } catch (e) {} }
     if (fly.cv) { fly.cv.remove(); fly.cv = null; }
     if (!fromBack) dropLayer('flyby');
     if (S.startScreen === 'planet' && !planet.on) showPlanet(true);
@@ -5639,62 +5660,62 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     if (!fly.on) return;
     const t = (now - fly.t0) / 1000;
     if (t >= FLY_TOTAL) { endFly(); return; }
-    const c = fly.c, W = fly.W, H = fly.H;
-    // v88 (user: "as if really in a flying machine"): the view banks gently, sways a little, banks hard in the turn at the
-    // Sun (16.4-18.2 s), and calms down before the city (still from 21 s). Drawn a bit larger so the tilted corners stay filled.
-    const calm = 1 - flyEase((t - 19.5) / 2), turn = Math.sin(Math.PI * flyEase((t - 16.2) / 2.2));
-    const roll = reduce ? 0 : (0.055 * Math.sin(t * 0.55) + 0.025 * Math.sin(t * 1.3 + 1)) * calm - 0.32 * turn;
-    const sx = reduce ? 0 : (6 * Math.sin(t * 0.8) + 2.5 * Math.sin(t * 2.9)) * calm, sy = reduce ? 0 : (4 * Math.sin(t * 1.1 + 2) + 1.5 * Math.sin(t * 3.7)) * calm;
-    const zoom = 1 + Math.abs(roll) * 0.75 + 0.03 * calm;
+    const c = fly.c, W = fly.W, H = fly.H, turn = flySoft((t - FLY_TURN0) / (FLY_TURN1 - FLY_TURN0));
+    // the machine: a slow lean from side to side and a slow drift; a wide bank through the turn; still before the city
+    const calm = 1 - flyEase((t - 24) / 3), bank = Math.sin(Math.PI * turn);
+    const roll = reduce ? 0 : 0.035 * Math.sin(t * 0.5) * calm - 0.16 * bank;
+    const sx = reduce ? 0 : 7 * Math.sin(t * 0.42) * calm, sy = reduce ? 0 : 5 * Math.sin(t * 0.33 + 2) * calm;
+    const zoom = 1 + Math.abs(roll) * 1.1 + 0.03 * calm;
     c.save();
     c.translate(W / 2 + sx, H / 2 + sy); c.rotate(roll); c.scale(zoom, zoom); c.translate(-W / 2, -H / 2);
-    flyBackground(c, W, H, t); flySun(c, W, H, t);
-    FLY_PASS.forEach((p) => flyPlanet(c, W, H, p, t));
-    flyEarth(c, W, H, t);
+    flyBackground(c, W, H, t, turn); flySun(c, W, H, t, turn);
+    FLY_PASS.forEach((p) => flyPlanet(c, W, H, p, t, turn));
+    flyBelt(c, W, H, t);
+    flyEarth(c, W, H, t, turn);
     c.restore();
+    flyCityText(c, W, H, t);
     if (t > FLY_TOTAL - 0.8) { c.fillStyle = 'rgba(0,0,0,' + flyEase((t - (FLY_TOTAL - 0.8)) / 0.8).toFixed(3) + ')'; c.fillRect(0, 0, W, H); }
     fly.raf = requestAnimationFrame(flyFrame);
   }
-  function flyBackground(c, W, H, t) {
-    // v88: black space and the star map reach well past the screen, so the banking view never shows bare corners
+  function flyBackground(c, W, H, t, turn) {
+    // black space and the star map reach well past the screen, so the banking view never shows bare corners
     c.fillStyle = '#000'; c.fillRect(-W, -H, W * 3, H * 3);
     const s = fly.stars;
     if (s && s.complete && s.naturalWidth) {
-      // the far stars turn slowly; at 16.4-18.2 s we turn around (they slide sideways fast)
-      const turn = flyEase((t - 16.4) / 1.8), off = (t * 0.004 + turn * 0.5) % 1, sc = H / s.naturalHeight * 2.4;
-      const w = s.naturalWidth * sc, x = -W * 0.6 - off * w;
+      const off = (t * 0.003 + turn * 0.5) % 1, sc = H / s.naturalHeight * 2.4, w = s.naturalWidth * sc, x = -W * 0.6 - off * w;
       c.globalAlpha = 0.9; c.drawImage(s, x, -H * 0.7, w, s.naturalHeight * sc); c.drawImage(s, x + w, -H * 0.7, w, s.naturalHeight * sc); c.globalAlpha = 1;
     }
-    // near stars streaming past: the feeling of speed (slower at the start and the end)
-    const speed = t < 22 ? 0.12 + 0.25 * Math.sin(Math.min(1, t / 20) * Math.PI) : 0.02;
+    // near stars streaming past: the feeling of speed; they drift sideways with the turn and settle as we zoom
+    const speed = 0.04 + 0.26 * Math.sin(Math.min(1, t / 26) * Math.PI), shift = turn * W * 3;
     c.fillStyle = '#fff';
     fly.near.forEach((q) => {
-      const z = 1 - ((q.z + t * speed) % 1), px = W / 2 + q.x * W * 0.5 / (z + 0.05), py = H / 2 + q.y * H * 0.5 / (z + 0.05);
-      if (px < 0 || px > W || py < 0 || py > H) return;
+      const z = 1 - ((q.z + t * speed * 0.6) % 1), py = H / 2 + q.y * H * 0.5 / (z + 0.05);
+      let px = W / 2 + q.x * W * 0.5 / (z + 0.05) - shift;
+      px = ((px % (W * 1.4)) + W * 1.4) % (W * 1.4) - W * 0.2;
+      if (py < -H * 0.2 || py > H * 1.2) return;
       c.globalAlpha = Math.min(1, (1 - z) * 1.4) * 0.8; c.beginPath(); c.arc(px, py, (1 - z) * 1.4, 0, 7); c.fill();
     });
     c.globalAlpha = 1;
   }
-  function flySun(c, W, H, t) {
-    if (t < 9 || t > 18.2) return;
-    const grow = flyEase((t - 9) / 7.5), turn = flyEase((t - 16.4) / 1.8);
-    const x = W * flyLerp(0.5, -0.9, turn), y = H * 0.42, R = flyLerp(4, Math.min(W, H) * 0.16, grow);
+  function flySun(c, W, H, t, turn) {
+    if (t < 9 || t > FLY_TURN1) return;
+    const grow = flySoft((t - 9) / 10), x = W * flyLerp(0.5, -1.1, turn), y = H * 0.42, R = flyLerp(3, Math.min(W, H) * 0.16, grow);
+    if (x + R * 6 < -W * 0.3) return;
     const g = c.createRadialGradient(x, y, R * 0.5, x, y, R * 6); g.addColorStop(0, 'rgba(255,214,150,0.55)'); g.addColorStop(1, 'rgba(255,214,150,0)');
-    c.save(); c.globalAlpha = flyEase((t - 9) / 1.5);  // v88: fades in
+    c.save(); c.globalAlpha = flyEase((t - 9) / 2.5);
     c.fillStyle = g; c.fillRect(x - R * 6, y - R * 6, R * 12, R * 12);
     GLB.draw(c, x, y, R, { mode: 'sun', tint: '#FFC94D', rot: t * 0.05, time: t, glow: 1, margin: 1.6 });
     c.restore();
   }
-  function flyPlanet(c, W, H, p, t) {
+  function flyPlanet(c, W, H, p, t, turn) {
     const k = (t - p.t0) / (p.t1 - p.t0); if (k < 0 || k > 1) return;
-    // v88 (user: planets popped in and out): each one starts far away as a tiny dot and fades in over its first third,
-    // grows, and sweeps off the side by itself; if it is still on the screen near the end, it fades out gently
-    // the side distance is 2.2 x the planet's size (ox/oy give only the direction), so it really passes beside us
+    // each one starts far away as a tiny dot, fades in over its first third, grows, and sweeps off the side by itself;
+    // the side distance is 2.2 x its size (ox/oy give only the direction), so it really passes beside us
     const z = 0.6 + 39.4 * Math.pow(1 - k, 2.5), f = W * 0.9, m = 2.2 * 0.8 * p.rad / Math.hypot(p.ox, p.oy);
-    const x = W / 2 + f * p.ox * m / z, y = H / 2 + f * p.oy * m / z, R = f * p.rad / z * 0.8;
-    if (x + R * 2.4 < 0 || x - R * 2.4 > W || y + R * 2.4 < 0 || y - R * 2.4 > H) return;
+    const x = W / 2 + f * p.ox * m / z + Math.sin(k * Math.PI) * W * (p.arc || 0) - turn * W * 1.6, y = H / 2 + f * p.oy * m / z, R = f * p.rad / z * 0.8;
+    if (x + R * 2.4 < -W * 0.3 || x - R * 2.4 > W * 1.3 || y + R * 2.4 < -H * 0.3 || y - R * 2.4 > H * 1.3) return;
     c.save(); c.globalAlpha = flyEase(k / 0.33) * (1 - flyEase((k - 0.86) / 0.14));
-    if (p.airless) GLB.draw(c, x, y, R, { mode: 'moon', tex: p.tex === 'mercury' ? 'mercury' : undefined, light: flyNorm(p.L), rot: t * p.spin * 6.283, shine: 0.1, expo: 1.3, glow: 0.4, margin: 1.2 });
+    if (p.airless) GLB.draw(c, x, y, R, { mode: 'moon', tex: p.tex, light: flyNorm(p.L), rot: t * p.spin * 6.283, shine: 0.1, expo: 1.3, glow: 0.4, margin: 1.2 });
     else {
       const o = { mode: 'planet', tex: p.tex, rot: t * p.spin * 6.283, roll: p.roll || 0, pitch: p.pitch || 0, light: flyNorm(p.L), expo: 1.2, margin: p.rings ? 1.3 : 1.15 };
       if (p.rings) o.rings = p.rings;
@@ -5702,34 +5723,140 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     }
     c.restore();
   }
-  function flyEarth(c, W, H, t) {
-    // 18.6 s: the Earth ahead, turning the last bit so your place faces us; 22 s on: the close look at the city
-    if (t < 18.6) return;
-    const k = flyEase((t - 18.6) / 4.4), R = flyLerp(10, Math.max(W, H) * 1.9, Math.pow(k, 2.2)), rad = Math.PI / 180;
-    const fade = flyEase((t - 22.0) / 1.2);
-    c.save(); c.globalAlpha = (1 - fade) * flyEase((t - 18.6) / 1.2);  // v88: the Earth fades in too
-    PG.draw(c, W / 2, H / 2, R, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: LON * rad + (1 - k) * 1.6, pitch: -LAT * rad,
-      rot2: t * 0.01, light: flyNorm([-0.35, 0.3, 0.88]), expo: 1.15, margin: 1.06, glow: 0.3 });
-    c.restore();
-    if (fade > 0) flyCity(c, W, H, t, fade);
+  // the asteroid belt between Jupiter and Mars (12.6-15.6 s): lumpy dark rocks rushing past, a few very close.
+  // Five rocks are painted once from the moon map, then only copied: cheap to draw, 90 at a time.
+  function flySprites() {
+    fly.sprites = [];
+    for (let i = 0; i < 5; i++) {
+      const s = document.createElement('canvas'); s.width = s.height = 128;
+      const x = s.getContext('2d'), n = 18, p1 = Math.random() * 6.283, p2 = Math.random() * 6.283;
+      x.beginPath();
+      // a lumpy outline: two slow bumps plus a little roughness, not straight cuts
+      for (let q = 0; q < n; q++) { const a = q / n * 6.283, r = 50 + 7 * Math.sin(a * 2 + p1) + 4 * Math.sin(a * 3 + p2) + Math.random() * 2.5; x[q ? 'lineTo' : 'moveTo'](64 + r * Math.cos(a), 64 + r * Math.sin(a)); }
+      x.closePath(); x.clip();
+      GLB.draw(x, 64, 64, 62, { mode: 'moon', light: flyNorm([-0.5, 0.35, 0.3]), rot: i * 1.3, shine: 0.05, expo: 1.0, glow: 0, margin: 1.05 });
+      x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(70, 58, 46, 0.45)'; x.fillRect(0, 0, 128, 128);
+      fly.sprites.push(s);
+    }
   }
-  function flyCity(c, W, H, t, a) {
+  function flyBelt(c, W, H, t) {
+    const env = flyEase((t - 12.6) / 1.0) * (1 - flyEase((t - 14.8) / 0.9));
+    if (env <= 0) return;
+    if (!fly.sprites) flySprites();
+    const f = W * 0.9;
+    fly.rocks.forEach((q) => {
+      const z = 1.02 - ((q.z + (t - 12) * 0.34) % 1);
+      const x = W / 2 + Math.cos(q.a) * q.d * f / (z * 3.2), y = H / 2 + Math.sin(q.a) * q.d * f / (z * 3.2), R = f * q.r / z;
+      if (R < 0.5 || x < -R || x > W + R || y < -R || y > H + R) return;
+      c.save(); c.globalAlpha = env * Math.min(1, (1 - z) * 5 + 0.05);
+      c.translate(x, y); c.rotate(q.a + t * q.spin);
+      c.drawImage(fly.sprites[q.s], -R * 1.05, -R * 1.05, R * 2.1, R * 2.1);
+      c.restore();
+    });
+  }
+  // one steady zoom: the Earth grows from a dot to the whole screen, then the map and the satellite pictures carry on at
+  // the same speed and the same scale (S = screen px per degree), so there is no visible change-over.
+  function flyRate(t) {
+    // the last 0.8 of the zoom is even; soft at both ends
+    const x = (t - FLY_ZOOM0) / (FLY_ZOOM1 - FLY_ZOOM0), a = 0.14;
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    if (x < a) return x * x / (2 * a * (1 - a));
+    if (x < 1 - a) return (x - a / 2) / (1 - a);
+    return 1 - (1 - x) * (1 - x) / (2 * a * (1 - a));
+  }
+  function flyEarth(c, W, H, t, turn) {
+    if (t < FLY_ZOOM0 - 3) return;
+    const rad = Math.PI / 180, R0 = Math.min(W, H) * 0.045, kmWide = 20, cosL = Math.cos(LAT * rad);
+    const Send = W * 111.32 / kmWide, Rend = Send / rad;  // at the end the screen is about 20 km wide
+    const R = R0 * Math.pow(Rend / R0, flyRate(t)), S = R * rad, Rswap = Math.max(W, H) * 1.0;
+    // the Earth slides in as the turn ends, its small Moon beside it (true size: 27 % of the Earth)
+    const ex = W / 2 + (1 - turn) * W * 1.6, ey = H / 2;
+    const swap = flyEase((R - Rswap * 0.72) / (Rswap * 0.28));
+    if (swap > 0) flyCityMap(c, W, H, S, cosL, t);
+    if (swap < 1) {
+      // it turns and tilts your place towards us slowly, as it grows (the pole's swirl stays out of sight)
+      const face = flySoft((R - R0) / (Rswap * 0.8));
+      c.save(); c.globalAlpha = (1 - swap) * flyEase((t - (FLY_ZOOM0 - 3)) / 1.5);
+      PG.draw(c, ex, ey, Math.min(R, Rswap), { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: LON * rad + (1 - face) * 1.1, pitch: -LAT * rad * (0.25 + 0.75 * face),
+        rot2: t * 0.01, light: flyNorm([-0.35, 0.3, 0.88]), expo: 1.15, margin: 1.06, glow: 0.3 });
+      // the Moon: drawn behind us as the Earth grows past it
+      const mx = ex - R * 2.1, my = ey - R * 1.5, mr = R * 0.27;
+      if (mx + mr > -W * 0.3) GLB.draw(c, mx, my, mr, { mode: 'moon', light: flyNorm([-0.35, 0.3, 0.88]), rot: t * 0.1, shine: 0.1, expo: 1.3, glow: 0.4, margin: 1.2 });
+      c.restore();
+    }
+  }
+  function flyCityMap(c, W, H, S, cosL, t) {
     const im = fly.city;
-    if (!im || !im.complete || !im.naturalWidth) return;
-    const mw = im.naturalWidth, mh = im.naturalHeight, cx = (LON + 180) / 360 * mw, cy = (90 - LAT) / 180 * mh;
-    const zoom = flyLerp(4, 22, flyEase((t - 22.0) / 4.0)), sw = W / zoom * (mw / 2048), sh = H / zoom * (mw / 2048);
-    c.globalAlpha = a; c.drawImage(im, cx - sw / 2, cy - sh / 2, sw, sh, 0, 0, W, H); c.globalAlpha = 1;
-    const v = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.75); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
-    c.fillStyle = v; c.fillRect(0, 0, W, H);
-    const n = flyEase((t - 23.6) / 1.2);
+    if (im && im.complete && im.naturalWidth) {
+      const pd = im.naturalWidth / 360, sw = W / (S * cosL) * pd, sh = H / S * pd, cx = (LON + 180) * pd, cy = (90 - LAT) * pd;
+      c.drawImage(im, cx - sw / 2, cy - sh / 2, sw, sh, 0, 0, W, H);
+    }
+    if (fly.tiles) flyDrawTiles(c, W, H, S * cosL);
+  }
+  /* ---- Satellite pictures over the city (Sentinel-2 cloudless by EOX; only while the flight plays, online only; the
+     service sees which area is asked for, not who you are). Web Mercator tiles at 4 zoom levels around your place. ---- */
+  const FLY_LEVELS = [7, 9, 11, 12];
+  const flyTile = (z) => {
+    const n = Math.pow(2, z), la = LAT * Math.PI / 180;
+    return { x: (LON + 180) / 360 * n, y: (1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2 * n, n: n };
+  };
+  function flyLoadTiles() {
+    if (fly.tiles || navigator.onLine === false) return;
+    fly.tiles = {};
+    const W = fly.W, H = fly.H;
+    // the smallest scale each level is used at is 0.4, so this many tiles fill the screen then
+    const nx = Math.ceil(W / (256 * 0.4) / 2) + 1, ny = Math.ceil(H / (256 * 0.4) / 2) + 1;
+    FLY_LEVELS.slice().reverse().forEach((z) => {
+      const c = flyTile(z), xc = Math.floor(c.x), yc = Math.floor(c.y);
+      for (let dy = -ny; dy <= ny; dy++) for (let dx = -nx; dx <= nx; dx++) {
+        const x = xc + dx, y = yc + dy; if (y < 0 || y >= c.n) continue;
+        const im = new Image(); im.crossOrigin = 'anonymous'; im.src = 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/' + z + '/' + y + '/' + ((x % c.n + c.n) % c.n) + '.jpg';
+        fly.tiles[z + '/' + x + '/' + y] = im;
+      }
+    });
+  }
+  function flyDrawTiles(c, W, H, pxPerDegLon) {
+    FLY_LEVELS.forEach((z) => {
+      const scale = pxPerDegLon * 360 / (256 * Math.pow(2, z)), a = flyEase((scale - 0.4) / 0.25);
+      if (a <= 0 || scale > 3.5) return;
+      const ct = flyTile(z), size = 256 * scale, x0 = Math.floor(ct.x - W / 2 / size), x1 = Math.floor(ct.x + W / 2 / size), y0 = Math.floor(ct.y - H / 2 / size), y1 = Math.floor(ct.y + H / 2 / size);
+      c.globalAlpha = a;
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        const im = fly.tiles[z + '/' + x + '/' + y];
+        if (im && im.complete && im.naturalWidth) c.drawImage(im, W / 2 + (x - ct.x) * size, H / 2 + (y - ct.y) * size, size + 0.5, size + 0.5);
+      }
+      c.globalAlpha = 1;
+    });
+  }
+  function flyCityText(c, W, H, t) {
+    const n = flyEase((t - (FLY_ZOOM1 - 2.4)) / 1.3);
     if (n <= 0) return;
     const font = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif';
-    c.globalAlpha = n; c.textAlign = 'center';
-    c.strokeStyle = 'rgba(255,255,255,0.8)'; c.lineWidth = 1.2; c.beginPath(); c.arc(W / 2, H / 2, 10 + 30 * (1 - n), 0, 7); c.stroke();
+    const v = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.75); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
+    c.globalAlpha = n; c.fillStyle = v; c.fillRect(0, 0, W, H); c.textAlign = 'center';
     if (CITY) { c.fillStyle = '#fff'; c.font = '200 ' + Math.round(Math.min(W, H) * 0.12) + 'px ' + font; c.fillText(CITY.toUpperCase(), W / 2, H * 0.32); }
-    c.font = '400 15px ' + font; c.fillStyle = 'rgba(255,255,255,0.75)';
+    c.font = '400 15px ' + font; c.fillStyle = 'rgba(255,255,255,0.8)';
     c.fillText(Math.abs(LAT).toFixed(2) + '° ' + (LAT >= 0 ? 'N' : 'S') + '  ·  ' + Math.abs(LON).toFixed(2) + '° ' + (LON >= 0 ? 'E' : 'W'), W / 2, H * 0.32 + 34);
+    if (fly.tiles) { c.font = '400 10px ' + font; c.fillStyle = 'rgba(255,255,255,0.6)'; c.fillText('Sentinel-2 cloudless by EOX · contains modified Copernicus Sentinel data', W / 2, H - st.bot - 14); }
     c.globalAlpha = 1;
+  }
+  /* ---- Sound: a file the user picked (kept in this phone's IndexedDB, never sent anywhere) ---- */
+  function flySoundDb() {
+    return new Promise((ok, no) => { const r = indexedDB.open('sun-launcher-sound', 1); r.onupgradeneeded = () => r.result.createObjectStore('f'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+  }
+  function flySaveSound(file) {
+    return flySoundDb().then((db) => new Promise((ok, no) => { const q = db.transaction('f', 'readwrite'); q.objectStore('f').put(file, 'fly'); q.oncomplete = () => ok(); q.onerror = () => no(q.error); }));
+  }
+  function flyReadSound() {
+    return flySoundDb().then((db) => new Promise((ok, no) => { const q = db.transaction('f').objectStore('f').get('fly'); q.onsuccess = () => ok(q.result || null); q.onerror = () => no(q.error); }));
+  }
+  function flyOwnSound() {
+    flyReadSound().then((file) => {
+      if (!file || !fly.on) return;
+      const a = new Audio(URL.createObjectURL(file));
+      fly.own = a;
+      a.play().catch(() => {});
+    }).catch(() => {});
   }
   // Our own driving riff (made here, not from any show): distorted power chords on E with a climbing answer, a kick on
   // each beat, 138 beats a minute. A soft start, louder over the planets, quiet as we land.
@@ -5742,7 +5869,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const tone = ctx.createBiquadFilter(); tone.type = 'lowpass'; tone.frequency.value = 2600; tone.Q.value = 0.8;
     shaper.connect(tone); tone.connect(out);
     const now = ctx.currentTime + 0.05, e8 = 60 / 138 / 2, hz = (n) => 440 * Math.pow(2, (n - 69) / 12);
-    // one bar = 8 eighths; 0 = rest; numbers = MIDI root of a power chord; 'm' = palm-muted (short)
+    // one bar = 8 eighths; numbers = MIDI root of a power chord; 'm' = palm-muted (short)
     const BAR_A = [[40, 'm'], [40, 'm'], [43, ''], [40, 'm'], [45, ''], [40, 'm'], [47, ''], [45, '']];
     const BAR_B = [[40, 'm'], [40, 'm'], [43, ''], [40, 'm'], [50, ''], [48, ''], [47, ''], [43, '']];
     const chord = (at, root, muted) => {
@@ -6602,7 +6729,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v90 · My location stays fresh (at most 10 min old, with a second try by GPS). The hidden flight: truer sizes, a slow wide turn, an asteroid belt, a steady zoom into your city, your own sound if you like.\nv89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -6660,7 +6787,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   function openItem(it) {
     if (it.app) { openApp(BY[it.name]); return; }
     if (FUNC_RUN[it.name]) { FUNC_RUN[it.name](); return; }
-    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. Mercury, Venus, Mars, Jupiter, Uranus and Neptune maps: Solar System Scope (solarsystemscope.com), CC BY 4.0. City names: GeoNames (geonames.org), CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain. Northern lights photo: NASA, ISS052-E-7857 (astronaut Jack Fischer, 2017).', '', false); return; }
+    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. Mercury, Venus, Mars, Jupiter, Uranus and Neptune maps: Solar System Scope (solarsystemscope.com), CC BY 4.0. City close-up in the flight: Sentinel-2 cloudless (s2maps.eu) by EOX IT Services GmbH, contains modified Copernicus Sentinel data, CC BY-NC-SA 4.0; asked for only while the flight plays. City names: GeoNames (geonames.org), CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain. Northern lights photo: NASA, ISS052-E-7857 (astronaut Jack Fischer, 2017).', '', false); return; }
     openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
   }
   $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
@@ -7092,6 +7219,17 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
   const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons', 'strip', 'clockStyle', 'flySound'];
+  // v90 (user): the flight's sound can be a file from the phone; kept only on this phone
+  $('flyPick').addEventListener('click', () => $('flyFile').click());
+  $('flyFile').addEventListener('change', function () {
+    const f = this.files && this.files[0]; this.value = '';
+    if (!f) return;
+    flySaveSound(f).then(() => {
+      S.flySound = 'own'; save(); fillForm();
+      $('flyPickLine').textContent = 'My sound: ' + f.name + '. It stays on your phone.';
+      toast('Sound saved for the flight.');
+    }).catch(() => toast('This file could not be saved.'));
+  });
   $('placesBack').addEventListener('click', () => { S.timePos = 'top'; S.chipsPos = 'below'; S.eyePos = 'top'; save(); kick(); toast('Time, chips and eye are back in their first places.'); });  // v78
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
