@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.maps.eox.at; media-src 'self' blob:; connect-src 'self' https://api.open-meteo.com https://services.swpc.noaa.gov https://celestrak.org https://tiles.maps.eox.at; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.maps.eox.at; media-src 'self' blob:; connect-src 'self' https://api.open-meteo.com https://services.swpc.noaa.gov https://celestrak.org https://tiles.maps.eox.at https://gibs.earthdata.nasa.gov; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#0B1430">
 <title>Sun Launcher</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -1298,6 +1298,15 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         </div>
         <p class="helpline">One short note under the chips, only when it matters: rain soon, strong wind, ice, battery low, something in the sky tonight, golden hour, high UV, longer days.</p>
       </fieldset>
+      <!-- v96 (user) -->
+      <fieldset>
+        <legend>Real clouds</legend>
+        <div class="seg">
+          <input type="radio" name="realClouds" id="rc-on" value="on"><label for="rc-on">On</label>
+          <input type="radio" name="realClouds" id="rc-off" value="off"><label for="rc-off">Off</label>
+        </div>
+        <p class="helpline">Yesterday's clouds from NASA's satellite, at most one download a day, about 0.5 MB. NASA sees only that a picture was asked for. Off: the same clouds every day.</p>
+      </fieldset>
       <!-- v95 (user): phone app only -->
       <fieldset id="skyAlertBox" hidden>
         <legend>Sky alerts</legend>
@@ -1348,7 +1357,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v95';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v96';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1426,7 +1435,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'off', useWeek: {}, seasonsOff74: 0, strip: 'off', clockStyle: 'thin', timePos: 'top', eyePos: 'top', homePages: null, homeDock: null, flySound: 'off', flySharp: 'on', eyeAt: {}, skyAlerts: 'off' };
+  const S = { mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'off', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'off', useWeek: {}, seasonsOff74: 0, strip: 'off', clockStyle: 'thin', timePos: 'top', eyePos: 'top', homePages: null, homeDock: null, flySound: 'off', flySharp: 'on', eyeAt: {}, skyAlerts: 'off', realClouds: 'on', cloudDay: '', cloudTry: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -1451,6 +1460,9 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   // v78 (user): hold and drag the time (top/bottom) and the eye (top/bottom) on the Earth; 5 clock styles
   if (S.timePos !== 'bottom') S.timePos = 'top';
   if (S.eyePos !== 'bottom') S.eyePos = 'top';
+  if (S.realClouds !== 'off') S.realClouds = 'on';  // v96: yesterday's real clouds on the Earth
+  if (typeof S.cloudDay !== 'string') S.cloudDay = '';
+  if (!isFinite(S.cloudTry)) S.cloudTry = 0;
   if (S.skyAlerts !== 'on') S.skyAlerts = 'off';  // v95: notifications for northern lights and eclipses (phone app)
   if (!S.eyeAt || typeof S.eyeAt !== 'object') S.eyeAt = {};  // v94: where the eye was dragged: p upright, l sideways, as parts of the screen
   if (['thin', 'bold', 'analog', 'glass', 'soft'].indexOf(S.clockStyle) === -1) S.clockStyle = 'thin';
@@ -2698,6 +2710,19 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       if (/\.jpg$/.test(url) && window.createImageBitmap) fetch(url).then((r) => { if (!r.ok) throw new Error('no file'); return r.blob(); }).then((b) => createImageBitmap(b)).then(up, plain);
       else plain();
       return false;
+    };
+    // v96: a map changes while the app runs (today's clouds)
+    out.swap = function (key, im) {
+      if (!init()) return;
+      const t = gl.createTexture(), old = TEX[key];
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      TEX[key] = t; if (old) gl.deleteTexture(old); kickLater();
     };
     const rgb = (h) => { const n = parseInt(h.replace('#', ''), 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
     function pass(c, x, y, R, o) {
@@ -4365,6 +4390,46 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, 2 * Math.PI); c.fill();
     c.strokeStyle = 'rgba(120, 180, 255, 0.35)'; c.lineWidth = 3; c.beginPath(); c.arc(cx, cy, R + 1.5, 0, 2 * Math.PI); c.stroke();
   }
+  /* v96 (user): real clouds. NASA's satellite picture of yesterday (GIBS, MODIS Terra, about 0.5 MB, at most once a day and well after
+     the app has opened). The result stays on the phone, so later opens use it at once. */
+  const CLOUD_BOX = 'sun-launcher-media-clouds', cloudT0 = performance.now();
+  let cloudUrl = null, cloudEarly = false;
+  const cloudDayAgo = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+  // the map to use for the first picture: today's saved clouds, or (after a very short wait for them) the normal map
+  function cloudSrc() { return cloudUrl || (cloudEarly || performance.now() - cloudT0 > 500 ? 'earth-clouds.jpg' : null); }
+  function cloudsStart() {
+    const done = () => { cloudEarly = true; kick(); };
+    if (S.realClouds === 'on' && S.cloudDay && window.caches) {
+      caches.open(CLOUD_BOX).then((c) => c.match('real-clouds-' + S.cloudDay)).then((r) => r ? r.blob() : null).then((b) => { if (b) cloudUrl = URL.createObjectURL(b); done(); }, done);
+    } else done();
+    setTimeout(cloudsUpdate, 9000);
+  }
+  function cloudsUpdate() {
+    if (S.realClouds !== 'on' || !window.caches || !window.Worker || !window.OffscreenCanvas || navigator.onLine === false) return;
+    if (S.cloudDay === cloudDayAgo(1) || Date.now() - S.cloudTry < 6 * 3600000) return;
+    S.cloudTry = Date.now(); save();
+    // measured: on the page this froze it up to 0.78 s, three times; in a worker the page never waits (upload/clouds-worker.js)
+    const w = new Worker('clouds-worker.js');
+    w.onerror = () => w.terminate();
+    w.onmessage = async (e) => {
+      w.terminate();
+      if (!e.data.blob) return;
+      try {
+        const box = await caches.open(CLOUD_BOX), name = 'real-clouds-' + e.data.day;
+        await box.put(name, new Response(e.data.blob, { headers: { 'Content-Type': 'image/jpeg' } }));
+        (await box.keys()).forEach((q) => { if (!q.url.endsWith(name)) box.delete(q); });
+        S.cloudDay = e.data.day; save();
+        const im = await createImageBitmap(e.data.blob);
+        PG.swap('earthC', im); im.close();
+      } catch (er) {}
+    };
+    w.postMessage({ plain: new URL('earth-clouds.jpg', location.href).href, days: [cloudDayAgo(1), cloudDayAgo(2)].filter((d) => d !== S.cloudDay) });
+  }
+  // the Settings switch works at once
+  function cloudsSetting() {
+    if (S.realClouds === 'on') { S.cloudTry = 0; if (S.cloudDay && window.caches) caches.open(CLOUD_BOX).then((c) => c.match('real-clouds-' + S.cloudDay)).then((r) => r && r.blob()).then((b) => b && createImageBitmap(b)).then((im) => { if (im) { PG.swap('earthC', im); im.close(); } }).catch(() => {}); cloudsUpdate(); }
+    else fetch('earth-clouds.jpg').then((r) => r.blob()).then((b) => createImageBitmap(b)).then((im) => { PG.swap('earthC', im); im.close(); }).catch(() => {});
+  }
   function renderPlanet(now) {
     const c = $('planetCanvas').getContext('2d'), W = st.W, H = st.H, k = kOf(W);
     c.clearRect(0, 0, W, H);
@@ -4385,7 +4450,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const R = st.land ? H : 520 * k, cx = st.land ? W * 0.78 : W / 2, cy = st.land ? H * 1.28 : Math.max(H * 1.197, H * 0.3 + 18 + 30 * k + 24 + R * 1.07), span = st.land ? W - cx - 34 : W / 2 - 34, skyY = st.land ? H * 0.11 : H * 0.42, centerLon = LON + 15.6 - spin.off, ss = subsolar(d), rad = Math.PI / 180;
     const pitch = (48.2 - LAT) * rad, cp = Math.cos(pitch), sp = Math.sin(pitch);
     const toView = (b) => [b[0], b[1] * cp + b[2] * sp, -b[1] * sp + b[2] * cp];  // globe -> screen (inverse of the shader's tilt)
-    const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & PG.need('earthC', 'earth-clouds.jpg');
+    const ok = PG.need('earth', 'earth-day.jpg') & PG.need('earthN', 'earth-night.jpg') & (cloudSrc() ? PG.need('earthC', cloudSrc()) : false);
     // v42: sharper 8k day map (NASA 21600 px, made smaller), only where the phone can hold it; the 4k map shows until it arrives
     // v91 (first open felt slow): the 8k map only after 8 s and 3 s without a touch; the 4k map shows until it is ready
     if (!earth8Go && performance.now() > 8000 && performance.now() - lastTouch > 3000) earth8Go = true;
@@ -6992,7 +7057,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v95 · Opens faster, with no freeze when the sharp Earth arrives. The flight keeps the pictures of your city on the phone, so it works offline. One tap on the empty sky shows tonight. New in Settings: Sky alerts. v94 · The hidden flight is a real 3D scene with one fluid motion: planets leave by going out of sight, real rocks in the belt, true sizes, and a much sharper ending over your city. Hold the eye on the Earth and drag it anywhere. Held sideways, the four chips sit in a neat block. v93 · The Moon is lit from the real direction of the Sun. New layout for a phone held sideways. v92 · A flick on the Sun ring no longer seems to spin backward. The map says the city (Vienna), not the district. My sound for the flight can be sharpened. v90 · My location stays fresh (at most 10 min old, with a second try by GPS). The hidden flight: truer sizes, a slow wide turn, an asteroid belt, a steady zoom into your city, your own sound if you like.\nv89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v96 · Real clouds on the Earth: yesterday\'s from NASA\'s satellite. v95 · Opens faster, with no freeze when the sharp Earth arrives. The flight keeps the pictures of your city on the phone, so it works offline. One tap on the empty sky shows tonight. New in Settings: Sky alerts. v94 · The hidden flight is a real 3D scene with one fluid motion: planets leave by going out of sight, real rocks in the belt, true sizes, and a much sharper ending over your city. Hold the eye on the Earth and drag it anywhere. Held sideways, the four chips sit in a neat block. v93 · The Moon is lit from the real direction of the Sun. New layout for a phone held sideways. v92 · A flick on the Sun ring no longer seems to spin backward. The map says the city (Vienna), not the district. My sound for the flight can be sharpened. v90 · My location stays fresh (at most 10 min old, with a second try by GPS). The hidden flight: truer sizes, a slow wide turn, an asteroid belt, a steady zoom into your city, your own sound if you like.\nv89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -7050,7 +7115,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   function openItem(it) {
     if (it.app) { openApp(BY[it.name]); return; }
     if (FUNC_RUN[it.name]) { FUNC_RUN[it.name](); return; }
-    if (it.name === 'Licences') { openSheet('Licences', 'Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. Mercury, Venus, Mars, Jupiter, Uranus and Neptune maps: Solar System Scope (solarsystemscope.com), CC BY 4.0. City close-up in the flight: Sentinel-2 cloudless (s2maps.eu) by EOX IT Services GmbH, contains modified Copernicus Sentinel data, CC BY-NC-SA 4.0; asked for only while the flight plays. City names: GeoNames (geonames.org), CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain. Northern lights photo: NASA, ISS052-E-7857 (astronaut Jack Fischer, 2017).', '', false); return; }
+    if (it.name === 'Licences') { openSheet('Licences', 'Real clouds: NASA GIBS, MODIS Terra, public domain. Moon map: NASA/GSFC Scientific Visualization Studio, CGI Moon Kit (LRO data), public domain. Sun map: Solar System Scope (solarsystemscope.com), based on NASA images, CC BY 4.0. Sunset sky photo: Unsplash / Pexels, free licence. Real stars: NASA/Goddard Space Flight Center Scientific Visualization Studio, Deep Star Maps 2020; Gaia DR2: ESA/Gaia/DPAC. Weather data: Open-Meteo.com, CC BY 4.0. Saturn and ring maps: Solar System Scope, CC BY 4.0. Mercury, Venus, Mars, Jupiter, Uranus and Neptune maps: Solar System Scope (solarsystemscope.com), CC BY 4.0. City close-up in the flight: Sentinel-2 cloudless (s2maps.eu) by EOX IT Services GmbH, contains modified Copernicus Sentinel data, CC BY-NC-SA 4.0; asked for only while the flight plays. City names: GeoNames (geonames.org), CC BY 4.0. Earth: NASA Visible Earth (Blue Marble Next Generation, October; Black Marble 2016 night lights; clouds), public domain. Northern lights photo: NASA, ISS052-E-7857 (astronaut Jack Fischer, 2017).', '', false); return; }
     openSheet(it.name, it.group + ' · this page is the next design step.', '', false);
   }
   $('sheetClose').addEventListener('click', () => hideOverlay($('sheet')));
@@ -7481,7 +7546,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons', 'strip', 'clockStyle', 'flySound', 'flySharp', 'skyAlerts'];
+  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons', 'strip', 'clockStyle', 'flySound', 'flySharp', 'skyAlerts', 'realClouds'];
   // v90 (user): the flight's sound can be a file from the phone; kept only on this phone
   $('flyPick').addEventListener('click', () => $('flyFile').click());
   $('flyFile').addEventListener('change', function () {
@@ -7810,6 +7875,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     const changed = e && e.target ? e.target.name : '';
     RADIOS.forEach((name) => { Array.prototype.forEach.call(form.elements[name], (r) => { if (r.checked) S[name] = r.value; }); });
     if (changed === 'skyAlerts') skyAlertsSync(true);
+    if (changed === 'realClouds') cloudsSetting();
     Array.prototype.forEach.call(form.elements.color, (r) => {
       if (!r.checked) return;
       if (r.value === 'time') S.sunTime = true; else { S.sunTime = false; S.color = r.value; }
@@ -7893,6 +7959,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     worlds.classList.add('dragging'); worlds.style.transform = 'translateY(-50%)'; requestAnimationFrame(() => worlds.classList.remove('dragging'));
     if (S.mode === 'two') pushLayer('moon');
   }
+  cloudsStart();
   resize();
   $('skyAlertBox').hidden = !(window.SunAndroid && SunAndroid.skyAlerts);
   skyAlertsSync(false);
