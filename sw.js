@@ -2,7 +2,7 @@
 // because Docs Reader and Scanner share this web address (harisonbd.github.io).
 // v42: two caches. CACHE (app code, new each version, ~0.3 MB) and MEDIA (photos and maps, kept across
 // versions so an update does not download them again). Change MEDIA only when a picture's content changes.
-const CACHE = 'sun-launcher-v94';
+const CACHE = 'sun-launcher-v95';
 const MEDIA = 'sun-launcher-media-1';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 const PICS = ['./tex-sun.jpg', './tex-moon.jpg', './sky-sunset.jpg', './sky-dawn.jpg', './sky-day.jpg', './sky-bluehour.jpg', './sky-night.jpg', './sky-overcast.jpg', './sky-rain.jpg', './sky-snow.jpg', './sky-snow-night.jpg', './sky-fog.jpg', './sky-storm.jpg', './saturn.jpg', './saturn-ring.png', './earth-day.jpg', './earth-night.jpg', './earth-clouds.jpg'];
@@ -18,7 +18,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('message', (e) => { if (e.data === 'version' && e.source) e.source.postMessage({ version: CACHE }); });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys()
-    .then((keys) => Promise.all(keys.filter((k) => k.startsWith('sun-launcher-') && k !== CACHE && k !== MEDIA).map((k) => caches.delete(k))))
+    .then((keys) => Promise.all(keys.filter((k) => k.startsWith('sun-launcher-') && k !== CACHE && k !== MEDIA && k !== 'sun-launcher-media-city').map((k) => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', (e) => {
