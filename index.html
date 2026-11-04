@@ -750,6 +750,57 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   #app.land .favbar { left: 52%; bottom: 84px; justify-content: flex-start; }
   #app.land .sheet { max-width: 560px; margin: 0 auto; max-height: 94%; }
 }
+
+/* v97 (user: at a glance I know what an option is about): coloured glass groups in Settings */
+.ngs { margin: 4px 0 14px; }
+.ng { --c: #FFC56B; display: block; margin: 0 0 10px; background: color-mix(in srgb, #fff 7%, transparent); border: 1px solid rgba(255, 255, 255, .14); border-radius: 20px; overflow: hidden; }
+.ng-blue { --c: #7CC4FF; } .ng-pink { --c: #FF9AA8; } .ng-violet { --c: #B9A7FF; } .ng-green { --c: #8CE0A4; }
+.ng > summary { list-style: none; min-height: 68px; box-sizing: border-box; padding: 12px 14px; display: flex; align-items: center; gap: 13px; cursor: pointer; }
+.ng > summary::-webkit-details-marker { display: none; }
+.ng > summary::after { content: ''; flex: none; margin-left: auto; width: 8px; height: 8px; border-right: 1.5px solid rgba(255, 255, 255, .5); border-bottom: 1.5px solid rgba(255, 255, 255, .5); transform: rotate(-45deg); }
+.ng[open] > summary::after { transform: rotate(45deg); }
+.ngt { flex: none; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 20%, transparent); }
+.ngh { min-width: 0; }
+.ngn { display: block; font-size: 17px; font-weight: 600; color: #F7F2E8; }
+.ngv { display: block; margin-top: 1px; font-size: 12.5px; font-weight: 500; color: var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ng > fieldset { margin: 0; padding: 13px 14px 14px; border: 0; border-top: 1px solid rgba(255, 255, 255, .09); }
+#app .ng legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.ngo { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.ngi { flex: none; display: grid; color: var(--c); }
+.ngo b { display: block; font-size: 15px; font-weight: 600; color: #F7F2E8; line-height: 1.2; }
+.ngo small { display: block; margin-top: 1px; font-size: 12px; color: rgba(245, 239, 227, .62); }
+#app .ng .seg { gap: 6px; }
+#app .ng .seg + .seg { margin-top: 8px; }
+#app .ng .seg label { min-height: 36px; border-radius: 18px; font-size: 13px; padding: 0 13px; }
+.ng .btn { width: 100%; min-height: 40px; font-size: 13px; margin-top: 9px; }
+.ng .helpline { margin-top: 7px; font-size: 12px; opacity: .7; }
+/* v97: the sky by picture */
+#app .skypicks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+#app .skypicks label { min-height: 66px; padding: 0; border-radius: 13px; overflow: hidden; display: flex; align-items: flex-end; background-size: cover; background-position: center; border: 1.5px solid transparent; }
+#app .skypicks label span { display: block; width: 100%; padding: 14px 2px 4px; text-align: center; font-size: 11.5px; color: #fff; background: linear-gradient(transparent, rgba(0, 0, 0, .6)); }
+#app .skypicks input:checked + label { border-color: var(--sun, #FFA84F); box-shadow: 0 0 0 1px var(--sun, #FFA84F); color: #fff; }
+label[for="photo-clear"] { background-image: linear-gradient(#4E94E0, #BCE0FF); }
+label[for="photo-off"] { background-image: radial-gradient(ellipse at 30% 45%, rgba(255, 255, 255, .9), transparent 42%), radial-gradient(ellipse at 72% 62%, rgba(255, 255, 255, .8), transparent 40%), linear-gradient(#5D97D6, #C8DFF5); }
+label[for="photo-live"] { background-image: url("sky-day.jpg"); }
+label[for="photo-sunset"] { background-image: url("sky-sunset.jpg"); }
+label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
+#app .skypicks label[for="photo-clear"], #app .skypicks input:checked + label[for="photo-clear"] { background: linear-gradient(#4E94E0, #BCE0FF); }
+#app .skypicks label[for="photo-off"], #app .skypicks input:checked + label[for="photo-off"] { background: radial-gradient(ellipse at 30% 45%, rgba(255, 255, 255, .9), transparent 42%), radial-gradient(ellipse at 72% 62%, rgba(255, 255, 255, .8), transparent 40%), linear-gradient(#5D97D6, #C8DFF5); }
+#app .skypicks label[for="photo-live"], #app .skypicks input:checked + label[for="photo-live"] { background: url("sky-day.jpg") center / cover; }
+#app .skypicks label[for="photo-sunset"], #app .skypicks input:checked + label[for="photo-sunset"] { background: url("sky-sunset.jpg") center / cover; }
+#app .skypicks label[for="photo-stars"], #app .skypicks input:checked + label[for="photo-stars"] { background: url("sky-night.jpg") center / cover; }
+/* v97: the eye does not float over the preview while Settings is open */
+#app:has(#settings:not([hidden])) .watchbtn { opacity: 0; pointer-events: none; }
+
+/* v97 polish, seen on the phone */
+/* Edit look: only the preview and a solid panel; nothing shows through, and the sun's name is not behind the pill */
+#app:has(#lookEdit:not([hidden])) .corner, #app:has(#lookEdit:not([hidden])) .info, #app:has(#lookEdit:not([hidden])) .handle { opacity: 0; pointer-events: none; }
+#app .le-panel { background: rgba(22, 28, 44, .9); color: #F5EFE3; }
+#app .le-head span, #app .le-row { color: rgba(245, 239, 227, .78); }
+#app .le-btns .btn { white-space: nowrap; padding: 0 6px; font-size: 14px; }
+/* Edit dial: the app's whole name, on two lines if it must */
+#app .erow > :first-child { flex: 1 1 auto; min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.15; font-size: 14.5px; }
+#app .erow > button:last-child { flex: none; min-width: 60px; padding: 0 10px; }
 </style>
 
 <div id="app">
@@ -967,7 +1018,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     <form class="sheet" id="settingsForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
       <h2 id="setTitle">Settings</h2>
       <!-- v48 (user, mockup settings-v48c): one sheet with everything on it. My looks, 4 screen cards (sun + moon),
-           the kinds of the picked card, sun styles as round pictures, moon style, then 3 groups to mix and match.
+           the kinds of the picked card, sun styles as round pictures, moon style, then 3 groups to More options.
            The old option controls stay underneath (hidden box below), so saved settings and the code that reads
            them stay the same; the pictures only tap them. -->
       <fieldset class="mylooks">
@@ -1039,14 +1090,16 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         <p id="themeLine" class="helpline"></p>
       </fieldset>
       <!-- v67: seasons -->
+      <!-- v97 (user): the sky is picked by picture, like the screens -->
       <fieldset>
-        <legend>Seasons</legend>
-        <div class="seg">
-          <input type="radio" name="seasons" id="se-off" value="off"><label for="se-off">Off</label>
-          <input type="radio" name="seasons" id="se-astro" value="astro"><label for="se-astro">Astronomical</label>
-          <input type="radio" name="seasons" id="se-meteo" value="meteo"><label for="se-meteo">Meteorological</label>
+        <legend>Sky</legend>
+        <div class="seg skypicks">
+          <input type="radio" name="skyPhoto" id="photo-clear" value="clear"><label for="photo-clear"><span>Clear</span></label>
+          <input type="radio" name="skyPhoto" id="photo-off" value="off"><label for="photo-off"><span>Clouds</span></label>
+          <input type="radio" name="skyPhoto" id="photo-live" value="live"><label for="photo-live"><span>Live photo</span></label>
+          <input type="radio" name="skyPhoto" id="photo-sunset" value="sunset"><label for="photo-sunset"><span>Sunset</span></label>
+          <input type="radio" name="skyPhoto" id="photo-stars" value="stars"><label for="photo-stars"><span>Stars</span></label>
         </div>
-        <p class="helpline">Winter snow, spring blossoms, a brighter summer Milky Way, autumn leaves. Astronomical: the equinoxes and solstices (about 20 Mar, 21 Jun, 23 Sep, 21 Dec). Meteorological: 1 Mar, 1 Jun, 1 Sep, 1 Dec.</p>
       </fieldset>
       <!-- v78 (user): clock styles; the time, the chips and the eye can be moved on the Earth -->
       <fieldset>
@@ -1058,34 +1111,11 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
           <input type="radio" name="clockStyle" id="cs-glass" value="glass"><label for="cs-glass">Glass</label>
           <input type="radio" name="clockStyle" id="cs-soft" value="soft"><label for="cs-soft">Soft</label>
         </div>
-        <p class="helpline">On the Earth, hold the time, the chips or the eye for a moment, then drag it: it snaps to the top, under the time or the bottom.</p>
+        <p class="helpline">On the Earth, hold the time, the chips or the eye for a moment, then drag it. The eye stays where you let go.</p>
         <button type="button" class="btn" id="placesBack">Put the time, chips and eye back</button>
       </fieldset>
       <!-- v76 (user): the screen picker at the bottom only when wanted -->
-      <fieldset>
-        <legend>Change screen from the bottom</legend>
-        <div class="seg">
-          <input type="radio" name="strip" id="sp-off" value="off"><label for="sp-off">Off</label>
-          <input type="radio" name="strip" id="sp-on" value="on"><label for="sp-on">On</label>
-        </div>
-        <p class="helpline">On: ‹ Dial › and dots at the bottom; slide them to change the Sun or Moon screen. Off: the screen stays as it is; change it here in Settings.</p>
-      </fieldset>
       <!-- v87 (user): sound for the hidden fly-through -->
-      <fieldset>
-        <legend>Fly home sound</legend>
-        <div class="seg">
-          <input type="radio" name="flySound" id="fs-off" value="off"><label for="fs-off">Off</label>
-          <input type="radio" name="flySound" id="fs-on" value="on"><label for="fs-on">Riff</label>
-          <input type="radio" name="flySound" id="fs-own" value="own"><label for="fs-own">My sound</label>
-        </div>
-        <button type="button" class="btn" id="flyPick">Choose a sound file</button>
-        <p class="helpline" id="flyPickLine">Riff: the flight's own guitar riff. My sound: a sound file from your phone; it stays on your phone.</p>
-        <div class="seg">
-          <input type="radio" name="flySharp" id="fsh-off" value="off"><label for="fsh-off">Natural</label>
-          <input type="radio" name="flySharp" id="fsh-on" value="on"><label for="fsh-on">Sharpen</label>
-        </div>
-        <p class="helpline">Sharpen makes My sound clearer while it plays. Your file does not change.</p>
-      </fieldset>
       <!-- the old pickers: hidden, still the source of truth for the radios (pairs, sun screen, sun style, moon look) -->
       <div id="oldPickers" hidden>
       <!-- v34: Screen style pairs: each sun screen has a moon partner with the same name -->
@@ -1171,22 +1201,14 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         </div>
       </fieldset>
       </div>
-      <div class="psec">Mix and match</div>
-      <details class="more grp" id="grpSky">
-      <summary>Sky &amp; place <span class="sum" id="sumSky"></span></summary>
-      <fieldset>
-        <legend>Sky</legend>
-        <div class="seg">
-          <input type="radio" name="skyPhoto" id="photo-clear" value="clear"><label for="photo-clear">Drawn: clear</label>
-          <input type="radio" name="skyPhoto" id="photo-off" value="off"><label for="photo-off">Drawn: clouds</label>
-          <input type="radio" name="skyPhoto" id="photo-live" value="live"><label for="photo-live">Live photo</label>
-          <input type="radio" name="skyPhoto" id="photo-sunset" value="sunset"><label for="photo-sunset">Sunset photo</label>
-          <input type="radio" name="skyPhoto" id="photo-stars" value="stars"><label for="photo-stars">Real stars</label>
-        </div>
-        <p class="helpline">Live photo: dawn, day, sunset, blue hour or night photo, matching the real sun in Vienna now. With Real weather on, overcast, rain, snow, fog and thunderstorm photos show too.</p>
-      </fieldset>
+      <div class="psec">More options</div>
+      <!-- v97 (user, tried on the real menu): the visual picks stay above; the rest in 5 coloured groups, one open at a time. -->
+      <div class="ngs" id="ngHost">
+      <details class="ng ng-gold" id="grpPlace">
+        <summary><span class="ngt"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg></span><span class="ngh"><span class="ngn">Time and place</span><span class="ngv" id="sumPlace"></span></span></summary>
       <fieldset>
         <legend>Location</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg></span><span><b>Location</b><small>Where the sun and moon are worked out for</small></span></div>
         <div class="seg">
           <input type="radio" name="loc" id="loc-fixed" value="fixed"><label for="loc-fixed">Vienna</label>
           <input type="radio" name="loc" id="loc-gps" value="gps"><label for="loc-gps">My location</label>
@@ -1194,23 +1216,8 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         <p class="helpline" id="locLine">Sun, moon, weather and the Earth follow this place. My location asks the phone once each time the app opens; the city name comes from a list inside the app (GeoNames, 50,000+ people), nothing is sent.</p>
       </fieldset>
       <fieldset>
-        <legend>Weather</legend>
-        <div class="seg">
-          <input type="radio" name="weather" id="wx-off" value="off"><label for="wx-off">Off</label>
-          <input type="radio" name="weather" id="wx-real" value="real"><label for="wx-real">Real weather</label>
-        </div>
-        <p id="wxLine" class="helpline"></p>
-      </fieldset>
-      <fieldset>
-        <legend>Sun position</legend>
-        <div class="seg">
-          <input type="radio" name="liveSun" id="ls-off" value="off"><label for="ls-off">Fixed</label>
-          <input type="radio" name="liveSun" id="ls-on" value="on"><label for="ls-on">Real sun</label>
-        </div>
-        <p id="liveLine" class="helpline"></p>
-      </fieldset>
-      <fieldset>
         <legend>Time of day</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.2 2"/></svg></span><span><b>Time of day</b><small>Real time, or try another</small></span></div>
         <div class="seg">
           <input type="radio" name="sky" id="sky-clock" value="clock"><label for="sky-clock">Follow the clock</label>
           <input type="radio" name="sky" id="sky-preview" value="preview"><label for="sky-preview">Pick a time</label>
@@ -1224,41 +1231,74 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
         <button type="button" class="btn" id="playDay">Play a day in 20 seconds</button>
       </fieldset>
       <fieldset>
+        <legend>Sun position</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg></span><span><b>Sun position</b><small>Where the sun sits on the Sun screen</small></span></div>
+        <div class="seg">
+          <input type="radio" name="liveSun" id="ls-off" value="off"><label for="ls-off">Fixed</label>
+          <input type="radio" name="liveSun" id="ls-on" value="on"><label for="ls-on">Real sun</label>
+        </div>
+        <p id="liveLine" class="helpline"></p>
+      </fieldset>
+      <fieldset>
         <legend>Sun sets behind the hills</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19l6-9 4 6 3-4 5 7z"/></svg></span><span><b>Sunset behind the hills</b><small>The dial sinks about an hour before sunset</small></span></div>
         <div class="seg">
           <input type="radio" name="sunSet" id="ss-off" value="off"><label for="ss-off">Off</label>
           <input type="radio" name="sunSet" id="ss-on" value="on"><label for="ss-on">On</label>
         </div>
-        <p class="helpline">Sun dial and Sun ring: about an hour before sunset the sun sinks behind the hills, and the ring tilts so the apps stay above it. At night it waits under the hills and rises in the morning. Real sun height for Vienna (Pick a time works too).</p>
+      </fieldset>
+      <fieldset>
+        <legend>Moon phase</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg></span><span><b>Moon phase</b><small>Today's real moon, or a fixed one</small></span></div>
+        <div class="seg">
+          <input type="radio" name="moonPhase" id="mp-real" value="real"><label for="mp-real">Real (today)</label>
+          <input type="radio" name="moonPhase" id="mp-fixed" value="fixed"><label for="mp-fixed">Fixed</label>
+        </div>
+        <p id="moonLine" class="helpline"></p>
+      </fieldset>
+      <fieldset>
+        <legend>Seasons</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15"/><path d="M5 19l8-8"/></svg></span><span><b>Seasons</b><small>Snow, blossoms and leaves by the date</small></span></div>
+        <div class="seg">
+          <input type="radio" name="seasons" id="se-off" value="off"><label for="se-off">Off</label>
+          <input type="radio" name="seasons" id="se-astro" value="astro"><label for="se-astro">Astronomical</label>
+          <input type="radio" name="seasons" id="se-meteo" value="meteo"><label for="se-meteo">Meteorological</label>
+        </div>
       </fieldset>
       </details>
-      <details class="more grp" id="grpFeel">
-      <summary>Start &amp; feel <span class="sum" id="sumFeel"></span></summary>
+      <details class="ng ng-blue" id="grpEarth">
+        <summary><span class="ngt"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 10.2 4 4 0 0 1 17.5 18z"/></svg></span><span class="ngh"><span class="ngn">Earth and sky</span><span class="ngv" id="sumEarth"></span></span></summary>
       <fieldset>
-        <legend>Start screen</legend>
+        <legend>Real clouds</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 10.2 4 4 0 0 1 17.5 18z"/></svg></span><span><b>Real clouds</b><small>Yesterday's clouds from NASA, about 0.5 MB a day</small></span></div>
         <div class="seg">
-          <input type="radio" name="startScreen" id="ss-planet" value="planet"><label for="ss-planet">Earth (planet)</label>
-          <input type="radio" name="startScreen" id="ss-sun" value="sun"><label for="ss-sun">Sun dial</label>
-        </div>
-        <p class="helpline">Earth: the app opens with the big clock and the real Earth; swipe up for the sun.</p>
-      </fieldset>
-      <fieldset>
-        <legend>Menus</legend>
-        <div class="seg">
-          <input type="radio" name="mode" id="mode-two" value="two"><label for="mode-two">Sun + moon</label>
-          <input type="radio" name="mode" id="mode-one" value="one"><label for="mode-one">One menu</label>
+          <input type="radio" name="realClouds" id="rc-on" value="on"><label for="rc-on">On</label>
+          <input type="radio" name="realClouds" id="rc-off" value="off"><label for="rc-off">Off</label>
         </div>
       </fieldset>
       <fieldset>
-        <legend>Charging mode</legend>
+        <legend>Weather</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 6.2 4 4 0 0 1 17.5 14z"/><path d="M9 18l-1 2.5M13 18l-1 2.5M17 18l-1 2.5"/></svg></span><span><b>Weather</b><small>Real rain, snow and fog in the sky</small></span></div>
         <div class="seg">
-          <input type="radio" name="chargeMode" id="cm-auto" value="auto"><label for="cm-auto">On when charging</label>
-          <input type="radio" name="chargeMode" id="cm-off" value="off"><label for="cm-off">Off</label>
+          <input type="radio" name="weather" id="wx-off" value="off"><label for="wx-off">Off</label>
+          <input type="radio" name="weather" id="wx-real" value="real"><label for="wx-real">Real weather</label>
         </div>
-        <p class="helpline">The Earth screen becomes a calm clock and the screen stays on. Double-tap the clock to start or stop it by hand (some browsers, like Brave, do not tell if the phone is charging).</p>
+        <p id="wxLine" class="helpline"></p>
       </fieldset>
+      <fieldset>
+        <legend>Notes on the Earth</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="3"/><path d="M9 17l3 3 3-3M8 10h8"/></svg></span><span><b>Notes</b><small>One short note, only when it matters</small></span></div>
+        <div class="seg">
+          <input type="radio" name="notes" id="notes-on" value="on"><label for="notes-on">On</label>
+          <input type="radio" name="notes" id="notes-off" value="off"><label for="notes-off">Off</label>
+        </div>
+      </fieldset>
+      </details>
+      <details class="ng ng-pink" id="grpSound">
+        <summary><span class="ngt"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span><span class="ngh"><span class="ngn">Sound and alerts</span><span class="ngv" id="sumSound"></span></span></summary>
       <fieldset>
         <legend>Vibration</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 9v6M20 9v6"/></svg></span><span><b>Vibration</b><small>The small buzz on the dial and buttons</small></span></div>
         <div class="seg">
           <input type="radio" name="haptics" id="hap-soft" value="soft"><label for="hap-soft">Soft</label>
           <input type="radio" name="haptics" id="hap-strong" value="strong"><label for="hap-strong">Strong</label>
@@ -1267,67 +1307,93 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
       </fieldset>
       <fieldset>
         <legend>Sound</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 7a7.5 7.5 0 0 1 0 10"/></svg></span><span><b>Sound</b><small>Soft ticks on the dial</small></span></div>
         <div class="seg">
           <input type="radio" name="sound" id="snd-off" value="off"><label for="snd-off">Off</label>
           <input type="radio" name="sound" id="snd-on" value="on"><label for="snd-on">Soft ticks</label>
         </div>
       </fieldset>
-      <fieldset>
-        <legend>Effects</legend>
-        <div class="seg">
-          <input type="radio" name="fx" id="fx-fancy" value="fancy"><label for="fx-fancy">Fancy</label>
-          <input type="radio" name="fx" id="fx-calm" value="calm"><label for="fx-calm">Calm (saves battery)</label>
-        </div>
-      </fieldset>
-      </details>
-      <details class="more grp" id="moreSettings">
-      <summary>More <span class="sum" id="sumMore"></span></summary>
-      <fieldset>
-        <legend>Moon phase</legend>
-        <div class="seg">
-          <input type="radio" name="moonPhase" id="mp-real" value="real"><label for="mp-real">Real (today)</label>
-          <input type="radio" name="moonPhase" id="mp-fixed" value="fixed"><label for="mp-fixed">Fixed</label>
-        </div>
-        <p id="moonLine" class="helpline"></p>
-      </fieldset>
-      <fieldset>
-        <legend>Notes on the Earth</legend>
-        <div class="seg">
-          <input type="radio" name="notes" id="notes-on" value="on"><label for="notes-on">On</label>
-          <input type="radio" name="notes" id="notes-off" value="off"><label for="notes-off">Off</label>
-        </div>
-        <p class="helpline">One short note under the chips, only when it matters: rain soon, strong wind, ice, battery low, something in the sky tonight, golden hour, high UV, longer days.</p>
-      </fieldset>
-      <!-- v96 (user) -->
-      <fieldset>
-        <legend>Real clouds</legend>
-        <div class="seg">
-          <input type="radio" name="realClouds" id="rc-on" value="on"><label for="rc-on">On</label>
-          <input type="radio" name="realClouds" id="rc-off" value="off"><label for="rc-off">Off</label>
-        </div>
-        <p class="helpline">Yesterday's clouds from NASA's satellite, at most one download a day, about 0.5 MB. NASA sees only that a picture was asked for. Off: the same clouds every day.</p>
-      </fieldset>
-      <!-- v95 (user): phone app only -->
       <fieldset id="skyAlertBox" hidden>
         <legend>Sky alerts</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span><span><b>Sky alerts</b><small>Northern lights and eclipses (dates for Vienna)</small></span></div>
         <div class="seg">
           <input type="radio" name="skyAlerts" id="sa-off" value="off"><label for="sa-off">Off</label>
           <input type="radio" name="skyAlerts" id="sa-on" value="on"><label for="sa-on">On</label>
         </div>
-        <p class="helpline">A notification before an eclipse and when northern lights may reach you. The eclipse dates are for Vienna. It asks NOAA for the forecast about every 3 hours; nothing about you is sent.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Fly home sound</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 3 4 7 3 12H9c-1-5 0-9 3-12z"/><path d="M9 15l-3 4M15 15l3 4M12 15v5"/></svg></span><span><b>Flight sound</b><small>Music for the hidden flight</small></span></div>
+        <div class="seg">
+          <input type="radio" name="flySound" id="fs-off" value="off"><label for="fs-off">Off</label>
+          <input type="radio" name="flySound" id="fs-on" value="on"><label for="fs-on">Riff</label>
+          <input type="radio" name="flySound" id="fs-own" value="own"><label for="fs-own">My sound</label>
+        </div>
+        <button type="button" class="btn" id="flyPick">Choose a sound file</button>
+        <p class="helpline" id="flyPickLine">Riff: the flight's own guitar riff. My sound: a sound file from your phone; it stays on your phone.</p>
+        <div class="seg">
+          <input type="radio" name="flySharp" id="fsh-off" value="off"><label for="fsh-off">Natural</label>
+          <input type="radio" name="flySharp" id="fsh-on" value="on"><label for="fsh-on">Sharpen</label>
+        </div>
       </fieldset>
       <fieldset>
         <legend>Tips</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 15a6 6 0 1 1 7 0c-.8.6-1.2 1.2-1.2 2.5h-4.6c0-1.3-.4-1.9-1.2-2.5z"/><path d="M10 21h4"/></svg></span><span><b>Tips</b><small>Short hints, each shown twice at most</small></span></div>
         <div class="seg">
           <input type="radio" name="tips" id="tips-on" value="on"><label for="tips-on">On</label>
           <input type="radio" name="tips" id="tips-off" value="off"><label for="tips-off">Off</label>
         </div>
-        <p class="helpline">Short one-time tips (hold the sun, turn the dial, pin to the bar, sunset). Each shows twice at most.</p>
+        <button type="button" class="btn" id="tipsAgain">Show all tips again</button>
       </fieldset>
-      <button type="button" class="btn" id="tipsAgain">Show all tips again</button>
-      <button type="button" class="btn" id="speedBtn">Speed check (15 s)</button>
-      <p class="helpline">Shows how often the screen is drawn and how long one drawing takes, top left, for 15 s. Try each screen; send me the numbers.</p>
       </details>
+      <details class="ng ng-violet" id="grpScreens">
+        <summary><span class="ngt"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="2.3"/><circle cx="17" cy="7" r="2.3"/><circle cx="7" cy="17" r="2.3"/><circle cx="17" cy="17" r="2.3"/></svg></span><span class="ngh"><span class="ngn">Screens</span><span class="ngv" id="sumScreens"></span></span></summary>
+      <fieldset>
+        <legend>Start screen</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg></span><span><b>Start screen</b><small>What opens first</small></span></div>
+        <div class="seg">
+          <input type="radio" name="startScreen" id="ss-planet" value="planet"><label for="ss-planet">Earth (planet)</label>
+          <input type="radio" name="startScreen" id="ss-sun" value="sun"><label for="ss-sun">Sun dial</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Menus</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="2.3"/><circle cx="17" cy="7" r="2.3"/><circle cx="7" cy="17" r="2.3"/><circle cx="17" cy="17" r="2.3"/></svg></span><span><b>Menus</b><small>Sun and moon, or one menu</small></span></div>
+        <div class="seg">
+          <input type="radio" name="mode" id="mode-two" value="two"><label for="mode-two">Sun + moon</label>
+          <input type="radio" name="mode" id="mode-one" value="one"><label for="mode-one">One menu</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Change screen from the bottom</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg></span><span><b>Bottom strip</b><small>Slide at the bottom to change the screen style</small></span></div>
+        <div class="seg">
+          <input type="radio" name="strip" id="sp-off" value="off"><label for="sp-off">Off</label>
+          <input type="radio" name="strip" id="sp-on" value="on"><label for="sp-on">On</label>
+        </div>
+      </fieldset>
+      </details>
+      <details class="ng ng-green" id="grpBattery">
+        <summary><span class="ngt"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="16" height="9" rx="2.5"/><path d="M21 11v3M7 11v3M10.5 11v3"/></svg></span><span class="ngh"><span class="ngn">Battery</span><span class="ngv" id="sumBattery"></span></span></summary>
+      <fieldset>
+        <legend>Effects</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/></svg></span><span><b>Effects</b><small>Calm saves battery</small></span></div>
+        <div class="seg">
+          <input type="radio" name="fx" id="fx-fancy" value="fancy"><label for="fx-fancy">Fancy</label>
+          <input type="radio" name="fx" id="fx-calm" value="calm"><label for="fx-calm">Calm (saves battery)</label>
+        </div>
+        <button type="button" class="btn" id="speedBtn">Speed check (15 s)</button>
+      </fieldset>
+      <fieldset>
+        <legend>Charging mode</legend>
+        <div class="ngo"><span class="ngi"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0zM12 16v5"/></svg></span><span><b>Charging clock</b><small>A big clock while the phone charges</small></span></div>
+        <div class="seg">
+          <input type="radio" name="chargeMode" id="cm-auto" value="auto"><label for="cm-auto">On when charging</label>
+          <input type="radio" name="chargeMode" id="cm-off" value="off"><label for="cm-off">Off</label>
+        </div>
+      </fieldset>
+      </details>
+      </div>
       <button type="button" class="btn" id="lookEditBtn2">Edit look (tilt, turn, size, place)</button>
       <button type="button" class="btn primary" id="setDone" data-autofocus>Done</button>
     </form>
@@ -1357,7 +1423,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v96';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v97';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -7057,7 +7123,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v96 · Real clouds on the Earth: yesterday\'s from NASA\'s satellite. v95 · Opens faster, with no freeze when the sharp Earth arrives. The flight keeps the pictures of your city on the phone, so it works offline. One tap on the empty sky shows tonight. New in Settings: Sky alerts. v94 · The hidden flight is a real 3D scene with one fluid motion: planets leave by going out of sight, real rocks in the belt, true sizes, and a much sharper ending over your city. Hold the eye on the Earth and drag it anywhere. Held sideways, the four chips sit in a neat block. v93 · The Moon is lit from the real direction of the Sun. New layout for a phone held sideways. v92 · A flick on the Sun ring no longer seems to spin backward. The map says the city (Vienna), not the district. My sound for the flight can be sharpened. v90 · My location stays fresh (at most 10 min old, with a second try by GPS). The hidden flight: truer sizes, a slow wide turn, an asteroid belt, a steady zoom into your city, your own sound if you like.\nv89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v97 · New Settings: the same pictures to pick your look, now with the sky too; everything else in clear coloured groups. v96 · Real clouds on the Earth: yesterday\'s from NASA\'s satellite. v95 · Opens faster, with no freeze when the sharp Earth arrives. The flight keeps the pictures of your city on the phone, so it works offline. One tap on the empty sky shows tonight. New in Settings: Sky alerts. v94 · The hidden flight is a real 3D scene with one fluid motion: planets leave by going out of sight, real rocks in the belt, true sizes, and a much sharper ending over your city. Hold the eye on the Earth and drag it anywhere. Held sideways, the four chips sit in a neat block. v93 · The Moon is lit from the real direction of the Sun. New layout for a phone held sideways. v92 · A flick on the Sun ring no longer seems to spin backward. The map says the city (Vienna), not the district. My sound for the flight can be sharpened. v90 · My location stays fresh (at most 10 min old, with a second try by GPS). The hidden flight: truer sizes, a slow wide turn, an asteroid belt, a steady zoom into your city, your own sound if you like.\nv89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -7404,7 +7470,7 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   function paRender() {
     const q = $('paFind').value.trim().toLowerCase(), box = $('paList');
     box.textContent = '';
-    phoneList.filter((x) => !q || x.l.toLowerCase().indexOf(q) !== -1).forEach((x) => {
+    (phoneList || []).filter((x) => !q || x.l.toLowerCase().indexOf(q) !== -1).forEach((x) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'paapp';
       const im = document.createElement('img'); im.alt = ''; im.loading = 'lazy'; im.src = 'appicon/' + x.p + '.png';
       const nm = document.createElement('span'); nm.textContent = x.l;
@@ -7773,9 +7839,13 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
     $('md-glow').closest('fieldset').hidden = sh.moon !== 'moondial' && sh.moon !== 'dial3d';
     // what each group has now
     const lab = (name) => { const r = Array.prototype.find.call(form.elements[name], (x) => x.checked); const l = r && form.querySelector('label[for="' + r.id + '"]'); return l ? l.textContent.trim() : ''; };
-    $('sumSky').textContent = [lab('skyPhoto'), S.loc === 'gps' ? (CITY || 'my location') : 'Vienna', S.sunSet === 'on' ? 'sunset on' : ''].filter(Boolean).join(' · ');
-    $('sumFeel').textContent = [lab('startScreen'), lab('haptics'), S.sound === 'on' ? 'sound on' : 'sound off'].filter(Boolean).join(' · ');
-    $('sumMore').textContent = ['moon ' + lab('moonPhase').toLowerCase(), 'tips ' + (S.tips === 'on' ? 'on' : 'off')].join(' · ');
+    // v97: your choices in plain words on each group
+    const onOff = (w, v) => w + (v ? ' on' : ' off');
+    $('sumPlace').textContent = [S.loc === 'gps' ? (CITY || 'My location') : 'Vienna', S.sky === 'clock' ? 'Real time' : S.sky === 'night' ? 'Always night' : 'Picked time', S.moonPhase === 'real' ? 'Real moon' : 'Fixed moon'].join(' · ');
+    $('sumEarth').textContent = [onOff('Clouds', S.realClouds === 'on'), onOff('Weather', S.weather !== 'off'), onOff('Notes', S.notes === 'on')].join(' · ');
+    $('sumSound').textContent = [lab('haptics') === 'Off' ? 'No buzz' : lab('haptics') + ' buzz', onOff('Ticks', S.sound === 'on')].concat(window.SunAndroid ? [onOff('Alerts', S.skyAlerts === 'on')] : []).join(' · ');
+    $('sumScreens').textContent = [S.startScreen === 'planet' ? 'Starts on the Earth' : 'Starts on the Sun', S.mode === 'one' ? 'One menu' : 'Sun + moon'].join(' · ');
+    $('sumBattery').textContent = [S.fx === 'fancy' ? 'Fancy effects' : 'Calm effects', S.chargeMode === 'off' ? 'No charging clock' : 'Charging clock'].join(' · ');
     requestAnimationFrame(() => { pvDots('pvars', 'pvarsDots'); pvDots('pmoons', 'pmoonsDots'); pvDots('pstyles', 'pstylesDots'); });
   }
   // + Edit look: the editor for the screen you came from (sun or moon)
@@ -7825,6 +7895,10 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
   }
   $('speedBtn').addEventListener('click', () => { hideOverlay($('settings')); speed.start(); });  // v53
   $('tipsAgain').addEventListener('click', () => { S.visits = 0; S.hints = {}; S.tips = 'on'; showTips = true; hintsDone = {}; save(); fillForm(); kick(); toast('All tips show again.'); });
+  // v97: one group open at a time, so you do not get lost in a long scroll
+  document.querySelectorAll('#ngHost > details').forEach((d) => d.addEventListener('toggle', () => {
+    if (d.open) document.querySelectorAll('#ngHost > details').forEach((o) => { if (o !== d) o.open = false; });
+  }));
   function openSettings() { st.peek = true; st.peekFrom = st.screen; fillForm(); showOverlay($('settings')); renderPicks(); updateLift(); }
   function peekScreen(which) {
     if (S.mode === 'one' || st.screen === which) return;
