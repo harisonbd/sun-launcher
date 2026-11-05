@@ -129,6 +129,7 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 /* soft dark fade behind the app name and hint, so text stays readable on the bright day photo */
 .skylive::after { content: ''; position: absolute; left: 0; right: 0; top: 40%; bottom: 0; background: linear-gradient(180deg, rgba(10, 15, 31, 0) 0%, rgba(10, 15, 31, 0.38) 30%, rgba(10, 15, 31, 0.2) 100%); }
 /* Neon style backgrounds (Settings > Sun > Neon style) */
+#app.mm-synth #moonScreen { background: linear-gradient(180deg, #050a24 0%, #101a56 38%, #33218a 56%, #0a0a2e 100%); }
 #app.nz-synth #sunScreen { background: linear-gradient(180deg, #0d0221 0%, #2b0a4a 38%, #6a1b6e 52%, #1a0533 100%); }
 /* Swap: the list sits on the bright sun, so names get a dark outline to stay readable (user, 22 Oct) */
 #app.moon-real .item, #app.moon-real .glabel { text-shadow: 0 0 2px rgba(10, 6, 16, 0.95), 0 1px 4px rgba(10, 6, 16, 0.9), 0 0 14px rgba(10, 6, 16, 0.75); }
@@ -635,8 +636,6 @@ fieldset.flash { animation: flash 1.6s ease; border-radius: 14px; }
 #planetScreen.time-bottom .pnote, #planetScreen.time-bottom .pnote.above, #planetScreen.time-bottom .ptimer, #planetScreen.time-bottom .ptimer.above { top: calc(var(--st) + 72px); bottom: auto; }
 #planetScreen.time-bottom:has(.pchips.above) .pnote, #planetScreen.time-bottom:has(.pchips.above) .ptimer { top: calc(var(--st) + 118px); }
 #app:has(#planetScreen.eye-bottom:not(.away):not([hidden])) .watchbtn { top: auto; bottom: calc(26px + var(--sb)); }
-/* v94: the eye where it was dragged, always clear of the phone's bars */
-#app:has(#planetScreen.eye-free:not(.away):not([hidden])) .watchbtn { bottom: auto; top: clamp(calc(4px + var(--st)), var(--eye-y), calc(100% - 52px - var(--sb))); left: clamp(max(4px, env(safe-area-inset-left, 0px)), var(--eye-x), calc(100% - 52px - env(safe-area-inset-right, 0px))); }
 .watchbtn.lift { box-shadow: 0 0 0 2px var(--sun); transition: none; }
 .dzones { position: absolute; inset: 0; pointer-events: none; display: none; z-index: 1; }
 .dzones.on { display: block; }
@@ -802,10 +801,14 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
 /* v97: sideways there is no free room for a live preview above the sheet, so Settings is solid enough to read */
 #app.land #settingsForm { background: rgba(22, 28, 44, .94); }
 
-/* v98: the eye's frame, shown while it is held */
-.eyeframe { position: absolute; inset: 0; pointer-events: none; z-index: 859; }
-.eyeframe[hidden] { display: none; }
-.eyeframe i { position: absolute; border-radius: 3px; background: #FFD84D; box-shadow: 0 0 10px rgba(255, 216, 77, 0.8); }
+/* v107 (user): two plain rows: Model and Screen, each a matching sun and moon */
+.pcardx { flex: 0 0 auto; scroll-snap-align: start; border: none; background: none; color: var(--ink-2); font-size: 12px; text-align: center; padding: 0; cursor: pointer; }
+.pcardx .duo { display: flex; gap: 3px; justify-content: center; margin-bottom: 4px; padding: 2px; border: 2px solid transparent; border-radius: 16px; }
+.pcardx .duo img { display: block; object-fit: cover; }
+.pcardx.model .duo img { width: 50px; height: 50px; border-radius: 25px; }
+.pcardx.screen .duo img { width: 48px; height: 104px; border-radius: 10px; }
+.pcardx.on { color: var(--ink); font-weight: 700; }
+.pcardx.on .duo { border-color: var(--sun); }
 </style>
 
 <div id="app">
@@ -902,7 +905,6 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   </div>
 
   <!-- v46: Watch (user): hide every button, app and text and just look at the sky; tap anywhere to come back -->
-  <div id="eyeFrame" class="eyeframe" aria-hidden="true" hidden></div>
   <button type="button" class="watchbtn" id="watchBtn" aria-label="Watch: hide the buttons and apps">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
   </button>
@@ -1035,36 +1037,16 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         <p class="helpline" id="looksMoonHelp" hidden></p>
         <div class="looks"><button type="button" class="lookchip add" id="lookEditBtn">+ Edit look</button></div>
       </fieldset>
-      <fieldset id="screenSet">
+      <fieldset id="modelRowSet">
+        <legend>Model <span class="leg2">sun + moon</span></legend>
+        <div class="swipe" id="pmodelRow"></div>
+        <div class="pdots" id="pmodelDots"></div>
+      </fieldset>
+      <fieldset id="screenRowSet">
         <legend>Screen <span class="leg2">sun + moon</span></legend>
-        <div class="pcards" id="pcards"></div>
-        <label class="switchrow"><input type="checkbox" id="pairLink" name="pairLink"> Same style on both screens</label>
-        <div class="psec" id="pvarTitle"></div>
-        <div class="swipe" id="pvars"></div>
-        <div class="pdots" id="pvarsDots"></div>
-        <div id="pmoonWrap" hidden>
-          <div class="psec">Moon screen</div>
-          <div class="swipe" id="pmoons"></div>
-          <div class="pdots" id="pmoonsDots"></div>
-        </div>
-      </fieldset>
-      <fieldset id="styleSet">
-        <legend>Sun style</legend>
-        <div class="swipe" id="pstyles"></div>
-        <div class="pdots" id="pstylesDots"></div>
-        <p class="helpline" id="pstyleNote" hidden></p>
-      </fieldset>
-      <fieldset id="modelSet">
-        <legend>Moon model</legend>
-        <div class="swipe" id="pmodels"></div>
-        <div class="pdots" id="pmodelsDots"></div>
-      </fieldset>
-      <fieldset id="modelOptions">
-        <legend>Real moon shadow on the models</legend>
-        <div class="seg">
-          <input type="radio" name="modelPhase" id="mp-on" value="on"><label for="mp-on">On</label>
-          <input type="radio" name="modelPhase" id="mp-off" value="off"><label for="mp-off">Off</label>
-        </div>
+        <div class="swipe" id="pscreenRow"></div>
+        <div class="pdots" id="pscreenDots"></div>
+        <input type="checkbox" id="pairLink" name="pairLink" hidden>
       </fieldset>
       <fieldset id="dailySet">
         <legend>A new model every day</legend>
@@ -1136,8 +1118,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
           <input type="radio" name="clockStyle" id="cs-glass" value="glass"><label for="cs-glass">Glass</label>
           <input type="radio" name="clockStyle" id="cs-soft" value="soft"><label for="cs-soft">Soft</label>
         </div>
-        <p class="helpline">On the Earth, hold the time, the chips or the eye for a moment, then drag it. The eye moves along the yellow frame and stays where you let go.</p>
-        <button type="button" class="btn" id="placesBack">Put the time, chips and eye back</button>
+        <p class="helpline">On the Earth, hold the time or the chips for a moment, then drag them.</p>
+        <button type="button" class="btn" id="placesBack">Put the time and chips back</button>
       </fieldset>
       <!-- v76 (user): the screen picker at the bottom only when wanted -->
       <!-- v87 (user): sound for the hidden fly-through -->
@@ -1163,12 +1145,10 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
           <input type="radio" name="sunView" id="sv-ring" value="ring"><label for="sv-ring">Sun ring</label>
           <input type="radio" name="sunView" id="sv-today" value="today"><label for="sv-today">Real sun today</label>
           <input type="radio" name="sunView" id="sv-minimal" value="minimal"><label for="sv-minimal">Minimal sun</label>
-          <input type="radio" name="sunView" id="sv-clock" value="clock"><label for="sv-clock">Clock dial</label>
         </div>
         <div class="sublg">Sun by a list (was Swap)</div>
         <div class="seg">
           <input type="radio" name="sunView" id="sv-edge" value="edge"><label for="sv-edge">Big edge</label>
-          <input type="radio" name="sunView" id="sv-arc" value="arc"><label for="sv-arc">Sun glow arc</label>
           <input type="radio" name="sunView" id="sv-small" value="small"><label for="sv-small">Small</label>
           <input type="radio" name="sunView" id="sv-crescent" value="crescent"><label for="sv-crescent">Crescent</label>
         </div>
@@ -1192,7 +1172,6 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
           <div class="seg">
             <input type="radio" name="sunPick" id="sp-blackhole" value="blackhole"><label for="sp-blackhole">Black hole</label>
             <input type="radio" name="sunPick" id="sp-neon" value="neon"><label for="sp-neon">Neon</label>
-            <input type="radio" name="sunPick" id="sp-vinyl" value="vinyl"><label for="sp-vinyl">Vinyl</label>
             <input type="radio" name="sunPick" id="sp-disco" value="disco"><label for="sp-disco">Disco ball</label>
             <input type="radio" name="sunPick" id="sp-flower" value="flower"><label for="sp-flower">Sunflower</label>
           </div>
@@ -1214,13 +1193,14 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         <div class="tabpane" data-group="moon" data-tab="normal">
           <div class="seg">
             <input type="radio" name="moonLook" id="moon-dots" value="dots"><label for="moon-dots">Dots</label>
-            <input type="radio" name="moonLook" id="moon-arc" value="arc"><label for="moon-arc">Glow arc</label>
             <input type="radio" name="moonLook" id="moon-crescent" value="crescent"><label for="moon-crescent">Crescent</label>
             <input type="radio" name="moonLook" id="moon-small" value="small"><label for="moon-small">Small moon</label>
           </div>
           <div class="seg">
             <input type="radio" name="moonModel" id="mm-real" value="real"><label for="mm-real">Real moon</label>
-            <input type="radio" name="moonModel" id="mm-vinyl" value="vinyl"><label for="mm-vinyl">Vinyl</label>
+            <input type="radio" name="moonModel" id="mm-flames" value="flames"><label for="mm-flames">Flames</label>
+            <input type="radio" name="moonModel" id="mm-neon" value="neon"><label for="mm-neon">Neon</label>
+            <input type="radio" name="moonModel" id="mm-synth" value="synth"><label for="mm-synth">Synthwave</label>
             <input type="radio" name="moonModel" id="mm-disco" value="disco"><label for="mm-disco">Disco ball</label>
             <input type="radio" name="moonModel" id="mm-dandelion" value="dandelion"><label for="mm-dandelion">Dandelion</label>
             <input type="radio" name="moonModel" id="mm-eclipse" value="eclipse"><label for="mm-eclipse">Eclipse</label>
@@ -1230,7 +1210,6 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
           <div class="seg">
             <input type="radio" name="moonLook" id="moon-phase" value="phase"><label for="moon-phase">Real moon phase</label>
             <input type="radio" name="moonLook" id="moon-minimal" value="minimal"><label for="moon-minimal">Minimal moon</label>
-            <input type="radio" name="moonLook" id="moon-dial" value="dial"><label for="moon-dial">Clock dial</label>
             <input type="radio" name="moonLook" id="moon-moondial" value="moondial"><label for="moon-moondial">Moon dial</label>
             <input type="radio" name="moonLook" id="moon-dial3d" value="dial3d"><label for="moon-dial3d">Moon 3D dial</label>
           </div>
@@ -1459,7 +1438,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v106';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v107';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1537,7 +1516,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { dailyModel: 'off', dailyDay: '', modelPhase: 'on', moonModel: 'real', mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'clear', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'off', useWeek: {}, seasonsOff74: 0, strip: 'off', clockStyle: 'thin', timePos: 'top', eyePos: 'top', homePages: null, homeDock: null, flySound: 'off', flySharp: 'on', eyeAt: {}, skyAlerts: 'off', realClouds: 'on', cloudDay: '', cloudTry: 0 };
+  const S = { dailyModel: 'off', dailyDay: '', moonModel: 'real', mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'clear', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'off', useWeek: {}, seasonsOff74: 0, strip: 'off', clockStyle: 'thin', timePos: 'top', eyePos: 'top', homePages: null, homeDock: null, flySound: 'off', flySharp: 'on', eyeAt: {}, skyAlerts: 'off', realClouds: 'on', cloudDay: '', cloudTry: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -1547,7 +1526,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (saved) Object.keys(S).forEach((k) => { if (k in saved) S[k] = saved[k]; });
   } catch (e) {}
   if (S.sunLook === 'pixel') S.rayStyle = 'glow';  // v105: Pixel removed (user)
-  if (['rays', 'neon', 'blackhole', 'vinyl', 'disco', 'flower'].indexOf(S.sunLook) === -1) S.sunLook = 'rays';  // Plasma (v39), Eclipse (v54) -> rays
+  if (S.sunLook === 'vinyl') S.rayStyle = 'glow';  // v107: Vinyl removed (user)
+  if (['rays', 'neon', 'blackhole', 'disco', 'flower'].indexOf(S.sunLook) === -1) S.sunLook = 'rays';  // Plasma (v39), Eclipse (v54) -> rays
   if (S.theme !== 'auto' && S.theme !== 'custom' && !THEMES[S.theme]) S.theme = 'auto';
   // The simpler menu has only "Follow the time" and "Pick myself": a saved fixed theme becomes Pick myself with its looks.
   if (S.theme !== 'auto' && S.theme !== 'custom') {
@@ -1562,12 +1542,12 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   if (['above', 'below', 'bottom'].indexOf(S.chipsPos) === -1) S.chipsPos = 'below';  // v66: chip row under the time (or above the date); v78: or at the bottom
   // v78 (user): hold and drag the time (top/bottom) and the eye (top/bottom) on the Earth; 5 clock styles
   if (S.timePos !== 'bottom') S.timePos = 'top';
-  if (S.eyePos !== 'bottom') S.eyePos = 'top';
+  S.eyePos = 'top';  // v107: one fixed place on every screen
   if (S.realClouds !== 'off') S.realClouds = 'on';  // v96: yesterday's real clouds on the Earth
   if (typeof S.cloudDay !== 'string') S.cloudDay = '';
   if (!isFinite(S.cloudTry)) S.cloudTry = 0;
   if (S.skyAlerts !== 'on') S.skyAlerts = 'off';  // v95: notifications for northern lights and eclipses (phone app)
-  if (!S.eyeAt || typeof S.eyeAt !== 'object') S.eyeAt = {};  // v94: where the eye was dragged: p upright, l sideways, as parts of the screen
+  S.eyeAt = {};  // v94: where the eye was dragged: p upright, l sideways, as parts of the screen
   if (['thin', 'bold', 'analog', 'glass', 'soft'].indexOf(S.clockStyle) === -1) S.clockStyle = 'thin';
   if (S.notes !== 'off') S.notes = 'on';
   if (['off', 'on', 'own'].indexOf(S.flySound) === -1) S.flySound = 'off';  // v87: sound for the fly-through; v90: 'own' = a file you picked
@@ -1596,9 +1576,13 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   if (NEON_STYLES.indexOf(S.neonStyle) === -1) S.neonStyle = 'minimal';  // Sign (v39) -> Minimal
   if (S.sunView === 'orb') S.sunView = 'small';  // v39: Glow orb pair removed (user)
   if (S.moonLook === 'orb') S.moonLook = 'small';
-  if (['real', 'vinyl', 'disco', 'dandelion', 'eclipse'].indexOf(S.moonModel) === -1) S.moonModel = 'real';  // v100
+  if (['real', 'disco', 'dandelion', 'eclipse', 'flames', 'neon', 'synth'].indexOf(S.moonModel) === -1) S.moonModel = 'real';  // v100
   if (S.dailyModel !== 'on') S.dailyModel = 'off';  // v102
-  if (S.modelPhase !== 'off') S.modelPhase = 'on';  // v102
+  // v107 (user): every Sun screen has its one Moon screen, and Clock and Glow arc are gone
+  if (S.sunView === 'clock') S.sunView = 'dial';
+  if (S.sunView === 'arc') S.sunView = 'edge';
+  S.moonLook = { dial: 'dial3d', ring: 'moondial', today: 'phase', minimal: 'minimal', edge: 'dots', crescent: 'crescent', small: 'small' }[S.sunView] || 'dial3d';
+  S.pairLink = 'on';
   if (S.sunView === 'small' && S.moonLook === 'crescent' && S.pairLink !== 'off') S.moonLook = 'small';  // v98: Small was wrongly paired with the big moon
   if (S.sunList === 'orb') S.sunList = 'small';
   if (S.liveSun !== 'on') S.liveSun = 'off';
@@ -2063,7 +2047,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     const tint = stopAt(SUNT, ph, 1);
     if (key === 'custom' || !THEMES[key]) return { look: S.sunLook, color: S.sunTime ? tint : S.color, moon: S.moonLook };
     const th = THEMES[key];
-    return { look: th.look, color: th.color === 'time' ? tint : th.color, moon: th.moon };
+    return { look: th.look, color: th.color === 'time' ? tint : th.color, moon: S.moonLook };  // v107: the look may follow the time; the screen stays yours
   }
   function lookBlend(ph) {
     const tb = themeBlend(ph), ra = resolveTheme(tb.a, ph), rb = resolveTheme(tb.b, ph);
@@ -3613,7 +3597,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       }
   }
   // the Synthwave floor: the moving grid under a line. Shared by the dial and the other screens
-  function synthFloor(c, W, H, cx, hy, rt) {
+  function synthFloor(c, W, H, cx, hy, rt, col) {
+    const rgb = col || '255, 62, 165';
     const fl = c.createLinearGradient(0, hy, 0, H); fl.addColorStop(0, '#2a0845'); fl.addColorStop(1, '#07010f');
     c.fillStyle = fl; c.fillRect(0, hy, W, H - hy);
     // floor grid: all lines in one path, glow = a wide faint stroke under a thin one (no shadowBlur: it lagged on the phone, 22 Oct)
@@ -3622,12 +3607,12 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     c.beginPath();
     for (let k = 0; k < 14; k++) { const t = (k + sh) / 14, y = hy + (H - hy) * t * t; c.moveTo(0, y); c.lineTo(W, y); }
     for (let i = -10; i <= 10; i++) { c.moveTo(cx + i * W * 0.02, hy); c.lineTo(cx + i * W * 0.2, H); }
-    c.strokeStyle = 'rgba(255, 62, 165, 0.16)'; c.lineWidth = 4; c.stroke();
-    c.strokeStyle = 'rgba(255, 62, 165, 0.55)'; c.lineWidth = 1.2; c.stroke();
+    c.strokeStyle = 'rgba(' + rgb + ', 0.16)'; c.lineWidth = 4; c.stroke();
+    c.strokeStyle = 'rgba(' + rgb + ', 0.55)'; c.lineWidth = 1.2; c.stroke();
     // horizon line
     c.beginPath(); c.moveTo(0, hy); c.lineTo(W, hy);
-    c.strokeStyle = 'rgba(255, 62, 165, 0.22)'; c.lineWidth = 9; c.stroke();
-    c.strokeStyle = 'rgba(255, 62, 165, 0.9)'; c.lineWidth = 2; c.stroke();
+    c.strokeStyle = 'rgba(' + rgb + ', 0.22)'; c.lineWidth = 9; c.stroke();
+    c.strokeStyle = 'rgba(' + rgb + ', 0.9)'; c.lineWidth = 2; c.stroke();
     c.strokeStyle = 'rgba(255, 250, 245, 0.8)'; c.lineWidth = 0.8; c.stroke();
     c.restore();
   }
@@ -3745,8 +3730,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       const T = tuneOf('sun:today'), r = Math.min(W * 0.31, H * 0.145) * T.size, mx = W / 2 + T.x * W, my = H * (0.25 + T.y);
       sunAt(mx, my, r, { glow: 1, tex: 'sun4k', detail: hd ? 0.25 : 0.45 }); bodyAt.sun = { x: mx, y: my, r: r };
       // v47 (user): only on Today: the real sunspots, and loops of hot gas at the edge (more after a real CME)
-      drawSunspots(c, mx, my, r);
-      if (!reduce) plasmaLoops(c, mx, my, r, now, 1, !!(SOL && SOL.cme));
+      // v107 (user): sunspots and eruptions belong to the real sun, never on a model
+      if (look === 'rays') { drawSunspots(c, mx, my, r); if (!reduce) plasmaLoops(c, mx, my, r, now, 1, !!(SOL && SOL.cme)); }
       txt(CITY ? 'Today above ' + CITY : 'Today above you', W / 2, H * 0.43, 12, 600, muted, 'center', true);
       txt(sol.title, W / 2, H * 0.47, 28, 600, '#F5EFE3', 'center');
       txt(sol.line, W / 2, H * 0.505, 14, 400, muted, 'center');
@@ -3790,10 +3775,6 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       // v98 (user: a sun with the same size and look as the Crescent moon): the same two circles as moonGeo, the dark one over the sun
       const T = tuneOf('sun:crescent'), Ri = Math.min(W * 0.385, 150, H * 0.178) * T.size, kc = Ri / 150, cy = H * (0.5 + T.y), Ix = W * 0.77 + T.x * W, Ox = W * 0.615 + T.x * W, rO = 230 * kc, rI = 215 * kc, stepA = 14 * Math.PI / 180;
       sunAt(Ox, cy, rO, { tex: 'sun4k', detail: hd ? 0.2 : 0.4, glow: 0.8, margin: 1.15 }); bodyAt.sun = { x: Ox, y: cy, r: rO };
-      if (look === 'rays') {
-        const dk = c.createRadialGradient(Ix, cy, rI * 0.9, Ix, cy, rI * 1.01); dk.addColorStop(0, 'rgba(10, 7, 14, 0.94)'); dk.addColorStop(0.85, 'rgba(10, 7, 14, 0.88)'); dk.addColorStop(1, 'rgba(10, 7, 14, 0)');
-        c.fillStyle = dk; c.beginPath(); c.arc(Ix, cy, rI * 1.01, 0, 2 * Math.PI); c.fill();
-      }
       place((d) => {
         if (Math.abs(d) > 4.5) return null;
         const a = d * stepA;
@@ -4005,10 +3986,14 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   // the list shape of a moon look: Glow orb, Small moon and Moonset use the Dots list (v34)
   // v100: the moon of every menu screen: the chosen model, or the real moon (also while a model is being drawn, and for the tiny ones)
   function moonDraw(c, x, y, r, o) {
+    const sy = S.moonModel === 'synth';
+    if (app.classList.contains('mm-synth') !== sy) app.classList.toggle('mm-synth', sy);
+    if (sy && r >= 20) synthFloor(c, st.W, st.H, st.W / 2, st.H * 0.8, reduce ? 0 : performance.now() / 1000, '46, 242, 255');
+    // v107: the Flames moon is the real Moon, whole and lit, with its cold fire behind it
+    if (S.moonModel === 'flames' && r >= 20) { modelMoonAt(c, x, y, r, 'flames', reduce ? 0 : performance.now() / 1000, st.H); GLB.draw(c, x, y, r, { mode: 'moon', light: [0.12, 0.1, 0.98], rot: 0.2, shine: 0.1, expo: 1.3, glow: 0.2, margin: 1.06 }); return; }
     if (S.moonModel !== 'real' && r >= 20) {
-      let ph = null;  // v102: the real shadow, except on the Eclipse (it is dark already), the dandelion (user, v104: no shadow over it) and the Crescent screen (it has its own dark circle)
-      if (S.modelPhase === 'on' && S.moonModel !== 'eclipse' && S.moonModel !== 'dandelion' && currentMoon() !== 'crescent') { const L = moonViewNow().light, ln = Math.hypot(L[0], L[1]) || 1; ph = { f: moonNow().fraction, ca: L[0] / ln, sa: -L[1] / ln }; }
-      if (modelMoonAt(c, x, y, r, S.moonModel, reduce ? 0 : performance.now() / 1000, st.H, ph)) return;
+      // v107 (user): only the real moon has a dark part, so a model never gets a shadow
+      if (modelMoonAt(c, x, y, r, S.moonModel, reduce ? 0 : performance.now() / 1000, st.H)) return;
     }
     GLB.draw(c, x, y, r, o);
   }
@@ -4135,10 +4120,6 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (look === 'crescent' && GLB.ok) {
       const cosA = clamp(((G.Ix - G.rI) - (G.Ox - G.rO)) / G.rO - 1, -0.95, 0.95), sinA = Math.sqrt(1 - cosA * cosA);
       moonDraw(c, G.Ox + mx, cy + my, G.rO, { mode: 'moon', light: [-sinA, 0.06, cosA], rot: wob, shine: 0.12, expo: 1.4, glow: 0.8, margin: 1.15 });
-      if (S.moonModel !== 'real') {
-        const dk = c.createRadialGradient(G.Ix + mx, cy + my, G.rI * 0.9, G.Ix + mx, cy + my, G.rI * 1.01); dk.addColorStop(0, 'rgba(6, 8, 16, 0.94)'); dk.addColorStop(0.85, 'rgba(6, 8, 16, 0.88)'); dk.addColorStop(1, 'rgba(6, 8, 16, 0)');
-        c.fillStyle = dk; c.beginPath(); c.arc(G.Ix + mx, cy + my, G.rI * 1.01, 0, 2 * Math.PI); c.fill();
-      }
     } else if (look === 'crescent') {
       c.beginPath(); c.arc(G.Ox, cy, G.rO, 0, 2 * Math.PI); c.fillStyle = moon; c.fill();
       c.globalCompositeOperation = 'destination-out';
@@ -4749,7 +4730,6 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     const T = (s, y, size, weight, col) => { c.font = weight + ' ' + size + 'px ' + font; c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s, st.land ? W * 0.21 : W / 2, y); };
     const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const day = DAYS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_LONG[d.getMonth()];
-    eyePlace();
     if (planet.calm) {
       // charging mode: a bigger, softer clock and no chips; between 22:00 and 6:00 the whole screen is a bit darker
       T(day, H * 0.13, 18, 400, 'rgba(240, 242, 248, 0.7)');
@@ -4892,38 +4872,6 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   const isNightAt = (ms) => sunAltAz(new Date(ms)).alt < -3;
   // fill each icon only when its kind changes (no DOM work every frame)
   function setIcon(el, key, html) { if (el.dataset.k !== key) { el.dataset.k = key; el.innerHTML = html; } }
-  // v94 (user): the eye can sit anywhere on the Earth screen; upright and sideways each keep their own place.
-  // Also with the night clock, which draws no chips (so this is not part of chipsUpdate)
-  function eyePlace() {
-    const eyeP = S.eyeAt[st.land ? 'l' : 'p'], eyeOk = Array.isArray(eyeP) && isFinite(eyeP[0]) && isFinite(eyeP[1]);
-    $('planetScreen').classList.toggle('eye-free', eyeOk);
-    if (eyeOk) { app.style.setProperty('--eye-x', (eyeP[0] * st.W).toFixed(0) + 'px'); app.style.setProperty('--eye-y', (eyeP[1] * st.H).toFixed(0) + 'px'); }
-  }
-  // v98 (user: not just anywhere, along the edges like a frame): where the eye can sit: four rails 16 px inside the screen,
-  // minus every place where it would cover the time, the date, the chips, the note, the timer or the swipe hint.
-  // Each rail piece = [x0, y0, x1, y1], the eye's top-left corner. The eye is 48 px.
-  function eyeRails() {
-    const W = st.W, H = st.H, EYE = 48, ar = $('app').getBoundingClientRect();
-    const px = (n) => { const e = document.createElement('div'); e.style.cssText = 'position:absolute;visibility:hidden;height:var(' + n + ')'; $('app').appendChild(e); const h = e.getBoundingClientRect().height; e.remove(); return h || 0; };
-    const L = 16, R = W - EYE - 16, T = px('--st') + 16, B = H - EYE - px('--sb') - 16;
-    const obs = [];
-    ['pChips', 'pNote', 'pTimer', 'planetUp'].forEach((id) => { const e = $(id); if (!e || e.hidden) return; const r = e.getBoundingClientRect(); if (r.width) obs.push([r.left - ar.left, r.top - ar.top, r.right - ar.left, r.bottom - ar.top]); });
-    const mid = st.land ? W * 0.21 : W / 2, tw = st.land ? W * 0.19 : planet.calm ? W * 0.38 : W * 0.29;
-    if (planetTime) obs.push([mid - tw, planetTime.y0, mid + tw, planetTime.y1]);
-    const dw = st.land ? W * 0.13 : W * 0.26;  // the date line is narrower than the time
-    if (planetDate) obs.push([mid - dw, planetDate.y0, mid + dw, planetDate.y1]);
-    const cut = (a0, a1, holes) => { let out = [[a0, a1]]; holes.forEach((h) => { const n = []; out.forEach((q) => { if (h[1] <= q[0] || h[0] >= q[1]) n.push(q); else { if (h[0] > q[0]) n.push([q[0], h[0]]); if (h[1] < q[1]) n.push([h[1], q[1]]); } }); out = n; }); return out.filter((q) => q[1] - q[0] >= 8); };
-    const rails = [], pad = 4;
-    [T, B].forEach((y) => cut(L, R, obs.filter((o) => o[3] + pad > y && o[1] - pad < y + EYE).map((o) => [o[0] - EYE - pad, o[2] + pad])).forEach((q) => rails.push([q[0], y, q[1], y])));
-    [L, R].forEach((x) => cut(T, B, obs.filter((o) => o[2] + pad > x && o[0] - pad < x + EYE).map((o) => [o[1] - EYE - pad, o[3] + pad])).forEach((q) => rails.push([x, q[0], x, q[1]])));
-    return rails;
-  }
-  // the point on the rails nearest to this place
-  function eyeSnap(rails, x, y) {
-    let best = null, d = 1e12;
-    rails.forEach((r) => { const qx = clamp(x, r[0], r[2]), qy = clamp(y, r[1], r[3]), e = (qx - x) * (qx - x) + (qy - y) * (qy - y); if (e < d) { d = e; best = [qx, qy]; } });
-    return best;
-  }
   function chipsUpdate(d) {
     const box = $('pChips'); if (!box) return;
     // v78: where the chips, the time and the eye are (CSS places the chips, the note and the eye from these)
@@ -5290,40 +5238,17 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   }
 
   /* ---------- v100 (user): sun and moon models that stand alone on every screen; mock/new-models.html, mock/lifelike.html ----------
-     All drawn here by code. Vinyl, Disco ball and Eclipse are simple enough to draw each frame. The sunflower and the
+     All drawn here by code. Disco ball and Eclipse are simple enough to draw each frame. The sunflower and the
      dandelion have thousands of parts: each is drawn once on its own canvas, a little each frame so that nothing freezes;
      until it is ready the screen shows the normal sun or moon. Then only the finished picture moves. */
-  const SUN_MODELS = ['vinyl', 'disco', 'flower'];
-  const MOON_OF_SUN = { vinyl: 'vinyl', disco: 'disco', flower: 'dandelion', blackhole: 'eclipse' };
-  const SUN_OF_MOON = { vinyl: 'vinyl', disco: 'disco', dandelion: 'flower', eclipse: 'blackhole' };
+  const SUN_MODELS = ['disco', 'flower'];
+  const MOON_OF_SUN = { disco: 'disco', flower: 'dandelion', blackhole: 'eclipse', flames: 'flames', neon: 'neon', synth: 'synth' };
+  const SUN_OF_MOON = { disco: 'disco', dandelion: 'flower', eclipse: 'blackhole', flames: 'flames', neon: 'neon', synth: 'synth' };
   const mTAU = Math.PI * 2, mGOLD = 2.399963;
   const mRnd = (k) => { const q = Math.sin(k * 127.1 + 311.7) * 43758.5453; return q - Math.floor(q); };
   const mCircle = (c, x, y, r) => { c.beginPath(); c.arc(x, y, r, 0, mTAU); };
   const mGlow = (c, x, y, r0, r1, rgb, a) => { const g = c.createRadialGradient(x, y, r0, x, y, r1); g.addColorStop(0, 'rgba(' + rgb + ',' + a + ')'); g.addColorStop(1, 'rgba(' + rgb + ',0)'); c.fillStyle = g; c.fillRect(x - r1, y - r1, r1 * 2, r1 * 2); };
 
-  function modelVinyl(c, x, y, r, t, moon) {
-    mGlow(c, x, y, r * 0.9, r * 1.35, moon ? '190,205,235' : '255,190,70', moon ? 0.25 : 0.3);
-    const body = c.createRadialGradient(x, y, r * 0.2, x, y, r);
-    body.addColorStop(0, moon ? '#3a4150' : '#4d3512'); body.addColorStop(1, moon ? '#15181f' : '#1c1206');
-    c.fillStyle = body; mCircle(c, x, y, r); c.fill();
-    c.lineWidth = Math.max(0.6, r * 0.006);
-    for (let q = 0.4; q < 0.98; q += 0.035) { c.strokeStyle = (moon ? 'rgba(210,220,240,' : 'rgba(255,205,110,') + (0.1 + 0.1 * mRnd(q * 50)).toFixed(3) + ')'; mCircle(c, x, y, r * q); c.stroke(); }
-    // the shine stays still while the record turns
-    c.save(); c.globalCompositeOperation = 'lighter';
-    [0.6, 3.75].forEach((a) => {
-      c.beginPath(); c.moveTo(x, y); c.arc(x, y, r * 0.97, a, a + 0.5); c.closePath();
-      const g = c.createRadialGradient(x, y, r * 0.3, x, y, r); g.addColorStop(0, moon ? 'rgba(220,230,255,.04)' : 'rgba(255,220,140,.05)'); g.addColorStop(1, moon ? 'rgba(220,230,255,.3)' : 'rgba(255,215,120,.38)');
-      c.fillStyle = g; c.fill();
-    });
-    c.restore();
-    c.save(); c.translate(x, y); c.rotate(t * 0.9);
-    const lab = c.createLinearGradient(0, -r * 0.33, 0, r * 0.33);
-    lab.addColorStop(0, moon ? '#eef2fb' : '#ffd766'); lab.addColorStop(1, moon ? '#8e99b3' : '#ff8a2e');
-    c.fillStyle = lab; mCircle(c, 0, 0, r * 0.33); c.fill();
-    c.fillStyle = moon ? 'rgba(30,36,50,.8)' : 'rgba(90,40,0,.75)'; c.font = '600 ' + (r * 0.075).toFixed(1) + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(moon ? 'SIDE B' : 'SIDE A', 0, -r * 0.14);
-    c.fillStyle = '#10131a'; mCircle(c, 0, 0, r * 0.045); c.fill();
-    c.restore();
-  }
   // v101 (user: more detail): every mirror tile really reflects: it has its own small tilt, and flashes when it turns a light towards us
   const DISCO_LIGHTS = [[-0.52, 0.62, 0.59], [0.74, 0.28, 0.61], [0.12, -0.72, 0.68], [-0.2, 0.1, 0.97]];
   // v102 (user picked A): the light a real mirror ball throws, over your own sky: thin rays in the air, and small dots that all travel
@@ -5388,6 +5313,51 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = Math.max(0.7, r * 0.006);
       c.beginPath(); c.moveTo(f[0] - k, f[1]); c.lineTo(f[0] + k, f[1]); c.moveTo(f[0], f[1] - k); c.lineTo(f[0], f[1] + k); c.stroke();
     });
+    c.restore();
+  }
+  // v107 (user): the Neon moon: cold glass tubes, a full ring and an inner curve that makes the crescent
+  function modelNeonMoon(c, x, y, r) {
+    c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
+    const hg = c.createRadialGradient(x, y, 0, x, y, r); hg.addColorStop(0, 'rgba(46,242,255,.02)'); hg.addColorStop(1, 'rgba(46,242,255,.1)');
+    c.fillStyle = hg; mCircle(c, x, y, r); c.fill();
+    const a = 1.05;
+    const ringP = () => mCircle(c, x, y, r);
+    const curveP = () => { c.beginPath(); c.arc(x + r * 0.42, y, r * 0.86, Math.PI - a - 0.32, Math.PI + a + 0.32); };
+    [[ringP, 1], [curveP, 0.9]].forEach((q) => {
+      [[Math.max(9, r * 0.13), 'rgba(46,242,255,.1)'], [Math.max(5, r * 0.065), 'rgba(46,242,255,.28)'], [Math.max(2.2, r * 0.026), 'rgba(90,245,255,.95)'], [Math.max(1, r * 0.009), 'rgba(250,255,255,.95)']].forEach((s) => { q[0](); c.lineWidth = s[0] * q[1]; c.strokeStyle = s[1]; c.stroke(); });
+    });
+    c.restore();
+  }
+  // the Synthwave moon: pale at the top, cyan to violet, with the same stripes as its sun
+  function modelSynthMoon(c, x, y, r, t) {
+    c.save(); c.globalCompositeOperation = 'lighter';
+    const hg = c.createRadialGradient(x, y, r * 0.9, x, y, r * 1.7); hg.addColorStop(0, 'rgba(70,190,255,.42)'); hg.addColorStop(1, 'rgba(70,190,255,0)');
+    c.fillStyle = hg; c.fillRect(x - r * 1.8, y - r * 1.8, r * 3.6, r * 3.6);
+    c.restore(); c.save();
+    const g = c.createLinearGradient(0, y - r, 0, y + r); g.addColorStop(0, '#F2FCFF'); g.addColorStop(0.42, '#6FE3FF'); g.addColorStop(1, '#7A3CFF');
+    mCircle(c, x, y, r); c.clip();
+    c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2);
+    // craters, flat and drawn like the rest of that style
+    c.fillStyle = 'rgba(40,70,170,.2)';
+    [[-0.35, -0.5, 0.17], [0.3, -0.62, 0.11], [0.05, -0.2, 0.13], [-0.58, -0.12, 0.09], [0.55, -0.22, 0.08]].forEach((q) => { mCircle(c, x + q[0] * r, y + q[1] * r, q[2] * r); c.fill(); });
+    const u = r / 50, off = (t * 6) % 12;
+    c.fillStyle = '#0a0a2e';
+    for (let k = 0; k < 7; k++) c.fillRect(x - r, y + r * 0.05 + (k * 12 + off) * u, r * 2, (1.5 + k * 1.1) * u);
+    c.restore();
+  }
+  // the Flames moon: cold blue fire around the Moon's edge; the app draws the whole lit Moon on top
+  function modelFrostRim(c, x, y, r, t) {
+    c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
+    mGlow(c, x, y, r * 0.92, r * 1.34, '110,175,255', 0.62);
+    const lw = Math.max(1, Math.sqrt(r / 60));
+    const wave = (th) => 0.5 + 0.22 * Math.sin(th * 6 + t * 0.55) + 0.16 * Math.sin(th * 11 - t * 0.9 + 1.3) + 0.12 * Math.sin(th * 23 + t * 1.7 + 2.1);
+    for (let k = 0; k < 150; k++) {
+      const th = k / 150 * mTAU + (mRnd(k) - 0.5) * 0.02, h = r * (0.06 + 0.3 * Math.pow(Math.max(0, wave(th)), 2.2)) * (0.75 + 0.5 * mRnd(k + 5)) * (0.85 + 0.15 * Math.sin(t * (2 + mRnd(k + 9)) + k)), b = 0.06 * Math.sin(t * 0.8 + th * 9) + (mRnd(k + 11) - 0.5) * 0.05;
+      const x0 = x + Math.cos(th) * r * 0.97, y0 = y + Math.sin(th) * r * 0.97, x1 = x + Math.cos(th + b) * (r + h), y1 = y + Math.sin(th + b) * (r + h);
+      const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, 'rgba(225,245,255,.85)'); g.addColorStop(0.4, 'rgba(95,165,255,.55)'); g.addColorStop(1, 'rgba(50,70,200,0)');
+      c.strokeStyle = g; c.lineWidth = (1 + 1.8 * mRnd(k + 13)) * lw;
+      c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(x + Math.cos(th + b * 0.4) * (r + h * 0.5), y + Math.sin(th + b * 0.4) * (r + h * 0.5), x1, y1); c.stroke();
+    }
     c.restore();
   }
   function modelEclipse(c, x, y, r, t) {
@@ -5536,6 +5506,37 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     }
     c.restore();
   }
+  // v107 (user): the sunflower's stem: thick and a little hairy, lit from one side, with two big leaves. It reaches the bottom of the screen
+  function mSunflowerStem(c, x, y, r, t) {
+    const m = c.getTransform(), H = c.canvas.height / (m.d || 1), y1 = H + 16;
+    if (y1 <= y) return;
+    const sway = Math.sin(t * 0.5) * r * 0.02, x1 = x + r * 0.05 + sway, x2 = x - r * 0.05, ym = (y + y1) / 2, N = 30, mid = [];
+    const w0 = Math.max(3, r * 0.065), w1 = Math.max(4, r * 0.095);
+    for (let i = 0; i <= N; i++) { const u = i / N, v = 1 - u; mid.push([v * v * x + 2 * v * u * x1 + u * u * x2, v * v * y + 2 * v * u * ym + u * u * y1, w0 + (w1 - w0) * u]); }
+    const leaf = (k, dir) => {
+      const p = mid[Math.round(k * N)], L = Math.min(r * 1.05, 150), W = L * 0.42, a = dir * (0.5 + Math.sin(t * 0.6 + k * 9) * 0.015);
+      c.save(); c.translate(p[0], p[1]); c.scale(dir, 1); c.rotate(-Math.abs(a));
+      const g = c.createLinearGradient(0, -W, 0, W); g.addColorStop(0, '#5f9638'); g.addColorStop(0.5, '#3f7626'); g.addColorStop(1, '#27541a');
+      c.fillStyle = g; c.beginPath(); c.moveTo(0, 0); c.bezierCurveTo(L * 0.18, -W * 1.05, L * 0.72, -W * 0.8, L, -W * 0.05); c.bezierCurveTo(L * 0.72, W * 0.72, L * 0.2, W * 0.9, 0, 0); c.closePath(); c.fill();
+      c.strokeStyle = 'rgba(190, 225, 135, 0.55)'; c.lineWidth = Math.max(0.8, L * 0.012); c.beginPath(); c.moveTo(0, 0); c.lineTo(L * 0.97, -W * 0.05); c.stroke();
+      c.strokeStyle = 'rgba(190, 225, 135, 0.3)'; c.lineWidth = Math.max(0.5, L * 0.006);
+      for (let i = 1; i <= 6; i++) { const q = i / 7.2, xx = L * q, h = W * 0.72 * Math.sin(Math.PI * Math.min(1, q * 1.08)); c.beginPath(); c.moveTo(xx, -W * 0.05 * q); c.lineTo(xx + L * 0.09, -h); c.moveTo(xx, -W * 0.05 * q); c.lineTo(xx + L * 0.09, h * 0.85); c.stroke(); }
+      c.restore();
+    };
+    leaf(0.42, 1); leaf(0.66, -1);
+    c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+    const line = (off, col, lw) => { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); mid.forEach((p, i) => { const qx = p[0] + p[2] * off; if (i) c.lineTo(qx, p[1]); else c.moveTo(qx, p[1]); }); c.stroke(); };
+    c.fillStyle = '#4a7a2c'; c.beginPath(); mid.forEach((p, i) => { if (i) c.lineTo(p[0] - p[2], p[1]); else c.moveTo(p[0] - p[2], p[1]); }); for (let i = N; i >= 0; i--) c.lineTo(mid[i][0] + mid[i][2], mid[i][1]); c.closePath(); c.fill();
+    line(0.62, 'rgba(18, 42, 14, 0.6)', w1 * 0.75);
+    line(0.1, 'rgba(36, 70, 24, 0.4)', Math.max(0.8, w1 * 0.05));
+    line(-0.25, 'rgba(120, 170, 80, 0.5)', w1 * 0.45);
+    line(-0.62, 'rgba(205, 232, 160, 0.7)', Math.max(0.8, w1 * 0.16));
+    // fine hairs along the edges
+    c.strokeStyle = 'rgba(215, 235, 180, 0.42)'; c.lineWidth = 0.7; c.beginPath();
+    for (let i = 0; i < 90; i++) { const u = mRnd(i * 2.1 + 4), p = mid[Math.floor(u * N)], s = mRnd(i * 1.3) > 0.5 ? 1 : -1, xx = p[0] + s * p[2], yy = p[1] + mRnd(i + 9) * 14; c.moveTo(xx, yy); c.lineTo(xx + s * (2 + mRnd(i * 3 + 1) * Math.max(3, r * 0.018)), yy - 1.5); }
+    c.stroke();
+    c.restore();
+  }
   const mArt = {};
   // the finished picture, or null while it is being drawn (at most ms milliseconds of work per call)
   function modelArt(name, ms) {
@@ -5551,18 +5552,20 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   }
   // false = not ready yet: the caller draws the normal sun
   function modelSunAt(c, x, y, r, kind, t) {
-    if (kind === 'vinyl') modelVinyl(c, x, y, r, t, false);
-    else if (kind === 'disco') modelDisco(c, x, y, r, t, false, 1);
+    if (kind === 'disco') modelDisco(c, x, y, r, t, false, 1);
     else {
       const im = modelArt('flower', 6); if (!im) return false;
+      mSunflowerStem(c, x, y, r, t);
       const q = r * 1.15; c.save(); c.translate(x, y); c.rotate(Math.sin(t * 0.5) * 0.018); c.imageSmoothingQuality = 'high'; c.drawImage(im, -q, -q, q * 2, q * 2); c.restore();
     }
     return true;
   }
-  function modelMoonAt(c, x, y, r, kind, t, H, ph) {
-    if (kind === 'vinyl') modelVinyl(c, x, y, r, t, true);
-    else if (kind === 'disco') modelDisco(c, x, y, r, t, true, ph ? 0.25 + 0.75 * ph.f : 1);
+  function modelMoonAt(c, x, y, r, kind, t, H) {
+    if (kind === 'disco') modelDisco(c, x, y, r, t, true, 1);
     else if (kind === 'eclipse') modelEclipse(c, x, y, r, t);
+    else if (kind === 'neon') modelNeonMoon(c, x, y, r);
+    else if (kind === 'synth') modelSynthMoon(c, x, y, r, t);
+    else if (kind === 'flames') { modelFrostRim(c, x, y, r, t); return false; }
     else {
       const im = modelArt('dandelion', 6); if (!im) return false;
       const sway = Math.sin(t * 0.55), q = r * 1.35;
@@ -5577,18 +5580,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         c.globalAlpha = 1;
       }
     }
-    if (ph && (kind === 'vinyl' || kind === 'disco')) modelShadow(c, x, y, r * 1.015, ph);
     return true;
-  }
-  // v102 (user): the moon's real shadow on a model. ph.f = the part lit, 0 to 1; (ph.ca, ph.sa) = towards the lit side, on the screen
-  function modelShadow(c, x, y, r, ph) {
-    if (ph.f > 0.995) return;
-    c.save(); c.translate(x, y); c.rotate(Math.atan2(ph.sa, ph.ca));
-    c.fillStyle = 'rgba(3, 5, 12, 0.9)'; c.shadowColor = 'rgba(3, 5, 12, 0.9)'; c.shadowBlur = r * 0.05;
-    c.beginPath(); c.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, true);
-    c.ellipse(0, 0, Math.abs(1 - 2 * ph.f) * r, r, 0, Math.PI / 2, -Math.PI / 2, ph.f < 0.5);
-    c.closePath(); c.fill();
-    c.restore();
   }
   /* ---------- Tonight's sky (v70, user: mock\next-ideas.html part 1) ----------
      Planets: low-precision orbit formulas (Paul Schlyter, "How to compute planetary positions"), good to about 1°,
@@ -7097,7 +7089,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   $('toSun').addEventListener('click', (e) => { if (e.detail === 0) goSun(); });
   /* ---------- Look editor (v43, E1): tilt, turn, size, ring and place for the Dial and Ring screens; Save as… ---------- */
   // Sun Dial uses its old values (S.tilt, S.size, S.custom = My view). Ring screens use S.tune[key] (tuneOf).
-  const LE_SUN_STYLES = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['blackhole', 'Black hole'], ['neon', 'Neon'], ['synth', 'Synthwave'], ['vinyl', 'Vinyl'], ['disco', 'Disco ball'], ['flower', 'Sunflower']];
+  const LE_SUN_STYLES = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['blackhole', 'Black hole'], ['neon', 'Neon'], ['synth', 'Synthwave'], ['disco', 'Disco ball'], ['flower', 'Sunflower']];
   const LE_MOON_STYLES = [['glow', 'Glow'], ['phase', 'Real phase']];
   let le = null;  // the screen being edited
   // v44 (E2): every screen can be edited; rows = the controls that make sense there (t tilt, u turn, s size, r ring)
@@ -7316,43 +7308,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (on) { hapt('press'); pushLayer('watchCatch'); } else dropLayer('watchCatch');
     kick();
   }
-  // v78: on the Earth, hold the eye (0.45 s) and drag it along the frame; a plain tap still starts Watch
-  let eyeDrag = null, eyeNoClick = false;
-  $('watchBtn').addEventListener('click', () => { if (!eyeNoClick) setWatch(true); });
-  $('watchBtn').addEventListener('pointerdown', (e) => {
-    if (!planet.on || st.watch) return;
-    const b = $('watchBtn');
-    eyeDrag = { x0: e.clientX, y0: e.clientY, id: e.pointerId, on: false, t: setTimeout(() => {
-      eyeDrag.on = true; b.classList.add('lift'); hapt('press'); try { b.setPointerCapture(e.pointerId); } catch (er) {}
-      // v98: the yellow frame shows where it can go
-      const ar = $('app').getBoundingClientRect(), r = b.getBoundingClientRect(), fr = $('eyeFrame');
-      eyeDrag.rails = eyeRails(); eyeDrag.left = r.left - ar.left; eyeDrag.top = r.top - ar.top; eyeDrag.at = eyeSnap(eyeDrag.rails, eyeDrag.left, eyeDrag.top);
-      fr.textContent = '';
-      eyeDrag.rails.forEach((q) => { const i = document.createElement('i'), hor = q[1] === q[3]; i.style.cssText = hor ? 'left:' + q[0] + 'px;width:' + (q[2] - q[0] + 48) + 'px;top:' + (q[1] + 22) + 'px;height:4px' : 'top:' + q[1] + 'px;height:' + (q[3] - q[1] + 48) + 'px;left:' + (q[0] + 22) + 'px;width:4px'; fr.appendChild(i); });
-      fr.hidden = false;
-    }, 450) };
-  });
-  $('watchBtn').addEventListener('pointermove', (e) => {
-    if (!eyeDrag) return;
-    if (!eyeDrag.on) { if (Math.hypot(e.clientX - eyeDrag.x0, e.clientY - eyeDrag.y0) > 10) { clearTimeout(eyeDrag.t); eyeDrag = null; } return; }
-    const at = eyeSnap(eyeDrag.rails, eyeDrag.left + e.clientX - eyeDrag.x0, eyeDrag.top + e.clientY - eyeDrag.y0);
-    if (at) { eyeDrag.at = at; $('watchBtn').style.transform = 'translate(' + (at[0] - eyeDrag.left) + 'px,' + (at[1] - eyeDrag.top) + 'px)'; }
-  });
-  const eyeEnd = (e) => {
-    if (!eyeDrag) return;
-    clearTimeout(eyeDrag.t);
-    if (eyeDrag.on) {
-      // v98 (user): it stays on the frame where you let go
-      const b = $('watchBtn'), at = eyeDrag.at;
-      b.classList.remove('lift'); b.style.transform = ''; $('eyeFrame').hidden = true;
-      eyeNoClick = true; setTimeout(() => { eyeNoClick = false; }, 350);
-      if (at) S.eyeAt[st.land ? 'l' : 'p'] = [at[0] / st.W, at[1] / st.H];
-      save(); hapt('detent');
-      kick();
-    }
-    eyeDrag = null;
-  };
-  $('watchBtn').addEventListener('pointerup', eyeEnd); $('watchBtn').addEventListener('pointercancel', eyeEnd);
+  // v107 (user): the eye stays in one place, top left, on every screen; it is not dragged any more
+  $('watchBtn').addEventListener('click', () => setWatch(true));
   $('watchCatch').addEventListener('pointerdown', (e) => { e.preventDefault(); setWatch(false); });
   // v47: the button sits in the top row next to Search on every screen (the bottom row covered apps, user screenshots)
   // double-tap on empty sky (Sun and Moon screens) also starts Watch
@@ -7630,7 +7587,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v106 · The Pixel model is gone. v104 · The dandelion is always whole, with no shadow, and it has a real stem now. v102 · Planets pass on the strong hits of the music. A new model every day if you like, with Another one to change it. The moon models show the real shadow of the Moon. Disco ball: real light over your own sky. v101 · A more detailed Disco ball: every mirror reflects the lights. v100 · Five new sun and moon models: Vinyl, Disco ball, Sunflower and dandelion, Black hole and eclipse. They work on every screen. v99 · The flight keeps one speed, as long as your sound, with a rock shower near the start and the Moon rushing past before the landing. v98 · Every sun style now works on every screen. A new big Crescent sun, and Small is small on both screens. The eye slides along a yellow frame. The date stays clear of the sun and moon. The Clouds sky is gone. A cleaner icon. v97 · New Settings: the same pictures to pick your look, now with the sky too; everything else in clear coloured groups. v96 · Real clouds on the Earth: yesterday\'s from NASA\'s satellite. v95 · Opens faster, with no freeze when the sharp Earth arrives. The flight keeps the pictures of your city on the phone, so it works offline. One tap on the empty sky shows tonight. New in Settings: Sky alerts. v94 · The hidden flight is a real 3D scene with one fluid motion: planets leave by going out of sight, real rocks in the belt, true sizes, and a much sharper ending over your city. Hold the eye on the Earth and drag it anywhere. Held sideways, the four chips sit in a neat block. v93 · The Moon is lit from the real direction of the Sun. New layout for a phone held sideways. v92 · A flick on the Sun ring no longer seems to spin backward. The map says the city (Vienna), not the district. My sound for the flight can be sharpened. v90 · My location stays fresh (at most 10 min old, with a second try by GPS). The hidden flight: truer sizes, a slow wide turn, an asteroid belt, a steady zoom into your city, your own sound if you like.\nv89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
+  const NEWS = 'v107 · A simpler Settings: pick a Model and a Screen, and each is always a matching sun and moon. New Flames, Neon and Synthwave moons. A stem on the sunflower. The eye stays in one place. Vinyl, Clock and Glow arc are gone. v106 · The Pixel model is gone. v104 · The dandelion is always whole, with no shadow, and it has a real stem now. v102 · Planets pass on the strong hits of the music. A new model every day if you like, with Another one to change it. The moon models show the real shadow of the Moon. Disco ball: real light over your own sky. v101 · A more detailed Disco ball: every mirror reflects the lights. v100 · Five new sun and moon models: Vinyl, Disco ball, Sunflower and dandelion, Black hole and eclipse. They work on every screen. v99 · The flight keeps one speed, as long as your sound, with a rock shower near the start and the Moon rushing past before the landing. v98 · Every sun style now works on every screen. A new big Crescent sun, and Small is small on both screens. The eye slides along a yellow frame. The date stays clear of the sun and moon. The Clouds sky is gone. A cleaner icon. v97 · New Settings: the same pictures to pick your look, now with the sky too; everything else in clear coloured groups. v96 · Real clouds on the Earth: yesterday\'s from NASA\'s satellite. v95 · Opens faster, with no freeze when the sharp Earth arrives. The flight keeps the pictures of your city on the phone, so it works offline. One tap on the empty sky shows tonight. New in Settings: Sky alerts. v94 · The hidden flight is a real 3D scene with one fluid motion: planets leave by going out of sight, real rocks in the belt, true sizes, and a much sharper ending over your city. Hold the eye on the Earth and drag it anywhere. Held sideways, the four chips sit in a neat block. v93 · The Moon is lit from the real direction of the Sun. New layout for a phone held sideways. v92 · A flick on the Sun ring no longer seems to spin backward. The map says the city (Vienna), not the district. My sound for the flight can be sharpened. v90 · My location stays fresh (at most 10 min old, with a second try by GPS). The hidden flight: truer sizes, a slow wide turn, an asteroid belt, a steady zoom into your city, your own sound if you like.\nv89 · Fix: no faint square around the sun. The hidden flight now feels like flying (gentle banking, a hard turn at the Sun).\nv88 · The hidden surprise flows more smoothly.\nv87 · A hidden surprise. Hint: the date has seven secrets.\nv86 · Tap the moon on the Earth: the Moon menu opens straight away (the moon chip still shows the moon card). The Moon ring turns the way you swipe.\nv85 · Battery: the moon and sun are drawn with far less work (the quiet Earth uses about half as much again). Nothing looks different.\nv84 · The quiet Earth (20 s after your last touch) is drawn 5 times a second: about half the battery, looks the same. A touch makes it smooth at once.\nv83 · Android app: Search finds every app on your phone (with nothing typed: recent apps, then all apps A-Z). As your home app, Home brings you back to the Earth. Uses much less battery while the Earth is quiet or the home pages are open.\nv82 · Android app: change your home pages. Hold an app to move, remove or put it in a folder; hold an empty place to add an app; hold a folder to rename it; hold the sky to add a row or a folder.\nv81 · Android app: Cards on your home page opens a card wallet (your Pictures › Cards folder): a grid, and a tapped card fills the screen at full brightness for scanning.\nv80 · Android app: real widgets on your home pages (music, weather, Google search, clock). Tap a widget place to pick one; tap again to change or remove it.\nv79 · Android app: your 2 home pages (apps, folders, Cards) on a starry sky. On the Earth, swipe sideways in the sky to reach them; the Earth itself still spins.\nv78 · Android app: add the apps on your phone to the Sun or the Moon (Edit dial › Add app › From my phone). The app can be your home screen (Settings › Apps › Default apps › Home app). Clock styles (Settings › Clock style: Thin, Bold, Analog, Glass, Soft). On the Earth, hold the time, the chips or the eye and drag it to a new place.\nv77 · Fixes: tapping the moon (or your city) on the Earth opens its card again on phones; Android app: no black bars at the top and bottom. The thin light line across the sun is gone.\nv76 · The screen picker at the bottom (‹ Dial › and dots) is off; turn it on in Settings › Change screen from the bottom. Android app: the sky fills the whole screen again, the buttons stay clear of the phone\'s bars.\nv75 · Fixes: clouds no longer have straight cut edges; the Edit app window is tidier (no words over boxes, all colours fit, empty quick actions hidden).\nv74 · Seasons (autumn leaves, snow, blossoms) are now off unless you turn them on in Settings › Seasons.\nv73 ·Fixes: the app list no longer covers the mini suns and moons on short screens; the note on the Earth moved to the bottom (it covered the moon); chips above the date now go to the very top, and the eye moves to the bottom-left there.\nv72 · Timer: Focus, Timer and Stopwatch in calm glass over the Earth. Open the Timer app; while it runs, a small chip under the time shows it.\nv71 · Calm glass menus: Settings, cards, Search and messages are now frosted see-through glass (darker by day; no blur with Effects = Calm). Search has a letter strip on the right.\nv70 · Tonight\'s sky: the planets you can see and the space station passes (notes on the Earth, Moon menu > Tonight\'s sky).\nv69 · The dial learns work days and weekends apart; Undo after Remove app; all apps A-Z in Search; saved data protected; 2 more meteor showers.\nv68 · Special sky days on the Earth: meteor showers, a copper moon eclipse, the supermoon, the sun eclipse, strong northern lights (NASA photo).\nv67 · Seasons: winter snow, spring blossoms and morning light, brighter summer Milky Way, autumn leaves (Settings > Seasons).\nv66 · Smart chips on the Earth: temperature, a note only when something matters, tap a chip for more; hold and drag the chips above the date.\nv65 · Tidy-up inside: the code is now in smaller files (nothing changes for you).\nv64 · Add your own apps: Edit dial > Add app. Edit or remove any app; quick actions with their own links.\nv63 · Fixes: text size, update note, offline pictures, moon times on clock-change days, safer backups.\nv62 · Turning Charging mode off or on works at once.\nv61 · The Moon menu works: text size, backup, storage, updates and more.\nv60 · "New version ready" note, sunset countdown, moon card on the Earth, bigger Search.\nv59 · Bug fixes, smoother motion, a lighter first install.\nv58 · The moon on the Earth rises and sets smoothly.\nv57 · Slider at the bottom to change the screen.\nv56 · 11 more sun colours.\nv55 · Eye top left, Search in the corner, Cancel in the look editor.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -8119,7 +8076,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons', 'strip', 'clockStyle', 'flySound', 'flySharp', 'skyAlerts', 'realClouds', 'moonModel', 'dailyModel', 'modelPhase'];
+  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons', 'strip', 'clockStyle', 'flySound', 'flySharp', 'skyAlerts', 'realClouds', 'moonModel', 'dailyModel'];
   // v90 (user): the flight's sound can be a file from the phone; kept only on this phone
   $('flyPick').addEventListener('click', () => $('flyFile').click());
   $('flyFile').addEventListener('change', function () {
@@ -8150,7 +8107,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     S.dailyDay = today; dailyPick();
   }
   $('dailyAgain').addEventListener('click', () => { const n = dailyPick(); hapt('detent'); toast('Today: ' + n + '.'); });
-  $('placesBack').addEventListener('click', () => { S.timePos = 'top'; S.chipsPos = 'below'; S.eyePos = 'top'; S.eyeAt = {}; save(); kick(); toast('Time, chips and eye are back in their first places.'); });  // v78
+  $('placesBack').addEventListener('click', () => { S.timePos = 'top'; S.chipsPos = 'below'; save(); kick(); toast('Time and chips are back in their first places.'); });  // v78
   // The Sun row shows sunLook and rayStyle as one choice: Glow, Corona and Flames are the Rays look.
   const sunPickOf = (look) => look === 'rays' ? S.rayStyle : look;
   function shownTheme() {
@@ -8173,8 +8130,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   // ---- Screen style pairs (v34): [key, name, sun screen, moon look, tab]. With "Same style on both screens" on,
   // one tap sets both; off: the Sun screen and Moon style lists pick each screen on its own.
   const PAIRS = [['dial', 'Dial', 'dial', 'dial3d', 'normal'], ['ring', 'Ring', 'ring', 'moondial', 'normal'], ['dots', 'Dots', 'edge', 'dots', 'normal'],
-    ['arc', 'Glow arc', 'arc', 'arc', 'normal'], ['crescent', 'Crescent', 'crescent', 'crescent', 'normal'],
-    ['today', 'Today', 'today', 'phase', 'extra'], ['minimal', 'Minimal', 'minimal', 'minimal', 'extra'], ['clock', 'Clock', 'clock', 'dial', 'extra'],
+    ['crescent', 'Crescent', 'crescent', 'crescent', 'normal'],
+    ['today', 'Today', 'today', 'phase', 'extra'], ['minimal', 'Minimal', 'minimal', 'minimal', 'extra'],
     ['small', 'Small', 'small', 'small', 'extra']
     // v39: Glow orb pair removed (user): ['orb', 'Glow orb', 'orb', 'orb', 'extra']
     // Rings pair (Ringed sun + Saturn rings) taken out for now (user, v35: "add it later"): ['rings', 'Rings', 'rings', 'saturn', 'planets']
@@ -8204,17 +8161,19 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   }
   // v48: Settings pictures. Cards = groups of the screen pairs; rows = the kinds of the picked card, the moon screens
   // (when "Same style" is off) and the sun styles. Each picture taps the matching old radio (hidden in #oldPickers).
-  const PV_FAM = [['ring', 'Ring', 'Dial · Ring', ['dial', 'ring']], ['clock', 'Clock', 'Big dial at the edge', ['clock']],
-    ['info', 'Info', 'Today · Minimal', ['today', 'minimal']], ['side', 'Side list', 'Big edge · Arc · Crescent · Small', ['edge', 'arc', 'crescent', 'small']]];
-  const PV_NAME = { dial: 'Dial', ring: 'Ring', clock: 'Clock', today: 'Today', minimal: 'Minimal', edge: 'Big edge', arc: 'Arc', crescent: 'Crescent', small: 'Small' };
-  const PV_MOON = [['dial3d', '3D dial'], ['moondial', 'Moon dial'], ['dial', 'Clock dial'], ['phase', 'Real phase'], ['minimal', 'Minimal'], ['dots', 'Dots'], ['arc', 'Arc'], ['crescent', 'Crescent'], ['small', 'Small']];
-  const PV_STY = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['blackhole', 'Black hole'], ['neon', 'Neon'], ['synth', 'Synthwave'], ['vinyl', 'Vinyl'], ['disco', 'Disco ball'], ['flower', 'Sunflower']];
-  const PV_MODEL = [['real', 'Real moon'], ['vinyl', 'Vinyl'], ['disco', 'Disco ball'], ['dandelion', 'Dandelion'], ['eclipse', 'Eclipse']];
+  // v107 (user: categories easier to identify): one plain list of screens; each is one Sun screen and its Moon screen
+  const PV_SCREENS = [['dial', 'dial3d', 'Dial'], ['ring', 'moondial', 'Ring'], ['today', 'phase', 'Today'], ['minimal', 'minimal', 'Minimal'], ['edge', 'dots', 'Big edge'], ['crescent', 'crescent', 'Crescent'], ['small', 'small', 'Small']];
+  const PV_MODELS = [['glow', 'real', 'Glow'], ['corona', 'real', 'Corona'], ['flames', 'flames', 'Flames'], ['blackhole', 'eclipse', 'Black hole'], ['neon', 'neon', 'Neon'], ['synth', 'synth', 'Synthwave'], ['disco', 'disco', 'Disco ball'], ['flower', 'dandelion', 'Sunflower']];
+  const PV_FAM = [['all', 'Screens', '', PV_SCREENS.map((x) => x[0])]];
+  const PV_NAME = { dial: 'Dial', ring: 'Ring', today: 'Today', minimal: 'Minimal', edge: 'Big edge', crescent: 'Crescent', small: 'Small' };
+  const PV_MOON = PV_SCREENS.map((x) => [x[1], x[2]]);
+  const PV_STY = [['glow', 'Glow'], ['corona', 'Corona'], ['flames', 'Flames'], ['blackhole', 'Black hole'], ['neon', 'Neon'], ['synth', 'Synthwave'], ['disco', 'Disco ball'], ['flower', 'Sunflower']];
+  const PV_MODEL = [['real', 'Real moon'], ['flames', 'Flames'], ['neon', 'Neon'], ['synth', 'Synthwave'], ['disco', 'Disco ball'], ['dandelion', 'Dandelion'], ['eclipse', 'Eclipse']];
   const pvImg = (src, pos) => { const im = document.createElement('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; if (pos) im.style.objectPosition = pos; return im; };
   const pvPos = (v) => ({ edge: '100% 30%', arc: '100% 30%', small: '100% 40%', crescent: '100% 40%', clock: '0% 50%', dial: '50% 42%', ring: '50% 45%', today: '50% 15%', minimal: '100% 15%' }[v] || '50% 40%');
   // v57 (user picked C): the screen slider at the bottom of the Sun and Moon screens. Slide sideways = the next
   // screen of the same group; hold = the group's pictures, slide over them, lift to keep. A swipe up still opens the Moon.
-  const VS_MOON = [['dial3d', 'moondial'], ['dial'], ['phase', 'minimal'], ['dots', 'arc', 'crescent', 'small']];
+  const VS_MOON = [PV_SCREENS.map((x) => x[1])];
   const vsGroup = (kind) => kind === 'sun' ? (PV_FAM.find((f) => f[3].indexOf(S.sunView) !== -1) || PV_FAM[0])[3] : (VS_MOON.find((g) => g.indexOf(currentMoon()) !== -1) || VS_MOON[3]);
   const vsCur = (kind) => kind === 'sun' ? S.sunView : currentMoon();
   const vsName = (kind, v) => kind === 'sun' ? PV_NAME[v] : (PV_MOON.find((m) => m[0] === v) || [v, v])[1];
@@ -8306,65 +8265,27 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     const on = Math.round(el.scrollLeft / Math.max(1, el.scrollWidth - el.clientWidth) * (n - 1));
     Array.prototype.forEach.call(d.children, (sp, i) => sp.classList.toggle('on', i === on));
   }
-  [['pvars', 'pvarsDots'], ['pmoons', 'pmoonsDots'], ['pstyles', 'pstylesDots'], ['pmodels', 'pmodelsDots']].forEach(([r, d]) => $(r).addEventListener('scroll', () => pvDots(r, d), { passive: true }));
+  [['pmodelRow', 'pmodelDots'], ['pscreenRow', 'pscreenDots']].forEach(([r, d]) => $(r).addEventListener('scroll', () => pvDots(r, d), { passive: true }));
   function renderPicks() {
     vsRender();  // v57: the bottom slider shows the same picks
     if ($('settings').hidden) return;  // v59: Settings closed: its pictures are rebuilt when it opens (openSettings)
-    const sh = shownTheme(), view = S.sunView, fam = PV_FAM.find((f) => f[3].indexOf(view) !== -1) || PV_FAM[0], link = S.pairLink === 'on';
-    const moonOf = (v) => { const pk = PAIRS.find((x) => x[2] === v); return pk ? pk[3] : 'dots'; };
-    // the 4 cards
-    const cards = $('pcards'); cards.textContent = '';
-    PV_FAM.forEach((f) => {
-      const v = f === fam ? view : f[3][0], m = f === fam && !link ? sh.moon : moonOf(v);
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'pcard' + (f === fam ? ' on' : '');
-      b.setAttribute('aria-pressed', f === fam ? 'true' : 'false'); b.setAttribute('aria-label', f[1] + ': ' + f[2]);
-      const pr = document.createElement('div'); pr.className = 'pair';
-      pr.appendChild(pvImg('pv-sun-' + v + '.jpg', pvPos(v))); pr.appendChild(pvImg('pv-moon-' + m + '.jpg', pvMoonPos(m)));
-      const t = document.createElement('b'); t.textContent = f[1]; const sm = document.createElement('small'); sm.textContent = f[2];
-      b.appendChild(pr); b.appendChild(t); b.appendChild(sm);
-      b.addEventListener('click', () => { if (f !== fam) pvPickView(f[3][0]); });
-      cards.appendChild(b);
-    });
-    // the kinds of the picked card
-    const vars = $('pvars'); vars.textContent = '';
-    $('pvarTitle').textContent = fam[3].length > 1 ? fam[1] + ' · which one' : '';
-    if (fam[3].length > 1) fam[3].forEach((v) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'pvar' + (v === view ? ' on' : '');
-      b.setAttribute('aria-pressed', v === view ? 'true' : 'false');
-      b.appendChild(pvImg('pv-sun-' + v + '.jpg', pvPos(v))); b.appendChild(document.createTextNode(PV_NAME[v]));
-      b.addEventListener('click', () => pvPickView(v));
-      vars.appendChild(b);
-    });
-    // the moon screens, only when "Same style on both screens" is off
-    $('pmoonWrap').hidden = link;
-    const moons = $('pmoons'); moons.textContent = '';
-    if (!link) PV_MOON.forEach(([m, name]) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'pvar' + (m === sh.moon ? ' on' : '');
-      b.setAttribute('aria-pressed', m === sh.moon ? 'true' : 'false');
-      b.appendChild(pvImg('pv-moon-' + m + '.jpg', pvMoonPos(m))); b.appendChild(document.createTextNode(name));
-      b.addEventListener('click', () => pvTap('moonLook', m));
-      moons.appendChild(b);
-    });
-    // sun styles: all of them, on every screen (v98)
+    const sh = shownTheme(), view = S.sunView;
+    // v107 (user): two rows. A Model changes the sun and the moon together, and so does a Screen
     const cur = sh.look === 'neon' ? (S.neonStyle === 'synth' ? 'synth' : 'neon') : sunPickOf(sh.look);
-    const stys = $('pstyles'); stys.textContent = '';
-    $('pstyleNote').hidden = true;
-    PV_STY.forEach(([v, name]) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'psty' + (v === cur ? ' on' : '');
-      b.setAttribute('aria-pressed', v === cur ? 'true' : 'false');
-      b.appendChild(pvImg('pv-style-' + v + '.jpg')); b.appendChild(document.createTextNode(name));
-      b.addEventListener('click', () => { if (v === 'neon') pvTap('neonStyle', 'minimal'); else if (v === 'synth') pvTap('neonStyle', 'synth'); else pvTap('sunPick', v); });
-      stys.appendChild(b);
-    });
+    const card = (cls, on, a, b, name, go) => {
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pcardx ' + cls + (on ? ' on' : '');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.setAttribute('aria-label', name);
+      const duo = document.createElement('div'); duo.className = 'duo'; duo.appendChild(pvImg(a)); duo.appendChild(pvImg(b));
+      btn.appendChild(duo); btn.appendChild(document.createTextNode(name)); btn.addEventListener('click', go);
+      return btn;
+    };
+    const modelRow = $('pmodelRow'); modelRow.textContent = '';
+    PV_MODELS.forEach((m) => modelRow.appendChild(card('model', m[0] === cur, 'pv-style-' + m[0] + '.jpg', 'pv-model-' + m[1] + '.jpg', m[2], () => {
+      if (m[0] === 'neon') pvTap('neonStyle', 'minimal'); else if (m[0] === 'synth') pvTap('neonStyle', 'synth'); else pvTap('sunPick', m[0]);
+    })));
+    const screenRow = $('pscreenRow'); screenRow.textContent = '';
+    PV_SCREENS.forEach((v) => screenRow.appendChild(card('screen', v[0] === view, 'pv-sun-' + v[0] + '.jpg', 'pv-moon-' + v[1] + '.jpg', v[2], () => pvPickView(v[0]))));
     $('dailyAgain').hidden = S.dailyModel !== 'on';
-    const mods = $('pmodels'); mods.textContent = '';
-    PV_MODEL.forEach(([v, name]) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'psty' + (v === S.moonModel ? ' on' : '');
-      b.setAttribute('aria-pressed', v === S.moonModel ? 'true' : 'false');
-      b.appendChild(pvImg('pv-model-' + v + '.jpg')); b.appendChild(document.createTextNode(name));
-      b.addEventListener('click', () => pvTap('moonModel', v));
-      mods.appendChild(b);
-    });
     // v48: Moon style (Glow / Phase) only where it changes the moon: the two ring screens
     $('md-glow').closest('fieldset').hidden = sh.moon !== 'moondial' && sh.moon !== 'dial3d';
     // what each group has now
@@ -8376,7 +8297,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     $('sumSound').textContent = [lab('haptics') === 'Off' ? 'No buzz' : lab('haptics') + ' buzz', onOff('Ticks', S.sound === 'on')].concat(window.SunAndroid ? [onOff('Alerts', S.skyAlerts === 'on')] : []).join(' · ');
     $('sumScreens').textContent = [S.startScreen === 'planet' ? 'Starts on the Earth' : 'Starts on the Sun', S.mode === 'one' ? 'One menu' : 'Sun + moon'].join(' · ');
     $('sumBattery').textContent = [S.fx === 'fancy' ? 'Fancy effects' : 'Calm effects', S.chargeMode === 'off' ? 'No charging clock' : 'Charging clock'].join(' · ');
-    requestAnimationFrame(() => { pvDots('pvars', 'pvarsDots'); pvDots('pmoons', 'pmoonsDots'); pvDots('pstyles', 'pstylesDots'); });
+    requestAnimationFrame(() => { pvDots('pmodelRow', 'pmodelDots'); pvDots('pscreenRow', 'pscreenDots'); });
   }
   // + Edit look: the editor for the screen you came from (sun or moon)
   ['lookEditBtn', 'lookEditBtn2'].forEach((id) => $(id).addEventListener('click', () => openLookEdit(st.peekFrom === 'moon' || S.mode === 'one' ? 'moon' : 'sun')));
@@ -8491,7 +8412,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (isLook || (changed === 'theme' && S.theme === 'custom')) {
       if (prevTheme === 'auto') {
         const th = THEMES[lookBlend(phaseNow()).theme];
-        if (th) { S.sunLook = th.look; S.moonLook = th.moon; if (th.color === 'time') S.sunTime = true; else { S.sunTime = false; S.color = th.color; } }
+        if (th) { S.sunLook = th.look; if (th.color === 'time') S.sunTime = true; else { S.sunTime = false; S.color = th.color; } }
       }
       S.theme = 'custom';
     }
@@ -8500,8 +8421,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     // v100: with "Same style on both screens" a model changes the sun and the moon together
     if (S.pairLink !== 'off') {
       if (changed === 'sunPick' && pick) S.moonModel = MOON_OF_SUN[pick.value] || 'real';
-      if (changed === 'neonStyle') S.moonModel = 'real';
-      if (changed === 'moonModel') { const sl = SUN_OF_MOON[S.moonModel]; if (sl) S.sunLook = sl; else if (MOON_OF_SUN[S.sunLook]) { S.sunLook = 'rays'; S.rayStyle = 'glow'; } }
+      if (changed === 'neonStyle') S.moonModel = S.neonStyle === 'synth' ? 'synth' : 'neon';
+      if (changed === 'moonModel') { const sl = SUN_OF_MOON[S.moonModel]; if (sl === 'flames') { S.sunLook = 'rays'; S.rayStyle = 'flames'; } else if (sl === 'neon' || sl === 'synth') { S.sunLook = 'neon'; S.neonStyle = sl === 'synth' ? 'synth' : 'minimal'; } else if (sl) S.sunLook = sl; else if (S.sunLook !== 'rays' || S.rayStyle === 'flames') { S.sunLook = 'rays'; S.rayStyle = 'glow'; } }
     }
     if (changed === 'moonLook') S.moonLook = tappedMoon;
     if (changed === 'color') { S.sunTime = tappedColor[0]; S.color = tappedColor[1]; }
@@ -8513,7 +8434,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     }
     if (changed === 'moonDial' && S.moonLook !== 'dial3d') S.moonLook = 'moondial';  // v48: the 3D dial keeps its screen  // tapping Glow / Phase switches the moon to Moon dial (like Neon styles)
     if (changed === 'dailyModel') dailyCheck();
-    if (changed === 'moonLook' || changed === 'moonDial' || changed === 'moonModel' || changed === 'modelPhase') peekScreen('moon');
+    if (changed === 'moonLook' || changed === 'moonDial' || changed === 'moonModel') peekScreen('moon');
     else if (['sunPick', 'sunView', 'neonStyle', 'color', 'skyPhoto', 'liveSun', 'weather', 'sunSet'].indexOf(changed) !== -1) peekScreen('sun');
     if (changed === 'moonPhase') peekScreen('moon');
     if (changed === 'theme' || isLook || S.theme !== prevTheme) fillForm();
