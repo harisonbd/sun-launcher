@@ -313,7 +313,7 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 .acts { display: flex; flex-direction: column; gap: 8px; }
 .act { min-height: 52px; padding: 0 16px; border: none; border-radius: 16px; background: var(--panel-2); color: var(--ink); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; }
 
-fieldset { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+fieldset { min-width: 0; border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
 .seg { position: relative; display: flex; flex-wrap: wrap; gap: 6px; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
@@ -1480,7 +1480,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   'use strict';
   const $ = (id) => document.getElementById(id);
   const realText = (s) => /^\[.*\]$/.test(s || '') ? '' : s;  // v111: "[One line on ...]" waits for real text; it is not shown
-  const APP_VERSION = 'v111';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v112';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -6360,7 +6360,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
      scene. Everything has a place in space and only the camera moves: straight on past the planets, one real turn at the
      end, then the zoom. True sizes between the planets. Nothing fades. */
   const fly = { on: false, t0: 0, raf: 0, real: 38.26, soundSet: true, ownBuf: null, ownCtx: null, cv: null, c: null, W: 0, H: 0, near: null, stars: null, city: null, rocks: null, sprites: null, tiles: null };
-  const FLY_TOTAL = 40, FLY_TURN0 = 24.8, FLY_TURN1 = 29.8, FLY_ZOOM0 = 29.4, FLY_ZOOM1 = 38.2, FLY_REAL = 38.26;  // 38.26 s = 22 bars of the riff
+  const FLY_TOTAL = 40, FLY_TURN0 = 24.8, FLY_TURN1 = 29.8, FLY_ZOOM0 = 31.2, FLY_ZOOM1 = 38.2, FLY_REAL = 38.26;  // 38.26 s = 22 bars of the riff
   const flyEase = (x) => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x);
   const flySoft = (x) => { x = x < 0 ? 0 : x > 1 ? 1 : x; return x * x * x * (x * (x * 6 - 15) + 10); };  // very soft start and end
   const flyLerp = (a, b, k) => a + (b - a) * k;
@@ -6381,19 +6381,30 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   ];
   // v99 (user: no moments that feel sped up or slowed down): one speed, from the start to the end of the turn. Times in this
   // file are "flight seconds" (40 in all); fly.rate fits them to the length of the sound.
-  const FLY_V = 4;
-  // the whole way, worked out once, 60 steps a second: it really moves where it looks, so the turn is a real curve
+  const FLY_V = 6;  // v112: a wider spiral, so each planet starts as a dot in the distance
+  // v112 (user: not on a straight line; see one in the distance, then turn and go to it): a slow spiral in towards the Sun. How far we have
+  // turned (degrees) when we pass each planet: the next one is off to the side, and comes into view as we curve towards it. The Sun is
+  // ahead of us at the very start, then out of sight until it comes back large near the end.
+  const FLY_KNOTS = [[0, 0], [5.6, 70], [9.6, 140], [14.3, 200], [17.2, 245], [21, 300], [22.4, 320], [23.2, 335], [24.8, 335]];
+  // the whole way, worked out once, 60 steps a second: it really moves where it looks, so every turn is a real curve.
+  // a = where it looks, b = only the big turn at the end (half a turn)
   const FLY_PATH = (() => {
-    const out = []; let s = 0, x = 0;
-    for (let n = 0; n <= FLY_TOTAL * 60; n++) { const t = n / 60, a = Math.PI * flySoft((t - FLY_TURN0) / (FLY_TURN1 - FLY_TURN0)); out.push({ s: s, x: x, a: a }); const v = FLY_V / 60; s += v * Math.cos(a); x += v * Math.sin(a); }
+    const N = FLY_TOTAL * 60, rate = [], soft = [], W = 45; let sum = 0;
+    for (let n = 0; n <= N; n++) { const t = n / 60; let r = 0; for (let k = 1; k < FLY_KNOTS.length; k++) if (t >= FLY_KNOTS[k - 1][0] && t < FLY_KNOTS[k][0]) r = (FLY_KNOTS[k][1] - FLY_KNOTS[k - 1][1]) / (FLY_KNOTS[k][0] - FLY_KNOTS[k - 1][0]); rate.push(r); }
+    for (let n = 0; n <= N; n++) { let q = 0; for (let k = -W; k <= W; k++) q += rate[Math.max(0, Math.min(N, n + k))]; q /= W * 2 + 1; soft.push(q); sum += q; }
+    const out = []; let s = 0, x = 0, sp = 0; const scale = 335 * Math.PI / 180 / sum;
+    for (let n = 0; n <= N; n++) { const t = n / 60, b = Math.PI * flySoft((t - FLY_TURN0) / (FLY_TURN1 - FLY_TURN0)), a = sp + b; out.push({ s: s, x: x, a: a, b: b }); sp += soft[n] * scale; const v = FLY_V / 60; s += v * Math.cos(a); x += v * Math.sin(a); }
     return out;
   })();
-  FLY_PASS.forEach((q) => { q.s = FLY_PATH[Math.round(q.T * 60)].s; const l = Math.hypot(q.ox, q.oy), d = q.d || 2.1 * Math.pow(q.r / 1.05, 0.8); q.T0 = q.T; q.dd = d; q.x = q.ox / l * d; q.y = -q.oy / l * d; });
-  const FLY_END = FLY_PASS[FLY_PASS.length - 1], FLY_SUN = { x: 0.2, y: -11.5, s: FLY_END.s + 40, r: 10.45 };  // true size; just above our line, so no planet crosses in front of it
+  // a planet's place: beside the way at the moment T we pass it
+  function flyPlace(q, T) { const C = FLY_PATH[Math.round(T * 60)], ca = Math.cos(C.a), sa = Math.sin(C.a), l = Math.hypot(q.ox, q.oy), d = q.d || 2.1 * Math.pow(q.r / 1.05, 0.8), side = q.ox / l * d; q.dd = d; q.x = C.x + ca * side; q.s = C.s - sa * side; q.y = -q.oy / l * d; }
+  FLY_PASS.forEach((q) => { q.T0 = q.T; flyPlace(q, q.T); });
+  // the Sun: true size, straight ahead at the end of the spiral, just above the planets' line, so no planet crosses in front of it
+  const FLY_SUN = (() => { const C = FLY_PATH[Math.round(FLY_PASS[FLY_PASS.length - 1].T * 60)], ca = Math.cos(C.a), sa = Math.sin(C.a); return { x: C.x + sa * 60 + ca * 0.2, y: -11.5, s: C.s + ca * 60 - sa * 0.2, r: 10.45 }; })();
   // the camera: how far along the way at time t (after the turn it goes back the way it came, towards the Earth), and where it looks
   function flyCam(t) {
     const q = Math.max(0, Math.min(FLY_PATH.length - 2, t * 60)), i = Math.floor(q), k = q - i, a = FLY_PATH[i], b = FLY_PATH[i + 1];
-    return { s: flyLerp(a.s, b.s, k), x: flyLerp(a.x, b.x, k), a: flyLerp(a.a, b.a, k) };
+    return { s: flyLerp(a.s, b.s, k), x: flyLerp(a.x, b.x, k), a: flyLerp(a.a, b.a, k), b: flyLerp(a.b, b.b, k) };
   }
   // a place in space -> the screen. Returns null when it is behind the camera.
   function flyView(cam, W, H, x, y, s, r, near) {
@@ -6419,12 +6430,12 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     fly.near = Array.from({ length: 70 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
     // the belt: rocks with a place in space between Jupiter and Mars, a few big ones and many small; far ones first
     // v99 (user: another shower shortly after the start): the far field beyond Neptune comes first, the belt after Jupiter stays
-    const fields = [[1.2, 4.2, 540], [18.4, 20.2, 360]].map((f) => [flyCam(f[0]).s, flyCam(f[1]).s, f[2]]), spots = [];
-    fields.forEach((f) => { for (let i = 0; i < f[2]; i++) spots.push(f); });
+    const spots = [];
+    [[1.2, 4.2, 540], [18.4, 20.2, 360]].forEach((f) => { for (let i = 0; i < f[2]; i++) spots.push(f); });
     fly.rocks = spots.map((f) => {
-      const s0 = f[0], s1 = f[1], r = 0.001 + Math.pow(Math.random(), 4) * 0.015, a = Math.random() * 6.283, d = 4 * r + 0.01 + Math.pow(Math.random(), 1.2) * 0.55;
-      return { x: Math.cos(a) * d, y: Math.sin(a) * d, s: s0 + Math.random() * (s1 - s0), r: r, k: Math.floor(Math.random() * FLY_ROCK_SHAPES), f0: Math.random() * FLY_ROCK_FRAMES, spin: (0.05 + Math.random() * 0.2) * (Math.random() < 0.5 ? -1 : 1) };
-    }).sort((a, b) => b.s - a.s);
+      const tf = f[0] + Math.random() * (f[1] - f[0]), C = FLY_PATH[Math.round(tf * 60)], r = 0.001 + Math.pow(Math.random(), 4) * 0.015, a = Math.random() * 6.283, d = 4 * r + 0.01 + Math.pow(Math.random(), 1.2) * 0.55, off = Math.cos(a) * d;
+      return { tf: tf, x: C.x + Math.cos(C.a) * off, y: Math.sin(a) * d, s: C.s - Math.sin(C.a) * off, r: r, k: Math.floor(Math.random() * FLY_ROCK_SHAPES), f0: Math.random() * FLY_ROCK_FRAMES, spin: (0.05 + Math.random() * 0.2) * (Math.random() < 0.5 ? -1 : 1) };
+    }).sort((a, b) => b.tf - a.tf);
     flyRocksStart();
     fly.faceEnd = 0;
     if (!fly.stars) { fly.stars = new Image(); fly.stars.src = 'stars-4k.jpg'; }
@@ -6487,10 +6498,10 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     fly.raf = requestAnimationFrame(flyFrame);
   }
   function flyDraw(t) {
-    const c = fly.c, W = fly.W, H = fly.H, cam = flyCam(t), turn = cam.a / Math.PI;
+    const c = fly.c, W = fly.W, H = fly.H, cam = flyCam(t), turn = cam.b / Math.PI;
     // the machine: a slow lean from side to side and a slow drift; a wide bank through the turn; still before the city
     const calm = 1 - flyEase((t - 30) / 3), bank = Math.sin(Math.PI * turn);
-    const lean = reduce ? 0 : 0.035 * Math.sin(t * 0.5) * calm - 0.16 * bank;
+    const lean = reduce ? 0 : 0.035 * Math.sin(t * 0.5) * calm - 0.16 * bank - 0.07 * flyEase(t / 3) * (1 - flyEase((t - 23) / 2));  // v112: it leans into the spiral
     // v94 (user): through the turn the ship rolls slowly onto its head, then slowly back, upright again before the city
     const roll = lean + (reduce ? 0 : -Math.PI * flySoft((t - 24.2) / 3.8) + Math.PI * flySoft((t - 28) / 4.6));
     const sx = reduce ? 0 : 7 * Math.sin(t * 0.42) * calm, sy = reduce ? 0 : 5 * Math.sin(t * 0.33 + 2) * calm;
@@ -6500,7 +6511,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     flyBackground(c, W, H, t, cam, calm); flySun(c, W, H, t, cam);
     // far to near: the planets and the belt on the way out; once we look back (they are all out of sight then) only the Earth and
     // its Moon (user: the planets stay in their own orbits, far from the Earth; this short way is not to scale)
-    const back = cam.a > Math.PI / 2, list = back ? [] : FLY_PASS.map((p) => ({ p: p, v: flyView(cam, W, H, p.x, p.y, p.s, p.r, 0.01) })).filter((q) => q.v).sort((a, b) => b.v.z - a.v.z);
+    const back = cam.b > Math.PI / 2, list = back ? [] : FLY_PASS.map((p) => ({ p: p, v: flyView(cam, W, H, p.x, p.y, p.s, p.r, 0.01) })).filter((q) => q.v).sort((a, b) => b.v.z - a.v.z);
     list.forEach((q) => { flyPlanet(c, W, H, q.p, q.v, t, cam); });
     if (!back) flyBelt(c, W, H, t, cam);
     if (back) flyEarth(c, W, H, t, cam);
@@ -6514,7 +6525,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     c.fillStyle = '#000'; c.fillRect(-W, -H, W * 3, H * 3);
     const s = fly.stars;
     if (s && s.complete && s.naturalWidth) {
-      const off = cam.a / (Math.PI * 2), sc = H / s.naturalHeight * 2.4, w = s.naturalWidth * sc, x = -W * 0.6 - off * w;
+      const off = (cam.a / (Math.PI * 2)) % 1, sc = H / s.naturalHeight * 2.4, w = s.naturalWidth * sc, x = -W * 0.6 - off * w;
       c.drawImage(s, x, -H * 0.7, w, s.naturalHeight * sc); c.drawImage(s, x + w, -H * 0.7, w, s.naturalHeight * sc);
       // v94 (user: cleaner): the map's grey grain a little darker
       c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(-W, -H, W * 3, H * 3);
@@ -6549,7 +6560,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     // too far to see its disc: a dot of its colour
     if (v.R < 1.2) { c.globalAlpha = Math.min(1, v.R * 1.4 + 0.25); c.fillStyle = p.col; c.beginPath(); c.arc(v.x, v.y, Math.max(0.6, v.R), 0, 7); c.fill(); c.globalAlpha = 1; return; }
     // the sunlight stays where it is in space, so after the turn we see the lit side
-    const ca = Math.cos(cam.a), sa = Math.sin(cam.a), fw = -p.L[2], light = flyNorm([p.L[0] * ca - fw * sa, p.L[1], -(p.L[0] * sa + fw * ca)]);
+    const ca = Math.cos(cam.b), sa = Math.sin(cam.b), fw = -p.L[2], light = flyNorm([p.L[0] * ca - fw * sa, p.L[1], -(p.L[0] * sa + fw * ca)]);
     if (p.airless) GLB.draw(c, v.x, v.y, v.R, { mode: 'moon', tex: p.tex, light: light, rot: t * p.spin * 6.283, shine: 0.1, expo: 1.3, glow: 0.4, margin: 1.2 });
     else {
       const o = { mode: 'planet', tex: p.tex, rot: t * p.spin * 6.283, roll: p.roll || 0, pitch: p.pitch || 0, light: light, expo: 1.2, margin: p.rings ? 1.3 : 1.15 };
@@ -6627,8 +6638,9 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (fly.rockN >= total) fly.rockDone = true;
   }
   function flyBelt(c, W, H, t, cam) {
-    if (cam.s < fly.rocks[fly.rocks.length - 1].s - 40) return;
+    if (t > 21) return;
     fly.rocks.forEach((q) => {
+      if (q.tf < t - 1 || q.tf > t + 8) return;
       const v = flyView(cam, W, H, q.x, q.y, q.s, q.r, 0.02);
       if (!v || v.x < -v.R || v.x > W + v.R || v.y < -v.R || v.y > H + v.R) return;
       // far away: a grain of light; near: the rock, one turning angle blended into the next on the big ones
@@ -6654,11 +6666,11 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   function flyEarth(c, W, H, t, cam) {
     if (t < FLY_ZOOM0 - 3) return;
     // v94 (user: ends closer, cleaner, sharper): at the end the screen is about 7 km wide
-    const rad = Math.PI / 180, R0 = Math.min(W, H) * 0.009, kmWide = 7, cosL = Math.cos(LAT * rad);
+    const rad = Math.PI / 180, R0 = W * 0.9 / 60, kmWide = 7, cosL = Math.cos(LAT * rad);
     const Send = W * 111.32 / kmWide, Rend = Send / rad;
     const R = R0 * Math.pow(Rend / R0, flyRate(t)), S = R * rad, Rswap = Math.max(W, H) * 1.0;
     // the Earth is straight ahead once we have turned back, its small Moon beside it (true size: 27 % of the Earth)
-    const left = Math.PI - cam.a; if (left > 1.3) return;
+    const left = Math.PI - cam.b; if (left > 1.3) return;
     const ex = W / 2 + Math.tan(left) * W * 0.9, ey = H / 2;
     const swap = flyEase((R - Rswap * 0.72) / (Rswap * 0.28));
     if (swap > 0) flyCityMap(c, W, H, S, cosL, t);
@@ -6670,11 +6682,11 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       c.save(); c.globalAlpha = 1 - swap;
       PG.draw(c, ex, ey, Math.min(R, Rswap), { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: LON * rad + (1 - face) * 1.1, pitch: -LAT * rad * (0.25 + 0.75 * face),
         rot2: t * 0.01, light: flyNorm([-0.35, 0.3, 0.88]), expo: 1.15, margin: 1.06, glow: 0.3 });
-      // v99 (user: whizzing past the Moon, then landing on the Earth): the Moon has a place on our way, v110: at its true 60 Earth
-      // radii before the Earth, a little to the side. It grows and rushes past first. zM = how far it is, in Earth radii.
-      const zM = W * 0.9 / R - 60;
-      if (zM > 0.3) {
-        const q = W * 0.9 / zM, mx = ex - q * 0.7, my = ey - q * 0.5, mr = q * 0.27;
+      // v112 (user: a near fly-by, 2A): the Moon has its true place, 60 Earth radii before the Earth, a little to the side. We pass close, so
+      // it grows to about half the screen, craters lit, for about 2 s. zM = how far it is, in Earth radii. The zoom waits until it has passed.
+      const zM = 2.7 * (32 - t);
+      if (zM > 0.25) {
+        const q = W * 0.9 / zM, mx = ex - q * 0.38, my = ey - q * 0.14, mr = q * 0.27;
         if (mx + mr > -W * 0.3 && my + mr > -H * 0.3) GLB.draw(c, mx, my, mr, { mode: 'moon', light: flyNorm([-0.35, 0.3, 0.88]), rot: t * 0.1, shine: 0.1, expo: 1.3, glow: 0.4, margin: 1.2 });
       }
       c.restore();
@@ -6804,7 +6816,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         hits.forEach((h) => { const at = h.t * rate + 1.8 * q.dd / FLY_V; if (Math.abs(at - q.T0) <= (q.inner ? 0.5 : 1.1) && at >= prev + (q.inner ? 0.6 : 1.4) && at <= 24.2 && h.v > best) { best = h.v; T = at; } });
       }
       if (T < prev + 0.4) T = prev + 0.4;  // v110: always in their real order
-      q.T = T; prev = T; q.s = FLY_PATH[Math.round(T * 60)].s;
+      q.T = T; prev = T; flyPlace(q, T);
     });
   }
   function flySoundReady() {
@@ -7693,7 +7705,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v111 · Sun and Moon now match better on every screen, and both lists open in the middle. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen. The flight has true sizes.';
+  const NEWS = 'v112 · The flight now spirals in: each planet comes into view as you curve towards it, and you pass close to the Moon. Sun and Moon match better on every screen. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
