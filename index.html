@@ -1480,7 +1480,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   'use strict';
   const $ = (id) => document.getElementById(id);
   const realText = (s) => /^\[.*\]$/.test(s || '') ? '' : s;  // v111: "[One line on ...]" waits for real text; it is not shown
-  const APP_VERSION = 'v112';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v113';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -3957,7 +3957,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         c.strokeStyle = 'rgba(255, 226, 190, ' + ((major ? 0.8 : 0.35) * fa2).toFixed(3) + ')'; c.lineWidth = major ? 1.6 : 1; c.stroke();
       }
       c.restore();
-      txt('Sun', 24, H * 0.115, 12, 600, muted, 'left', true);
+      txt('Sun', 24, H * 0.165 - 26, 12, 600, muted, 'left', true);
       txt(DAYS[today.getDay()] + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()], 24, H * 0.165, 28, 300, '#F5EFE3');
       txt(sol.title + ' · ' + (front + 1) + ' of ' + n, 24, H * 0.2, 13, 400, muted);
       if (!S.pins.length) txt('Turn the dial · tap to open', W / 2, H * 0.875, 12.5, 400, muted, 'center');
@@ -4445,7 +4445,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         c.strokeStyle = 'rgba(225, 230, 242, ' + ((major ? 0.75 : 0.32) * fa2).toFixed(3) + ')'; c.lineWidth = major ? 1.6 : 1; c.stroke();
       }
       c.restore();
-      txt('Moon', 24, H * 0.115, 12, 600, 'rgba(195, 204, 221, 0.85)', 'left', true);
+      txt('Moon', 24, H * 0.165 - 26, 12, 600, 'rgba(195, 204, 221, 0.85)', 'left', true);
       txt(DAYS[today.getDay()] + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()], 24, H * 0.155, 28, 300, '#F5EFE3');
       if (cur) txt(cur.group + ' · ' + (live + 1) + ' of ' + LIST.length, 24, H * 0.195, 13, 400, 'rgba(195, 204, 221, 0.9)');
       txt('Turn the dial · tap to open', W / 2, H * 0.9, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
@@ -6360,7 +6360,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
      scene. Everything has a place in space and only the camera moves: straight on past the planets, one real turn at the
      end, then the zoom. True sizes between the planets. Nothing fades. */
   const fly = { on: false, t0: 0, raf: 0, real: 38.26, soundSet: true, ownBuf: null, ownCtx: null, cv: null, c: null, W: 0, H: 0, near: null, stars: null, city: null, rocks: null, sprites: null, tiles: null };
-  const FLY_TOTAL = 40, FLY_TURN0 = 24.8, FLY_TURN1 = 29.8, FLY_ZOOM0 = 31.2, FLY_ZOOM1 = 38.2, FLY_REAL = 38.26;  // 38.26 s = 22 bars of the riff
+  const FLY_TOTAL = 40, FLY_TURN0 = 24.4, FLY_TURN1 = 30, FLY_ZOOM0 = 31.2, FLY_ZOOM1 = 38.2, FLY_REAL = 38.26;  // 38.26 s = 22 bars of the riff
   const flyEase = (x) => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x);
   const flySoft = (x) => { x = x < 0 ? 0 : x > 1 ? 1 : x; return x * x * x * (x * (x * 6 - 15) + 10); };  // very soft start and end
   const flyLerp = (a, b, k) => a + (b - a) * k;
@@ -6389,11 +6389,14 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   // the whole way, worked out once, 60 steps a second: it really moves where it looks, so every turn is a real curve.
   // a = where it looks, b = only the big turn at the end (half a turn)
   const FLY_PATH = (() => {
-    const N = FLY_TOTAL * 60, rate = [], soft = [], W = 45; let sum = 0;
-    for (let n = 0; n <= N; n++) { const t = n / 60; let r = 0; for (let k = 1; k < FLY_KNOTS.length; k++) if (t >= FLY_KNOTS[k - 1][0] && t < FLY_KNOTS[k][0]) r = (FLY_KNOTS[k][1] - FLY_KNOTS[k - 1][1]) / (FLY_KNOTS[k][0] - FLY_KNOTS[k - 1][0]); rate.push(r); }
-    for (let n = 0; n <= N; n++) { let q = 0; for (let k = -W; k <= W; k++) q += rate[Math.max(0, Math.min(N, n + k))]; q /= W * 2 + 1; soft.push(q); sum += q; }
-    const out = []; let s = 0, x = 0, sp = 0; const scale = 335 * Math.PI / 180 / sum;
-    for (let n = 0; n <= N; n++) { const t = n / 60, b = Math.PI * flySoft((t - FLY_TURN0) / (FLY_TURN1 - FLY_TURN0)), a = sp + b; out.push({ s: s, x: x, a: a, b: b }); sp += soft[n] * scale; const v = FLY_V / 60; s += v * Math.cos(a); x += v * Math.sin(a); }
+    const N = FLY_TOTAL * 60, W = 66;
+    // v112 (user: sharper moments before the Sun): every change of turning speed is spread out over about 2 s, twice, so no turn starts or stops at once
+    const smooth = (f) => { const raw = []; for (let n = 0; n <= N; n++) raw.push(f(n / 60)); for (let pass = 0; pass < 2; pass++) { const o = raw.slice(); for (let n = 0; n <= N; n++) { let q = 0; for (let k = -W; k <= W; k++) q += o[Math.max(0, Math.min(N, n + k))]; raw[n] = q / (W * 2 + 1); } } return raw; };
+    const spiral = smooth((t) => { for (let k = 1; k < FLY_KNOTS.length; k++) if (t >= FLY_KNOTS[k - 1][0] && t < FLY_KNOTS[k][0]) return (FLY_KNOTS[k][1] - FLY_KNOTS[k - 1][1]) / (FLY_KNOTS[k][0] - FLY_KNOTS[k - 1][0]); return 0; });
+    const big = smooth((t) => t >= FLY_TURN0 && t < FLY_TURN1 ? flySoft((t - FLY_TURN0) / (FLY_TURN1 - FLY_TURN0)) - flySoft((t - 1 / 60 - FLY_TURN0) / (FLY_TURN1 - FLY_TURN0)) : 0);
+    let sS = 0, sB = 0; spiral.forEach((v) => { sS += v; }); big.forEach((v) => { sB += v; });
+    const out = []; let s = 0, x = 0, sp = 0, b = 0;
+    for (let n = 0; n <= N; n++) { const a = sp + b; out.push({ s: s, x: x, a: a, b: b }); sp += spiral[n] / sS * 335 * Math.PI / 180; b += big[n] / sB * Math.PI; const v = FLY_V / 60; s += v * Math.cos(a); x += v * Math.sin(a); }
     return out;
   })();
   // a planet's place: beside the way at the moment T we pass it
@@ -6501,9 +6504,9 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     const c = fly.c, W = fly.W, H = fly.H, cam = flyCam(t), turn = cam.b / Math.PI;
     // the machine: a slow lean from side to side and a slow drift; a wide bank through the turn; still before the city
     const calm = 1 - flyEase((t - 30) / 3), bank = Math.sin(Math.PI * turn);
-    const lean = reduce ? 0 : 0.035 * Math.sin(t * 0.5) * calm - 0.16 * bank - 0.07 * flyEase(t / 3) * (1 - flyEase((t - 23) / 2));  // v112: it leans into the spiral
+    const lean = reduce ? 0 : 0.035 * Math.sin(t * 0.5) * calm - 0.16 * bank - 0.07 * flySoft(t / 4) * (1 - flySoft((t - 20) / 6));  // v112: it leans into the spiral
     // v94 (user): through the turn the ship rolls slowly onto its head, then slowly back, upright again before the city
-    const roll = lean + (reduce ? 0 : -Math.PI * flySoft((t - 24.2) / 3.8) + Math.PI * flySoft((t - 28) / 4.6));
+    const roll = lean + (reduce ? 0 : -Math.PI * flySoft((t - 23.6) / 4.8) + Math.PI * flySoft((t - 27.8) / 5));
     const sx = reduce ? 0 : 7 * Math.sin(t * 0.42) * calm, sy = reduce ? 0 : 5 * Math.sin(t * 0.33 + 2) * calm;
     const zoom = 1 + Math.abs(lean) * 1.1 + 0.03 * calm;
     c.save();
@@ -7705,7 +7708,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v112 · The flight now spirals in: each planet comes into view as you curve towards it, and you pass close to the Moon. Sun and Moon match better on every screen. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen.';
+  const NEWS = 'v113 · The flight now spirals in: each planet comes into view as you curve towards it, and you pass close to the Moon. Sun and Moon match better on every screen. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
