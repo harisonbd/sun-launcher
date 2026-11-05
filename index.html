@@ -255,7 +255,7 @@ button:focus-visible, a:focus-visible, .seg input:focus-visible + label, input:f
 /* Sun views (22 Oct): the app buttons become cards (Real sun today), a plain list (Minimal sun) or text on a dial (Clock dial) */
 #app.sv #sunInfo, #app.sv #clockChip { display: none !important; }
 #app.sv .facet.sv-off { opacity: 0 !important; pointer-events: none; }
-#app.sv-today .facet { width: min(278px, calc(100vw - 96px)); height: 52px; border-radius: 14px; padding: 0 16px; gap: 12px; font-size: 16px; transform-origin: 50% 50%; }
+#app.sv-today .facet { width: var(--todayw, min(278px, calc(100vw - 96px))); height: 52px; border-radius: 14px; padding: 0 16px; gap: 12px; font-size: 16px; transform-origin: 50% 50%; }
 #app.sv-minimal .facet, #app.sv-clock .facet:not(.front) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7); }
 #app.sv-minimal .facet { height: 40px; gap: 14px; padding: 0 8px; font-size: 17px; font-weight: 400; color: rgba(250, 244, 236, 0.75); transform-origin: 0 50%; }
 #app.sv-minimal .facet .ini { width: 28px; height: 28px; }
@@ -821,9 +821,10 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
 #app.ml-dial3d .item:not(.sel) { background: rgba(38, 54, 94, .94); border-color: rgba(235, 240, 250, .6); }
 #app:not(.sv) .facet.mini { width: 40px; height: 40px; padding: 0; justify-content: center; background: rgba(38, 54, 94, .94) !important; border: 1.5px solid rgba(235, 240, 250, .6) !important; }
 #app:not(.sv) .facet.mini .ini { background: transparent; color: #EEF0F5; }
-/* v110 (user): a clear Edit button on every screen, under Settings */
-.roundbtn.editl { top: calc(72px + var(--st)); right: max(16px, env(safe-area-inset-right, 0px)); }
+/* v110 (user): a clear Edit button on every screen; v111: in the top row, beside Settings */
+.roundbtn.editl { right: calc(72px + env(safe-area-inset-right, 0px)); }
 #app.watch .roundbtn.editl, #app.editing .roundbtn.editl { opacity: 0; pointer-events: none; }
+@media (max-width: 400px) { .handle.top { width: 116px; margin-left: -58px; font-size: 11px; white-space: nowrap; overflow: hidden; } }
 </style>
 
 <div id="app">
@@ -1078,6 +1079,13 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         <div class="seg">
           <input type="radio" name="listStyle" id="ls-pills" value="pills"><label for="ls-pills">Pills</label>
           <input type="radio" name="listStyle" id="ls-plain" value="plain"><label for="ls-plain">Plain</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Sun list</legend>
+        <div class="seg">
+          <input type="radio" name="sunList" id="sli-loop" value="loop"><label for="sli-loop">Loop</label>
+          <input type="radio" name="sunList" id="sli-ends" value="ends"><label for="sli-ends">Stop at ends</label>
         </div>
       </fieldset>
       <fieldset>
@@ -1471,7 +1479,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = 'v110';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const realText = (s) => /^\[.*\]$/.test(s || '') ? '' : s;  // v111: "[One line on ...]" waits for real text; it is not shown
+  const APP_VERSION = 'v111';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1549,7 +1558,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   const FRONT_FX = ['lift', 'dim', 'halo', 'glint'];
   // Neon look styles (22 Oct: user removed the old Neon, Cyberpunk and Tron; Minimal is the default).
   const NEON_STYLES = ['minimal', 'synth'];
-  const S = { moonList: 'ends', listStyle: 'pills', dialBy: {}, dailyModel: 'off', dailyDay: '', moonModel: 'real', mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'clear', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'off', useWeek: {}, seasonsOff74: 0, strip: 'off', clockStyle: 'thin', timePos: 'top', eyePos: 'top', homePages: null, homeDock: null, flySound: 'off', flySharp: 'on', eyeAt: {}, skyAlerts: 'off', realClouds: 'on', cloudDay: '', cloudTry: 0 };
+  const S = { sunList: 'loop', moonList: 'ends', listStyle: 'pills', dialBy: {}, dailyModel: 'off', dailyDay: '', moonModel: 'real', mode: 'two', theme: 'auto', sunLook: 'rays', sunView: 'dial', pairLink: 'on', chargeMode: 'auto', dir: 'flat', moonLook: 'dots', color: '#FFC94D', sunTime: true, fx: 'fancy', haptics: 'soft', sound: 'off', tilt: 45, size: 125, sky: 'clock', hour: 12, rayStyle: 'glow', frontFx: [], swap: 'off', skyPhoto: 'clear', moonDial: 'glow', sunList: 'edge', neonStyle: 'minimal', liveSun: 'off', weather: 'off', moonPhase: 'real', startScreen: 'planet', order: BASE_APPS.map((a) => a.name), onMoon: [], recent: [], favs: ['Backup & restore', 'Theme', 'Offline status'], custom: null, visits: 0, pins: [], useHours: {}, tune: {}, looks: { sun: [], moon: [] }, sunSet: 'off', tips: 'on', hints: {}, loc: 'fixed', place: null, textSize: 'normal', apps: null, chipsPos: 'below', notes: 'on', seasons: 'off', useWeek: {}, seasonsOff74: 0, strip: 'off', clockStyle: 'thin', timePos: 'top', eyePos: 'top', homePages: null, homeDock: null, flySound: 'off', flySharp: 'on', eyeAt: {}, skyAlerts: 'off', realClouds: 'on', cloudDay: '', cloudTry: 0 };
   try {
     let saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!saved) {
@@ -1612,6 +1621,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   if (['real', 'corona', 'disco', 'dandelion', 'eclipse', 'flames', 'neon', 'synth'].indexOf(S.moonModel) === -1) S.moonModel = 'real';  // v100
   if (S.dailyModel !== 'on') S.dailyModel = 'off';  // v102
   if (S.moonList !== 'loop') S.moonList = 'ends';  // v110
+  if (S.sunList !== 'ends') S.sunList = 'loop';  // v111
   if (S.listStyle !== 'plain') S.listStyle = 'pills';  // v110
   if (!S.dialBy || typeof S.dialBy !== 'object') S.dialBy = {};  // v110
   if (S.moonModel === 'real' && S.sunLook === 'rays' && S.rayStyle === 'corona') S.moonModel = 'corona';  // v110: Corona has its own moon
@@ -2971,6 +2981,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       st[st.spin] += st.vel * dt;
       st.vel *= Math.exp(-dt / 325);
       let stop = Math.abs(st.vel) < (st.spin === 'rot' ? 0.03 : 0.0006);
+      if (st.spin === 'rot' && sunEnds()) { const u = (frontDeg() - st.rot) / (360 / APPS.length); if (u < -0.3 || u > APPS.length - 0.7) stop = true; }
       if (st.spin === 'pos' && !moonLoops() && (st.pos < -0.3 || st.pos > LIST.length - 0.7)) stop = true;
       if (stop) { const key = st.spin; st.spin = null; if (key === 'rot') snapRot(); else snapPos(); }
       active = true;
@@ -3115,14 +3126,23 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     const n = APPS.length, step = 360 / n;
     return ((Math.round((frontDeg() - st.rot) / step) % n) + n) % n;
   }
+  // v111 (user: uniform, no overlaps): a list name fades before it reaches the top row of buttons or the bottom corners. 1 = free, 0 = gone
+  function roomK(side, y) {
+    const g = $(side + 'Settings'), b = $(side + 'Search');
+    if (!b.offsetHeight) return 1;
+    return clamp((y - 22 - g.offsetTop - g.offsetHeight) / 20, 0, 1) * clamp((b.offsetTop - y - 22) / 20, 0, 1);
+  }
+  // v111 (user): the Sun list can stop at its ends too; it then shows nothing past its first and last app
+  const sunEnds = () => S.sunList === 'ends' && APPS.length > 2;
+  function sunNormal() { st.rot = frontDeg() - frontIndex() * 360 / Math.max(1, APPS.length); }
   function snapRot() {
-    const step = 360 / APPS.length, fd = frontDeg(), k = Math.round((fd - st.rot) / step);
+    const step = 360 / APPS.length, fd = frontDeg(), k0 = Math.round((fd - st.rot) / step), k = sunEnds() ? clamp(k0, 0, APPS.length - 1) : k0;
     tween('rot', fd - k * step, 320);
   }
   function rotateTo(i) {
     const step = 360 / APPS.length, base = frontDeg() - i * step;
     const d = ((((base - st.rot) % 360) + 540) % 360) - 180;
-    tween('rot', st.rot + d, 480);
+    tween('rot', sunEnds() ? base : st.rot + d, 480);
   }
 
   let facetEls = [];
@@ -3559,7 +3579,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       }
       el.classList.toggle('flip', flip);
       el.style.zIndex = String(500 + Math.round(p[3]));
-      const below = hzD.on && i !== front && p[1] > hzY() - 24;  // v45: behind the hills
+      const past = sunEnds() && Math.abs(i - (frontDeg() - st.rot) / (360 / APPS.length)) > APPS.length / 2;  // v111: past the end of the list
+      const below = past || (hzD.on && i !== front && p[1] > hzY() - 24);  // v45: behind the hills
       el.style.opacity = below ? '0' : (0.3 + 0.7 * f).toFixed(2);
       el.style.pointerEvents = below ? 'none' : '';
       // v34: only the front app shows its name; the neighbours show their round initial (they slid under the front pill)
@@ -3575,7 +3596,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         el.setAttribute('aria-label', APPS[i].name + (i === front ? ', in front. Tap to open, hold for shortcuts' : ''));
       });
       $('sunName').textContent = APPS[front].name;
-      $('sunHint').textContent = APPS[front].hint;
+      $('sunHint').textContent = realText(APPS[front].hint);
       lastFront = front;
     }
     let maxY = 0, minY = H;
@@ -3744,17 +3765,20 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       if (look === 'blackhole' && r >= 30) Object.assign(opt, { mode: 'blackhole', glow: 1, margin: Math.max(opt.margin, 1.9) });
       GLB.draw(c, x, y, r, opt);
     };
-    const dOf = (i) => { let d = (((i - pos) % n) + n) % n; if (d > n / 2) d -= n; return d; };
-    const place = (fn) => facetEls.forEach((el, i) => {
+    const dOf = (i) => { if (sunEnds()) return i - pos; let d = (((i - pos) % n) + n) % n; if (d > n / 2) d -= n; return d; };
+    const sbT = $('sunSearch'); let tNarrow = false;
+    const place = (fn) => { facetEls.forEach((el, i) => {
       el.classList.remove('mini', 'flip');
       const r = fn(dOf(i), i === front, el);
+      if (S.sunView === 'today') { if (r && sbT.offsetHeight && r.y + 24 > sbT.offsetTop) tNarrow = true; }
+      else if (r && i !== front) { const k = roomK('sun', r.y); if (k <= 0) { el.classList.add('sv-off'); return; } r.o *= k; }
       el.classList.toggle('sv-off', !r);
       if (!r) return;
       if (r.mini) el.classList.add('mini');
       el.style.transform = 'translate(' + r.x.toFixed(1) + 'px,' + r.y.toFixed(1) + 'px) translate(' + (r.left ? '0' : '-50%') + ',-50%) scale(' + (r.s || 1).toFixed(3) + ')';
       el.style.opacity = clamp(r.o, 0, 1).toFixed(2);
       el.style.zIndex = String(i === front ? 520 : 510);
-    });
+    }); if (S.sunView === 'today') app.style.setProperty('--todayw', tNarrow ? (W - 2 * (sbT.offsetLeft + sbT.offsetWidth + 8)) + 'px' : ''); };
     if (front !== lastFront) {
       facetEls.forEach((el, i) => { el.classList.toggle('front', i === front); el.setAttribute('aria-label', APPS[i].name + (i === front ? ', selected. Tap to open, hold for shortcuts' : '')); });
       lastFront = front;
@@ -3848,7 +3872,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       }
       const cur = APPS[front];
       txt(cur.name, W / 2, H * 0.7, 30, 600, '#F5EFE3', 'center');
-      if (cur.hint) txt(cur.hint, W / 2, H * 0.745, 15, 400, muted, 'center');
+      if (realText(cur.hint)) txt(cur.hint, W / 2, H * 0.745, 15, 400, muted, 'center');
       place((d) => {
         if (Math.abs(d) > 4.5) return null;
         const a = d * stepA;
@@ -4288,8 +4312,9 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       const x = G.Ix - G.Ri * Math.cos(rad), y = cy + G.Ri * Math.sin(rad);
       const sc = isSel ? 1.3 : 1 - Math.min(ad, 60) / 60 * 0.16;
       el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-14px,-50%) scale(' + sc.toFixed(3) + ')';
-      el.style.opacity = isSel ? '1' : fade.toFixed(2);
-      el.style.visibility = fade > 0.02 || isSel ? 'visible' : 'hidden';
+      const fk = fade * roomK('moon', y);
+      el.style.opacity = isSel ? '1' : fk.toFixed(2);
+      el.style.visibility = fk > 0.02 || isSel ? 'visible' : 'hidden';
     });
     $('moonTip').hidden = !showTips;
     if (live !== lastLive && cur) {
@@ -4298,7 +4323,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         el.setAttribute('aria-label', LIST[i].name + (i === live ? ', selected. Tap to open' : ''));
       });
       $('moonName').textContent = cur.name;
-      $('moonHint').textContent = cur.app ? cur.hint : cur.group + ' · ' + (live + 1) + ' of ' + N;
+      $('moonHint').textContent = cur.app ? realText(cur.hint) : cur.group + ' · ' + (live + 1) + ' of ' + N;
       lastLive = live; moonInfoH = 0;
     }
     if (look !== vsMoonShown) { vsMoonShown = look; moonInfoH = 0; vsRender(); }  // v59: "Follow the time" changed the moon: the slider follows
@@ -4487,7 +4512,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     drawWeather(c, W, H, now);
     drawRipples(c, 'moon', now, '#DCE2EE');
     // menu items: cards (D) or a plain list (B), the chosen one in the middle; scroll with the finger
-    const cw = Math.min(280, W - 100);
+    // v111 (user): if the rows reach the height of Search, they get narrower and stay clear of it
+    const sb = $('moonSearch'), sbX = sb.offsetLeft + sb.offsetWidth + 8, cw = cards && listY + rowGap + 24 > sb.offsetTop ? Math.min(280, W - 2 * sbX) : Math.min(280, W - 100);
     $('items').style.setProperty('--cardw', Math.round(cw) + 'px');
     itemEls.forEach((el, i) => {
       const dd = moonD(i), ad = Math.abs(dd);
@@ -4497,8 +4523,9 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         const rad = dd * 7.2 * Math.PI / 180, x = scene.C0 + scene.r * Math.cos(rad), y = scene.C1 + scene.r * Math.sin(rad), sel = i === live;
         el.dataset.n = String(i + 1).padStart(2, '0');
         el.style.transform = 'translate(' + (x + (sel ? 0 : 6)).toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(0,-50%) scale(' + (sel ? 1 : Math.max(0.7, 1 - ad * 0.058)).toFixed(3) + ')';
-        el.style.opacity = ad < 7.5 ? (sel ? '1' : Math.max(0.12, 1 - ad * 0.17).toFixed(2)) : '0';
-        el.style.visibility = ad < 7.5 ? 'visible' : 'hidden';
+        const rk = sel ? 1 : roomK('moon', y);
+        el.style.opacity = ad < 7.5 ? (sel ? '1' : (Math.max(0.12, 1 - ad * 0.17) * rk).toFixed(2)) : '0';
+        el.style.visibility = ad < 7.5 && rk > 0 ? 'visible' : 'hidden';
         el.style.zIndex = String(200 - Math.round(ad * 10));
         return;
       }
@@ -4520,11 +4547,12 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         el.style.zIndex = String(sel ? 300 : Math.round(100 + f * 100));
         return;
       }
-      const vis = cards ? ad < 1.6 && (!phaseRow || listY + dd * rowGap > phaseRow.y + 80) : ad < 4.6;  // v73: never on the mini moons
+      const lk = cards || i === live ? 1 : roomK('moon', listY + dd * rowGap);
+      const vis = cards ? ad < 1.6 && (!phaseRow || listY + dd * rowGap > phaseRow.y + 80) : ad < 4.6 && lk > 0;  // v73: never on the mini moons
       el.style.zIndex = String(200 - Math.round(ad * 10));
       if (cards) el.style.transform = 'translate(' + (W / 2).toFixed(1) + 'px,' + (listY + dd * rowGap).toFixed(1) + 'px) translate(-50%,-50%) scale(' + (1 - Math.min(ad, 2) * 0.06).toFixed(3) + ')';
       else el.style.transform = 'translate(18px,' + (listY + dd * rowGap).toFixed(1) + 'px) translate(0,-50%)';
-      el.style.opacity = vis ? Math.max(0.15, 1 - ad * (cards ? 0.38 : 0.2)).toFixed(2) : '0';
+      el.style.opacity = vis ? (Math.max(0.15, 1 - ad * (cards ? 0.38 : 0.2)) * lk).toFixed(2) : '0';
       el.style.visibility = vis ? 'visible' : 'hidden';
     });
     labelEls.forEach((el) => { el.style.transform = 'translate(-999px,-999px)'; });
@@ -4532,7 +4560,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (live !== lastLive && cur) {
       itemEls.forEach((el, i) => { el.classList.toggle('sel', i === live); el.setAttribute('aria-label', LIST[i].name + (i === live ? ', selected. Tap to open' : '')); });
       $('moonName').textContent = cur.name;
-      $('moonHint').textContent = cur.app ? cur.hint : cur.group + ' · ' + (live + 1) + ' of ' + LIST.length;
+      $('moonHint').textContent = cur.app ? realText(cur.hint) : cur.group + ' · ' + (live + 1) + ' of ' + LIST.length;
       lastLive = live;
     }
     $('moonInfo').style.top = Math.round(H + 40) + 'px';
@@ -6886,6 +6914,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       // ring screens turn with a sideways swipe (v34)
       const svg = sv ? sunViewGeo() : null;
       st.rot = sv ? drag.start + (svg.sideways ? dx : dy) / svg.row * (360 / APPS.length) : drag.start - along * 0.5 * (G.sinT < 0 ? -1 : 1);
+      if (sunEnds()) { const sp = 360 / APPS.length, fd = frontDeg(); st.rot = clamp(st.rot, fd - (APPS.length - 0.6) * sp, fd + 0.4 * sp); }
       drag.samples.push({ t: performance.now(), v: st.rot });
       if (drag.samples.length > 8) drag.samples.shift();
       kick();
@@ -7600,12 +7629,12 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     openSheet(a.name, 'Link not set yet: [' + a.name + ' address].', '', false);
   }
   function openShortcuts(a) {
-    const acts = (a.short || []).map((q) => ({
+    const acts = (a.short || []).filter((q) => realText(q.label)).map((q) => ({
       label: q.label,
       run: () => { pushRecent(a.name); if (!q.href && a.name === 'Timer') { const n = /(\d+)/.exec(q.label); if (/stopwatch/i.test(q.label)) openTimer('stop', 0, true); else openTimer(n ? 'timer' : 'focus', n ? +n[1] : 0, true); return; } if (q.href) { hapt('press'); const w = window.open(q.href, '_blank'); if (w) w.opener = null; else location.href = q.href; } else toast(a.name + ': ' + q.label + ' has no link yet (Edit app).'); }
     }));
     acts.push({ label: '✎ Edit app', run: () => openAppForm(a.name) }, { label: 'Remove ' + a.name, run: () => askRemove(a.name) });
-    openSheet(a.name, a.short && a.short.length ? 'Quick actions' : 'No quick actions yet: add them in Edit app.', a.href, false, acts);
+    openSheet(a.name, acts.length ? 'Quick actions' : 'No quick actions yet: add them in Edit app.', a.href, false, acts);
   }
   // v61: the Moon menu functions (user): Look opens the right part of Settings, Data saves / loads / cleans,
   // Safety and Info explain, Phone opens its setting. Things a web app cannot do say so in one line.
@@ -7664,7 +7693,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v110 · Sun and Moon now match better on every screen, and both lists open in the middle. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen. The flight has true sizes.';
+  const NEWS = 'v111 · Sun and Moon now match better on every screen, and both lists open in the middle. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen. The flight has true sizes.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -8153,7 +8182,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
 
   /* ---------- Settings ---------- */
   const form = $('settingsForm');
-  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons', 'strip', 'clockStyle', 'flySound', 'flySharp', 'skyAlerts', 'realClouds', 'moonModel', 'dailyModel', 'moonList', 'listStyle'];
+  const RADIOS = ['mode', 'theme', 'moonLook', 'sky', 'fx', 'haptics', 'sound', 'skyPhoto', 'moonDial', 'neonStyle', 'liveSun', 'weather', 'moonPhase', 'startScreen', 'sunView', 'chargeMode', 'sunSet', 'tips', 'loc', 'notes', 'seasons', 'strip', 'clockStyle', 'flySound', 'flySharp', 'skyAlerts', 'realClouds', 'moonModel', 'dailyModel', 'sunList', 'moonList', 'listStyle'];
   // v90 (user): the flight's sound can be a file from the phone; kept only on this phone
   $('flyPick').addEventListener('click', () => $('flyFile').click());
   $('flyFile').addEventListener('change', function () {
@@ -8513,6 +8542,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (changed === 'moonLook') S.moonLook = tappedMoon;
     if (changed === 'color') { S.sunTime = tappedColor[0]; S.color = tappedColor[1]; }
     if (changed === 'sunView') sunStyleUI();
+    if (changed === 'sunList') { sunNormal(); lastFront = -1; }
     if (changed === 'moonList' && LIST.length) { const n = LIST.length; st.pos = ((Math.round(st.pos) % n) + n) % n; }
     if (changed === 'pairLink') { S.pairLink = $('pairLink').checked ? 'on' : 'off'; pairUI(); }
     if (changed === 'pair') {
