@@ -1497,7 +1497,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   'use strict';
   const $ = (id) => document.getElementById(id);
   const realText = (s) => /^\[.*\]$/.test(s || '') ? '' : s;  // v111: "[One line on ...]" waits for real text; it is not shown
-  const APP_VERSION = 'v115';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v116';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -1690,8 +1690,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   /* ---------- Touch feel: vibration and sound ---------- */
   // Vibrate only when an item changes (detent), on long-press, swipe and the tilt end: no fine ticks or snaps (user, 21 Oct).
   const HAPT = {
-    soft: { fine: 3, detent: 8, detentSoft: 5, snap: 14, press: 22, swipe: [8, 30, 8] },
-    strong: { fine: 6, detent: 15, detentSoft: 9, snap: 24, press: 36, swipe: [14, 40, 14] }
+    soft: { fine: 3, detent: 8, detentSoft: 5, snap: 14, press: 22, swipe: [8, 30, 8], launch: [30, 50, 70] },
+    strong: { fine: 6, detent: 15, detentSoft: 9, snap: 24, press: 36, swipe: [14, 40, 14], launch: [45, 60, 100] }
   };
   let lastHapt = 0, lastDetent = 0;
   function hapt(kind) {
@@ -6444,9 +6444,13 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (!GLB.need('mercury', 'planet-mercury.jpg')) ok = false;
     return ok && fly.stars.complete && fly.city.complete;
   }
-  function startFly() {
+  function startFly(at) {
     if (fly.on || !GLB.ok) return;
     fly.on = true;
+    // v116 (user: no sign that the 7 taps worked, and an extra tap skipped it): a ring of light from the tap and a long buzz; taps in the first 1.5 s do nothing
+    fly.tap0 = performance.now();
+    const ar = $('app').getBoundingClientRect();
+    fly.glow = at ? { x: at.x - ar.left, y: at.y - ar.top } : { x: ar.width / 2, y: ar.height / 2 };
     fly.cv = document.createElement('canvas'); fly.cv.className = 'flycv'; fly.cv.setAttribute('aria-label', 'Flying home past the planets. Tap to skip.');
     $('app').appendChild(fly.cv);
     fly.c = fly.cv.getContext('2d');
@@ -6464,9 +6468,9 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     fly.faceEnd = 0;
     if (!fly.stars) { fly.stars = new Image(); fly.stars.src = 'stars-4k.jpg'; }
     if (!fly.city) { fly.city = new Image(); fly.city.src = PG.big() ? 'earth-day-8k.jpg' : 'earth-day.jpg'; }
-    fly.cv.addEventListener('pointerdown', () => endFly());
+    fly.cv.addEventListener('pointerdown', () => { if (performance.now() - fly.tap0 > 1500) endFly(); });
     pushLayer('flyby');
-    hapt('press');
+    hapt('launch');
     flySoundReady();  // made ready here, inside the tap, so the phone allows sound; it plays when the picture starts
     // the place first (a fresh GPS look, at most 3 s), then the city's satellite pictures for that place
     let placed = false;
@@ -6501,6 +6505,15 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     const c = fly.c; c.fillStyle = '#000'; c.fillRect(0, 0, fly.W, fly.H);
     c.fillStyle = 'rgba(255,255,255,' + (0.35 + 0.25 * Math.sin(s * 4)).toFixed(2) + ')'; c.textAlign = 'center'; c.font = '300 14px ' + (getComputedStyle(document.documentElement).getPropertyValue('--font') || 'sans-serif');
     c.fillText('Leaving the solar system…', fly.W / 2, fly.H / 2);
+    flyGlow(c);
+  }
+  // v116: the ring of light that says "it started": it grows from the tap and fades in 0.9 s
+  function flyGlow(c) {
+    const g = fly.glow, a = (performance.now() - fly.tap0) / 900;
+    if (!g || a >= 1 || a < 0) return;
+    const r = 24 + a * Math.max(fly.W, fly.H) * 0.55, k = (1 - a) * (1 - a), gr = c.createRadialGradient(g.x, g.y, r * 0.55, g.x, g.y, r);
+    gr.addColorStop(0, 'rgba(255,236,200,0)'); gr.addColorStop(0.82, 'rgba(255,236,200,' + (0.6 * k).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,236,200,0)');
+    c.fillStyle = gr; c.fillRect(0, 0, fly.W, fly.H);
   }
   function endFly(fromBack) {
     if (!fly.on) return;
@@ -6547,6 +6560,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (back) flyEarth(c, W, H, t, cam);
     c.restore();
     flyCityText(c, W, H, t);
+    flyGlow(c);
     if (t > FLY_TOTAL - 0.8) { c.fillStyle = 'rgba(0,0,0,' + flyEase((t - (FLY_TOTAL - 0.8)) / 0.8).toFixed(3) + ')'; c.fillRect(0, 0, W, H); }
   }
   function flyBackground(c, W, H, t, cam, calm) {
@@ -6610,7 +6624,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (!gl) { fly.rockDone = true; return; }
     const FS = [
       'precision highp float;',
-      'varying vec2 vP; uniform float uSeed, uA, uB; uniform vec3 uL;',
+      'varying vec2 vP; uniform float uSeed, uA, uB, uIce; uniform vec3 uL;',
       'float h3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }',
       'float n3(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);',
       '  return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),',
@@ -6635,7 +6649,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       '  vec3 n = normalize(vec3(fine(turn(P + e.xyy)) - fine(turn(P - e.xyy)), fine(turn(P + e.yxy)) - fine(turn(P - e.yxy)), fine(turn(P + e.yyx)) - fine(turn(P - e.yyx))));',
       '  float mu0 = dot(n, uL), mu = max(n.z, 0.05), ls = mu0 > 0.0 ? 2.0 * mu0 / (mu0 + mu) : 0.0;',
       '  float al = fb(turn(P) * 5.0 + uSeed), g = 0.6 + 0.8 * al;',
-      '  vec3 col = mix(vec3(0.27, 0.25, 0.235), vec3(0.42, 0.385, 0.345), al) * g * (ls * smoothstep(-0.02, 0.1, mu0) * 1.35 + 0.012);',
+      '  vec3 col = mix(mix(vec3(0.27, 0.25, 0.235), vec3(0.42, 0.385, 0.345), al), mix(vec3(0.62, 0.62, 0.6), vec3(0.86, 0.85, 0.82), al), uIce) * g * (ls * smoothstep(-0.02, 0.1, mu0) * 1.35 + 0.012);',
       '  gl_FragColor = vec4(col * a, a);',
       '}'
     ].join('\n');
@@ -6650,16 +6664,16 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     const aP = gl.getAttribLocation(prog, 'aP'); gl.enableVertexAttribArray(aP); gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
     gl.uniform3fv(gl.getUniformLocation(prog, 'uL'), flyNorm([-0.6, 0.45, 0.5]));
-    fly.rockGl = { gl: gl, cv: cv, uSeed: gl.getUniformLocation(prog, 'uSeed'), uA: gl.getUniformLocation(prog, 'uA'), uB: gl.getUniformLocation(prog, 'uB') };
+    fly.rockGl = { gl: gl, cv: cv, uSeed: gl.getUniformLocation(prog, 'uSeed'), uA: gl.getUniformLocation(prog, 'uA'), uB: gl.getUniformLocation(prog, 'uB'), uIce: gl.getUniformLocation(prog, 'uIce') };
   }
   // a few each frame while the loading screen shows, so nothing freezes; a rock not made in time is drawn with one that is
   function flyRocksMore() {
-    const g = fly.rockGl, total = FLY_ROCK_SHAPES * FLY_ROCK_FRAMES;
+    const g = fly.rockGl, total = FLY_ROCK_SHAPES * FLY_ROCK_FRAMES * 2;  // v116: the second half are icy (Saturn's ring)
     if (fly.rockDone || !g) return;
     const t0 = performance.now();
     while (fly.rockN < total && performance.now() - t0 < 12) {
-      const n = fly.rockN++, k = Math.floor(n / FLY_ROCK_FRAMES), f = n % FLY_ROCK_FRAMES, gl = g.gl;
-      gl.uniform1f(g.uSeed, 3.7 + k * 7.3); gl.uniform1f(g.uA, f / FLY_ROCK_FRAMES * 6.2832); gl.uniform1f(g.uB, 0.4 + k * 0.9);
+      const n = fly.rockN++, k = Math.floor(n / FLY_ROCK_FRAMES) % FLY_ROCK_SHAPES, f = n % FLY_ROCK_FRAMES, gl = g.gl;
+      gl.uniform1f(g.uSeed, 3.7 + k * 7.3); gl.uniform1f(g.uA, f / FLY_ROCK_FRAMES * 6.2832); gl.uniform1f(g.uB, 0.4 + k * 0.9); gl.uniform1f(g.uIce, n >= FLY_ROCK_SHAPES * FLY_ROCK_FRAMES ? 1 : 0);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       const s = document.createElement('canvas'); s.width = s.height = FLY_ROCK_PX; s.getContext('2d').drawImage(g.cv, 0, 0);
       fly.sprites[n] = s;
@@ -6669,15 +6683,16 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   }
   function flyBelt(c, W, H, t, cam) {
     if (t > 21) return;
-    fly.rocks.forEach((q) => {
+    const all = fly.ring && t > FLY_PASS[2].T - 9 && t < FLY_PASS[2].T + 1.5 ? fly.rocks.concat(fly.ring) : fly.rocks;  // the belt is farther, so it is drawn first
+    all.forEach((q) => {
       if (q.tf < t - 1 || q.tf > t + 8) return;
       const v = flyView(cam, W, H, q.x, q.y, q.s, q.r, 0.02);
       if (!v || !flySeen(v.x, v.y, v.R, W, H)) return;
       // far away: a grain of light; near: the rock, one turning angle blended into the next on the big ones
       if (v.R < 0.1) return;
-      if (v.R < 0.8) { c.globalAlpha = Math.min(0.75, v.R * 1.1); c.fillStyle = '#b8ab9c'; c.fillRect(v.x - 0.5, v.y - 0.5, 1, 1); c.globalAlpha = 1; return; }
+      if (v.R < 0.8) { c.globalAlpha = Math.min(0.75, v.R * 1.1); c.fillStyle = q.ice ? '#e4e2dc' : '#b8ab9c'; c.fillRect(v.x - 0.5, v.y - 0.5, 1, 1); c.globalAlpha = 1; return; }
       const fr = ((q.f0 + t * q.spin * FLY_ROCK_FRAMES) % FLY_ROCK_FRAMES + FLY_ROCK_FRAMES) % FLY_ROCK_FRAMES, f0 = Math.floor(fr), mix = fr - f0;
-      const a = fly.sprites[q.k * FLY_ROCK_FRAMES + f0] || fly.sprites[0], b = fly.sprites[q.k * FLY_ROCK_FRAMES + (f0 + 1) % FLY_ROCK_FRAMES] || a;
+      const base = q.ice ? FLY_ROCK_SHAPES * FLY_ROCK_FRAMES : 0, a = fly.sprites[base + q.k * FLY_ROCK_FRAMES + f0] || fly.sprites[q.k * FLY_ROCK_FRAMES + f0] || fly.sprites[0], b = fly.sprites[base + q.k * FLY_ROCK_FRAMES + (f0 + 1) % FLY_ROCK_FRAMES] || a;
       if (!a) return;
       c.drawImage(a, v.x - v.R, v.y - v.R, v.R * 2, v.R * 2);
       if (v.R > 8 && mix > 0.02 && b !== a) { c.globalAlpha = mix; c.drawImage(b, v.x - v.R, v.y - v.R, v.R * 2, v.R * 2); c.globalAlpha = 1; }
@@ -6701,16 +6716,18 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     const R = R0 * Math.pow(Rend / R0, flyRate(t)), S = R * rad, Rswap = Math.max(W, H) * 1.0;
     // the Earth is straight ahead once we have turned back, its small Moon beside it (true size: 27 % of the Earth)
     const left = Math.PI - cam.b; if (left > 1.3) return;
-    const ex = W / 2 + FLY_M * Math.tan(left) * W * 0.9, ey = H / 2;
-    const swap = flyEase((R - Rswap * 0.72) / (Rswap * 0.28));
-    if (swap > 0) flyCityMap(c, W, H, S, cosL, t);
+    // v116 (user: land at an angle, smoother): we come in at a slant (th); the Earth sits lower and is turned so your place stays in the middle
+    const th = flyTiltAt(t), Rc = Math.min(R, Rswap);
+    const ex = W / 2 + FLY_M * Math.tan(left) * W * 0.9, ey = H / 2 + Rc * Math.sin(th);
+    const swap = flyEase((R - Rswap * 0.62) / (Rswap * 0.38));  // v116: a longer change from the globe to the map
+    if (swap > 0) flyTiltMap(c, W, H, S, cosL, t, th);
     if (swap < 1) {
       // it turns and tilts your place towards us slowly, as it grows (the pole's swirl stays out of sight).
       // v94 (user: it turned, then stopped): one slow turn by the clock over the whole way, ending as the map takes over
-      if (!fly.faceEnd) { const want = Math.log(Rswap * 0.72 / R0) / Math.log(Rend / R0); let a = FLY_ZOOM0, b = FLY_ZOOM1; for (let i = 0; i < 24; i++) { const m = (a + b) / 2; if (flyRate(m) < want) a = m; else b = m; } fly.faceEnd = a; }
+      if (!fly.faceEnd) { const want = Math.log(Rswap * 0.62 / R0) / Math.log(Rend / R0); let a = FLY_ZOOM0, b = FLY_ZOOM1; for (let i = 0; i < 24; i++) { const m = (a + b) / 2; if (flyRate(m) < want) a = m; else b = m; } fly.faceEnd = a; }
       const face = flyEase((t - (FLY_ZOOM0 - 3)) / (fly.faceEnd - (FLY_ZOOM0 - 3)));
       c.save(); c.globalAlpha = 1 - swap;
-      PG.draw(c, ex, ey, Math.min(R, Rswap), { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: LON * rad + (1 - face) * 1.1, pitch: -LAT * rad * (0.25 + 0.75 * face),
+      PG.draw(c, ex, ey, Rc, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: LON * rad + (1 - face) * 1.1, pitch: -(LAT * rad * (0.25 + 0.75 * face) - th * face),
         rot2: t * 0.01, light: flyNorm([-0.35 * FLY_M, 0.3, 0.88]), expo: 1.15, margin: 1.06, glow: 0.3 });
       // v112 (user: a near fly-by, 2A): the Moon has its true place, 60 Earth radii before the Earth, a little to the side. We pass close, so
       // it grows to about half the screen, craters lit, for about 2 s. zM = how far it is, in Earth radii. The zoom waits until it has passed.
@@ -6725,24 +6742,63 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   // v94 (measured: a 0.17 s freeze when the huge map first appeared): only the part around your place, cut out before we leave
   function flyCityCrop() {
     const im = fly.city; fly.cityCut = null;
+    flyTiltPrep();  // v116: also when the big map is late
     if (!im || !im.complete || !im.naturalWidth) return;
     const pd = im.naturalWidth / 360, S0 = Math.max(fly.W, fly.H) * 0.72 * Math.PI / 180, cosL = Math.cos(LAT * Math.PI / 180);
-    const w = Math.min(4096, Math.ceil(fly.W / (S0 * cosL) * pd * 1.3)), h = Math.min(4096, Math.ceil(fly.H / S0 * pd * 1.3));
+    const w = Math.min(4096, Math.ceil(fly.W / (S0 * cosL) * pd * (FLY_FAR + 0.2))), h = Math.min(4096, Math.ceil(fly.H / S0 * pd * 2.3));  // v116: wide and tall enough for the slanted view
     const x0 = Math.round((LON + 180) * pd - w / 2), y0 = Math.round((90 - LAT) * pd - h / 2), k = document.createElement('canvas'); k.width = w; k.height = h;
     k.getContext('2d').drawImage(im, -x0, -y0);
     fly.c.drawImage(k, 0, 0, 2, 2);
     fly.cityCut = { cv: k, x0: x0, y0: y0 };
   }
-  function flyCityMap(c, W, H, S, cosL, t) {
+  // v116: the slanted map. A ground row Y (flat-map px from your place, + = farther) and its scale k (flat px per screen px) for screen row y,
+  // when the view looks down at the slant th from straight down. Row y = H/2 is your place, at scale 1, so the zoom carries on unchanged
+  const FLY_TILT = 33 * Math.PI / 180, FLY_FAR = 2.4;
+  const flyTiltAt = (t) => FLY_TILT * (1 - flySoft((t - 35) / 2.6));  // levels out to straight down in the last seconds
+  function flyRow(y, H, f, th) {
+    const b0 = Math.PI / 2 - th, h = f * Math.sin(b0), ph = Math.atan((y - H / 2) / f), b = b0 + ph;
+    return b <= 0.02 ? null : { Y: h / Math.tan(b) - h / Math.tan(b0), k: h / Math.sin(b) * Math.cos(ph) / f };
+  }
+  // the flat map is first drawn on its own surface, large enough for the farthest rows, then copied to the screen in thin rows
+  function flyTiltPrep() {
+    const W = fly.W, H = fly.H, f = W * 0.9; let top = 0, bot = 0;
+    for (let y = 0; y <= H; y += 2) { const r = flyRow(y, H, f, FLY_TILT); if (!r || r.k > FLY_FAR) continue; top = Math.max(top, r.Y); bot = Math.min(bot, r.Y); }
+    bot = Math.min(bot, -H / 2 - 4);  // when it is almost level again the near rows reach the screen's bottom
+    const q = 2, w = Math.ceil(W * FLY_FAR + 12), h = Math.ceil(top - bot + 24);
+    if (!fly.tm || fly.tm.w !== w || fly.tm.h !== h) { const cv = document.createElement('canvas'); cv.width = Math.ceil(w * q); cv.height = Math.ceil(h * q); fly.tm = { cv: cv, c: cv.getContext('2d'), q: q, w: w, h: h, cx: w / 2, cy: top + 12 }; }
+    fly.c.drawImage(fly.tm.cv, 0, 0, 2, 2);  // ready now, not with a freeze when the map first appears
+  }
+  function flyTiltMap(c, W, H, S, cosL, t, th) {
+    const m = fly.tm;
+    if (!m || th < 0.004) { flyCityMap(c, W, H, S, cosL, t); return; }
+    const o = m.c, f = W * 0.9, step = 3;
+    o.setTransform(m.q, 0, 0, m.q, 0, 0); o.fillStyle = '#000'; o.fillRect(0, 0, m.w, m.h);
+    flyCityMap(o, m.w, m.h, S, cosL, t, m.cx, m.cy);
+    // near rows first (the bottom of the screen), up to the far rows; beyond that only haze
+    let yTop = 0;
+    for (let y = H; y > 0; y -= step) {
+      const a = flyRow(y - step, H, f, th), b = flyRow(y, H, f, th);
+      if (!a || a.k > FLY_FAR) { yTop = y; break; }
+      const k = (a.k + b.k) / 2, sx = m.cx - W / 2 * k, sy = m.cy - a.Y, sh = a.Y - b.Y;
+      c.drawImage(m.cv, sx * m.q, sy * m.q, W * k * m.q, sh * m.q, 0, y - step, W, step + 0.6);
+    }
+    // the air far away: a light blue haze that grows towards the far rows, as much as the view is slanted
+    const s = th / FLY_TILT, g = c.createLinearGradient(0, yTop, 0, H * 0.62);
+    g.addColorStop(0, 'rgba(176,200,232,' + (0.92 * s).toFixed(3) + ')'); g.addColorStop(0.35, 'rgba(176,200,232,' + (0.4 * s).toFixed(3) + ')'); g.addColorStop(1, 'rgba(176,200,232,0)');
+    c.fillStyle = g; c.fillRect(0, yTop, W, H * 0.62 - yTop);
+    if (yTop > 0) { c.fillStyle = 'rgba(176,200,232,' + (0.92 * s).toFixed(3) + ')'; c.fillRect(0, 0, W, yTop + 1); }
+  }
+  function flyCityMap(c, W, H, S, cosL, t, ox, oy) {
     const im = fly.city;
+    if (ox == null) { ox = W / 2; oy = H / 2; }
     if (im && im.complete && im.naturalWidth) {
-      const pd = im.naturalWidth / 360, sw = W / (S * cosL) * pd, sh = H / S * pd, cx = (LON + 180) * pd, cy = (90 - LAT) * pd, q = fly.cityCut;
-      const sx = cx - sw / 2, sy = cy - sh / 2;
+      const pd = im.naturalWidth / 360, kx = pd / (S * cosL), ky = pd / S, sw = W * kx, sh = H * ky, cx = (LON + 180) * pd, cy = (90 - LAT) * pd, q = fly.cityCut;
+      const sx = cx - ox * kx, sy = cy - oy * ky;
       // the cut part while the view fits inside it (the place may still change with a late GPS fix); else the whole map
       if (q && sx >= q.x0 && sy >= q.y0 && sx + sw <= q.x0 + q.cv.width && sy + sh <= q.y0 + q.cv.height) c.drawImage(q.cv, sx - q.x0, sy - q.y0, sw, sh, 0, 0, W, H);
       else c.drawImage(im, sx, sy, sw, sh, 0, 0, W, H);
     }
-    if (fly.tiles) flyDrawTiles(c, W, H, S * cosL);
+    if (fly.tiles) flyDrawTiles(c, W, H, S * cosL, ox, oy);
   }
   /* ---- Satellite pictures over the city (Sentinel-2 cloudless by EOX; only while the flight plays, online only; the
      service sees which area is asked for, not who you are). Web Mercator tiles at 4 zoom levels around your place. ---- */
@@ -6780,18 +6836,18 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     // you moved to another city: the old city's pictures go (only when online, so they are not lost for nothing)
     Promise.all(jobs).then(() => box).then((c) => { if (c && navigator.onLine !== false) c.keys().then((ks) => ks.forEach((k) => { if (urls.indexOf(k.url) === -1) c.delete(k); })); }).catch(() => {});
   }
-  function flyDrawTiles(c, W, H, pxPerDegLon) {
+  function flyDrawTiles(c, W, H, pxPerDegLon, ox, oy) {
     // a picture is slow only the first time it is drawn: at most 3 new ones a frame, the coarser level shows until then
     let fresh = 3;
     FLY_LEVELS.forEach((z) => {
       const from = flyLevelFrom(z), scale = pxPerDegLon * 360 / (256 * Math.pow(2, z)), a = flyEase((scale - from) / (from * 0.2));
       if (a <= 0 || scale > 3.5) return;
-      const ct = flyTile(z), size = 256 * scale, x0 = Math.floor(ct.x - W / 2 / size), x1 = Math.floor(ct.x + W / 2 / size), y0 = Math.floor(ct.y - H / 2 / size), y1 = Math.floor(ct.y + H / 2 / size);
+      const ct = flyTile(z), size = 256 * scale, x0 = Math.floor(ct.x - ox / size), x1 = Math.floor(ct.x + (W - ox) / size), y0 = Math.floor(ct.y - oy / size), y1 = Math.floor(ct.y + (H - oy) / size);
       c.globalAlpha = a;
       for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
         const im = fly.tiles[z + '/' + x + '/' + y];
         if (im && !im.seen) { if (fresh <= 0) continue; fresh--; im.seen = true; }
-        if (im) c.drawImage(im, W / 2 + (x - ct.x) * size, H / 2 + (y - ct.y) * size, size + 0.5, size + 0.5);
+        if (im) c.drawImage(im, ox + (x - ct.x) * size, oy + (y - ct.y) * size, size + 0.5, size + 0.5);
       }
       c.globalAlpha = 1;
     });
@@ -6848,7 +6904,21 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       if (T < prev + 0.4) T = prev + 0.4;  // v110: always in their real order
       q.T = T; prev = T; q.gone = false; flyPlace(q, T);
     });
+    flyRing();
   }
+  // v116 (user: closer by Saturn's rings, fly through rocks for a second or two): we cross the ring's plane as we pass Saturn. Its rocks lie
+  // in a thin sheet, tilted like the ring, from 1 s before to 0.6 s after; most are small, some pass very close
+  function flyRing() {
+    const sat = FLY_PASS[2], out = [];
+    for (let i = 0; i < 720; i++) {
+      const tf = sat.T - 1 + Math.random() * 1.6, C = FLY_PATH[Math.round(tf * 60)], r = 0.0015 + Math.pow(Math.random(), 3) * 0.016;
+      const off = (Math.random() * 2 - 1) * (0.15 + Math.pow(Math.random(), 1.5) * 1.1), y = off * FLY_RING_TILT + (Math.random() - 0.5) * 0.06;
+      if (Math.abs(off) < 3 * r && Math.abs(y) < 3 * r) continue;
+      out.push({ tf: tf, x: C.x + Math.cos(C.a) * off, y: y, s: C.s - Math.sin(C.a) * off, r: r, k: Math.floor(Math.random() * FLY_ROCK_SHAPES), ice: 1, f0: Math.random() * FLY_ROCK_FRAMES, spin: (0.05 + Math.random() * 0.2) * (Math.random() < 0.5 ? -1 : 1) });
+    }
+    fly.ring = out.sort((a, b) => b.tf - a.tf);
+  }
+  const FLY_RING_TILT = 0.3;  // the sheet's slope on the screen (y per sideways step)
   function flySoundReady() {
     fly.real = FLY_REAL; fly.ownBuf = null; fly.going = false; fly.soundSet = S.flySound === 'off'; flyFitPlanets(null);
     if (fly.soundSet) return;
@@ -7196,7 +7266,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       else if (tap && planetDate && ty > planetDate.y0 && ty < planetDate.y1 && (!st.land || tx < st.W * 0.48)) {
         const tn = performance.now();
         dateTaps = tn - lastDateTap < 600 ? dateTaps + 1 : 1; lastDateTap = tn;
-        if (dateTaps >= 7) { dateTaps = 0; eatClick(); startFly(); }
+        if (dateTaps >= 7) { dateTaps = 0; eatClick(); startFly({ x: e.clientX, y: e.clientY }); }
       }
       // double-tap the clock: charging mode on / off by hand (v37)
       else if (tap && planetTime && ty > planetTime.y0 && ty < planetTime.y1 && (!st.land || tx < st.W * 0.48)) {  // v78: wherever the time is
@@ -7735,7 +7805,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v115 · The flight now curves to the right, passes nearer to Saturn and rolls once through the rock belt. Small icons on the Sun, Moon and Earth labels. The Sun and Moon now match on the Dial, Clock and Today, with short labels and an Edit list corner on the Moon. The flight now spirals in: each planet comes into view as you curve towards it, and you pass close to the Moon. Sun and Moon match better on every screen. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen.';
+  const NEWS = 'v116 · The flight lands at a slant and levels out, flies through the rocks of the ring of Saturn, and a ring of light and a buzz show that the 7 taps worked. The flight now curves to the right, passes nearer to Saturn and rolls once through the rock belt. Small icons on the Sun, Moon and Earth labels. The Sun and Moon now match on the Dial, Clock and Today, with short labels and an Edit list corner on the Moon. The flight now spirals in: each planet comes into view as you curve towards it, and you pass close to the Moon. Sun and Moon match better on every screen. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
