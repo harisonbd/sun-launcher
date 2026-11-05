@@ -816,7 +816,6 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
 #app.ls-pills.sv-clock .facet:not(.front) { background: color-mix(in srgb, var(--panel) 72%, transparent) !important; border-color: color-mix(in srgb, var(--sun) 28%, var(--line)) !important; padding: 0 13px; }
 #app.ls-pills .item:not(.card):not(.sel), #app.mm-pills .item:not(.card):not(.sel) { background: rgba(74, 92, 150, .92); border: 1.5px solid rgba(225, 232, 248, .6); color: #fff; border-radius: 22px; padding: 0 14px 0 8px; text-shadow: none; }
 #app.ls-pills .item.sel:not(.card), #app.mm-pills .item.sel:not(.card) { background: var(--moon); color: var(--moon-ink); border-radius: 24px; padding: 0 16px 0 8px; text-shadow: none; }
-#app.ls-pills.ml-dial .item.sel::before { color: var(--moon-ink); border-right-color: var(--moon-ink); }
 /* v110 (user): the Dial's small round items match on the Sun and the Moon, and show a little more */
 #app.ml-dial3d .item:not(.sel) { background: rgba(38, 54, 94, .94); border-color: rgba(235, 240, 250, .6); }
 #app:not(.sv) .facet.mini { width: 40px; height: 40px; padding: 0; justify-content: center; background: rgba(38, 54, 94, .94) !important; border: 1.5px solid rgba(235, 240, 250, .6) !important; }
@@ -825,6 +824,18 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
 .roundbtn.editl { right: calc(72px + env(safe-area-inset-right, 0px)); }
 #app.watch .roundbtn.editl, #app.editing .roundbtn.editl { opacity: 0; pointer-events: none; }
 @media (max-width: 400px) { .handle.top { width: 116px; margin-left: -58px; font-size: 11px; white-space: nowrap; overflow: hidden; } }
+/* v114 (user): the small round items on the Sun's Dial show letters, like the Moon's */
+#app:not(.sv) .facet.mini .ini img { display: none; }
+#app:not(.sv) .facet.mini .ini:has(img)::before { content: attr(data-l); }
+/* v114 (user): on Clock the Moon's chosen item has a round letter, the same shape as the Sun's */
+#app.ml-dial .item.sel { padding-left: 6px; }
+#app.ml-dial .item.sel::before { content: attr(data-ini); width: 34px; height: 34px; margin-right: 10px; border: none; border-radius: 50%; display: grid; place-items: center; line-height: 1; font-weight: 700; background: var(--moon); color: var(--moon-ink); }
+#app.ls-pills.ml-dial .item.sel::before { background: var(--moon-ink); color: var(--moon); }
+/* v114 (user): on Today the Moon's rows have a round letter and no group name, the same as the Sun's */
+#app .item.card .grp { display: none; }
+#app .item.card .dot { width: 30px; height: 30px; flex: none; border: none; border-radius: 50%; background: rgba(238, 240, 245, .22); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #EEF0F5; box-shadow: none; }
+#app .item.card .dot::before { content: attr(data-ini); }
+#app .item.card.sel .dot { background: var(--moon-ink); border-color: var(--moon-ink); color: var(--moon); }
 </style>
 
 <div id="app">
@@ -843,7 +854,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     <button type="button" id="pTimer" class="ptimer" aria-label="Timer, tap to open" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="1.2"/><circle id="pTimerArc" cx="12" cy="12" r="9" fill="none" stroke="#fff" stroke-width="1.4" stroke-dasharray="56.5" stroke-dashoffset="0" transform="rotate(-90 12 12)" stroke-linecap="round"/></svg><span id="pTimerT" aria-live="off"></span></button>
     <button type="button" class="planet-handle" id="planetUp" aria-label="Open the sun menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>
-      <span>Swipe up · Sun menu</span>
+      <span>Sun</span>
     </button>
   </div>
   <div id="worlds">
@@ -882,10 +893,10 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         <span>Edit dial</span>
       </button>
       <div class="favbar" id="favBar" aria-label="Pinned apps" hidden></div>
-      <div class="vstrip" id="sunStrip" role="group" aria-label="Sun screen: slide sideways to change it"><div class="vs-peek" hidden></div><div class="vs-nm"><button type="button" class="vs-prev" aria-label="Previous screen">‹</button><span class="vs-name" aria-live="polite"></span><button type="button" class="vs-next" aria-label="Next screen">›</button></div><div class="vs-dots" aria-hidden="true"></div><div class="vs-sub">swipe up · Moon</div></div>
+      <div class="vstrip" id="sunStrip" role="group" aria-label="Sun screen: slide sideways to change it"><div class="vs-peek" hidden></div><div class="vs-nm"><button type="button" class="vs-prev" aria-label="Previous screen">‹</button><span class="vs-name" aria-live="polite"></span><button type="button" class="vs-next" aria-label="Next screen">›</button></div><div class="vs-dots" aria-hidden="true"></div><div class="vs-sub">Moon</div></div>
       <button type="button" class="handle bottom" id="toMoon" aria-label="Open the moon menu" tabindex="-1" aria-hidden="true">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"></path></svg>
-        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M15 4a8 8 0 1 0 5 13A7 7 0 0 1 15 4z"></path></svg>Swipe up · Moon</span>
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M15 4a8 8 0 1 0 5 13A7 7 0 0 1 15 4z"></path></svg>Moon</span>
       </button>
     </section>
 
@@ -897,11 +908,15 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       <div id="scrub" class="scrub" aria-hidden="true"></div>
       <div id="bubble" class="bubble" aria-hidden="true" hidden><small id="bubbleGroup"></small><span id="bubbleName"></span></div>
       <button type="button" class="handle top" id="toSun" aria-label="Back to the sun menu">
-        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></svg>Swipe down · Sun</span>
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></svg>Sun</span>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg>
       </button>
       <button type="button" class="mini-sun" id="miniSun" aria-label="Camera: take a photo and send it to an app" hidden>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+      </button>
+      <button type="button" class="corner br" id="moonEdit" aria-label="Edit list: order and place your apps">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13 7l4 4"></path></svg>
+        <span>Edit list</span>
       </button>
       <button type="button" class="corner bl" id="moonSearch" aria-label="Search apps and functions; your recent apps are at the top">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
@@ -1480,7 +1495,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   'use strict';
   const $ = (id) => document.getElementById(id);
   const realText = (s) => /^\[.*\]$/.test(s || '') ? '' : s;  // v111: "[One line on ...]" waits for real text; it is not shown
-  const APP_VERSION = 'v113';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v114';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -3159,6 +3174,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       ini.className = 'ini';
       ini.setAttribute('aria-hidden', 'true');
       fillIcon(ini, a);
+      ini.dataset.l = a.name.charAt(0);  // v114: the small round items on the Dial show letters, like the Moon's
       const nm = document.createElement('span');
       nm.className = 'nm';
       nm.textContent = a.name;
@@ -3575,7 +3591,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         const tl = clamp(-Math.asin(clamp((p[1] - G.cy) / (G.R * 1.02), -1, 1)) * 180 / Math.PI, -78, 78);
         el.style.transform = 'translate(' + p[0].toFixed(1) + 'px,' + p[1].toFixed(1) + 'px) translate(-50%,-50%) scale(' + p[2].toFixed(3) + ') perspective(520px) rotateX(' + tl.toFixed(1) + 'deg)';
       } else {
-        el.style.transform = 'translate(' + p[0].toFixed(1) + 'px,' + p[1].toFixed(1) + 'px) translate(-50%,-100%) scale(' + p[2].toFixed(3) + ')';
+        el.style.transform = 'translate(' + p[0].toFixed(1) + 'px,' + (p[1] + 58 * clamp(1 - dd / 0.3, 0, 1)).toFixed(1) + 'px) translate(-50%,-100%) scale(' + p[2].toFixed(3) + ')';  // v114 (user)
       }
       el.classList.toggle('flip', flip);
       el.style.zIndex = String(500 + Math.round(p[3]));
@@ -3601,7 +3617,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     }
     let maxY = 0, minY = H;
     for (let m = 0; m < 24; m++) { const pm = G.polar(G.R, m / 24 * 2 * Math.PI); if (pm[1] > maxY) maxY = pm[1]; if (pm[1] < minY) minY = pm[1]; }
-    let top = maxY + 26, showInfo = true;
+    let top = maxY + 26 + 44, showInfo = true;
     if (st.land) top = H * 0.26;
     else if (top + 130 > H - 110) { top = 100; showInfo = minY - 70 > 240; }
     $('sunInfo').style.top = Math.round(top) + 'px';
@@ -4012,7 +4028,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'item' + (it.app ? ' app' : '');
-      const d = document.createElement('span'); d.className = 'dot'; d.setAttribute('aria-hidden', 'true');
+      const d = document.createElement('span'); d.className = 'dot'; d.setAttribute('aria-hidden', 'true'); d.dataset.ini = it.name.charAt(0);
       const t = document.createElement('span'); t.textContent = it.name; t.className = 'nm';
       b.dataset.ini = it.name.charAt(0);
       const gr = document.createElement('small'); gr.className = 'grp'; gr.setAttribute('aria-hidden', 'true'); gr.textContent = it.group;
@@ -4446,8 +4462,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       }
       c.restore();
       txt('Moon', 24, H * 0.165 - 26, 12, 600, 'rgba(195, 204, 221, 0.85)', 'left', true);
-      txt(DAYS[today.getDay()] + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()], 24, H * 0.155, 28, 300, '#F5EFE3');
-      if (cur) txt(cur.group + ' · ' + (live + 1) + ' of ' + LIST.length, 24, H * 0.195, 13, 400, 'rgba(195, 204, 221, 0.9)');
+      txt(DAYS[today.getDay()] + ' ' + today.getDate() + ' ' + MONTHS[today.getMonth()], 24, H * 0.165, 28, 300, '#F5EFE3');
+      if (cur) txt(cur.group + ' · ' + (live + 1) + ' of ' + LIST.length, 24, H * 0.2, 13, 400, 'rgba(195, 204, 221, 0.9)');
       txt('Turn the dial · tap to open', W / 2, H * 0.9, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       scene = { kind: 'dial', C0: C0, C1: C1, r: 318 * k };
     } else if (look === 'moondial' || look === 'dial3d') {
@@ -4470,8 +4486,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
         else moonDraw(c, sx, sy, R, { mode: 'moon', light: moonLight([0.62, 0.55, 0.05]), roll: moonRoll(), rot: -0.3, shine: 0.17, expo: 1.3, glow: 0.8, margin: 1.2 });
       }
       ringHalf(true);
-      txt('Moon menu', txtX(W), st.land ? H * 0.3 : H * 0.125 + st.top, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true);
-      if (cur) txt(cur.group, txtX(W), st.land ? H * 0.4 : H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center');
+      // v114 (user): on the Dial the words sit below, like the Sun's (moonInfo); Ring keeps its heading above on both
+      if (!d3 || st.land) { txt('Moon menu', txtX(W), st.land ? H * 0.3 : H * 0.125 + st.top, 12, 600, 'rgba(195, 204, 221, 0.85)', 'center', true); if (cur) txt(cur.group, txtX(W), st.land ? H * 0.4 : H * 0.16 + st.top, 24, 500, '#F5EFE3', 'center'); }
       txt('Swipe sideways to turn the ring · tap to open', txtX(W), st.land ? H * 0.52 : H * 0.83, 12.5, 400, 'rgba(195, 204, 221, 0.85)', 'center');
       const s0 = ringPlace(scene, Math.PI / 2);
       c.beginPath(); c.arc(s0[0], s0[1], 4, 0, 2 * Math.PI); c.fillStyle = '#fff'; c.fill();
@@ -4563,7 +4579,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       $('moonHint').textContent = cur.app ? realText(cur.hint) : cur.group + ' · ' + (live + 1) + ' of ' + LIST.length;
       lastLive = live;
     }
-    $('moonInfo').style.top = Math.round(H + 40) + 'px';
+    $('moonInfo').style.top = Math.round(look === 'dial3d' && !st.land && scene ? ringPlace(scene, Math.PI / 2)[1] + 72 : H + 40) + 'px';
     $('moonTip').hidden = true;
     const sc = $('scrub'); sc.style.width = '0px';
   }
@@ -7708,7 +7724,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v113 · The flight now spirals in: each planet comes into view as you curve towards it, and you pass close to the Moon. Sun and Moon match better on every screen. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen.';
+  const NEWS = 'v114 · The Sun and Moon now match on the Dial, Clock and Today, with short labels and an Edit list corner on the Moon. The flight now spirals in: each planet comes into view as you curve towards it, and you pass close to the Moon. Sun and Moon match better on every screen. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
@@ -8189,7 +8205,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     renderFavBar();
     kick();
   }
-  $('sunEdit').addEventListener('click', () => { renderEdit(); showOverlay($('edit')); });
+  // v114 (user): the Moon has the same corner as the Sun, with the same editor
+  [['sunEdit', 'Edit dial'], ['moonEdit', 'Edit list']].forEach(([id, title]) => $(id).addEventListener('click', () => { $('editTitle').textContent = title; renderEdit(); showOverlay($('edit')); }));
   $('editDone').addEventListener('click', () => hideOverlay($('edit')));
   $('editReset').addEventListener('click', () => { S.order = APP_LIST.map((a) => a.name); S.onMoon = []; changed(); });  // v64: order only (your apps stay)
   $('addApp').addEventListener('click', () => openAppForm(null));
