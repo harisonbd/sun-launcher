@@ -1497,7 +1497,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   'use strict';
   const $ = (id) => document.getElementById(id);
   const realText = (s) => /^\[.*\]$/.test(s || '') ? '' : s;  // v111: "[One line on ...]" waits for real text; it is not shown
-  const APP_VERSION = 'v116';  // v61: shown in Updates and About (sw.js CACHE has the same number)
+  const APP_VERSION = 'v117';  // v61: shown in Updates and About (sw.js CACHE has the same number)
   const setText = (id, t) => { const el = $(id); if (el.textContent !== t) el.textContent = t; };  // v59
   let reduce = false;
   try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -6392,7 +6392,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     { T: 5.6, tex: 'neptune', ox: 0.6, oy: 0.03, r: 0.37, L: [-0.55, 0.15, -0.35], spin: 0.05, col: '#7f9fd8' },
     { T: 9.6, tex: 'uranus', ox: -0.6, oy: -0.03, r: 0.381, L: [0.5, 0.2, -0.3], spin: -0.04, roll: 1.4, col: '#a8d8dc' },
     { T: 14.3, tex: 'saturn', ox: 0.75, oy: 0.03, r: 0.875, d: 1.7, L: [-0.6, 0.35, -0.2], spin: 0.06, rings: 'ring', roll: -0.35, pitch: -0.42, col: '#d8c79c' },
-    { T: 17.2, tex: 'jupiter', ox: -0.8, oy: -0.03, r: 1.05, L: [0.55, 0.25, -0.25], spin: 0.08, col: '#d8b998' },
+    { T: 17.2, tex: 'jupiter', ox: -0.8, oy: -0.03, r: 1.05, L: [0.55, 0.25, 0.15], spin: 0.08, col: '#d8b998' },
     { T: 21, tex: 'mars', ox: 0.5, oy: 0.02, r: 0.051, L: [-0.25, 0.85, -0.1], spin: 0.05, col: '#c87a50', inner: true },
     { T: 22.4, tex: 'venus', ox: -0.45, oy: -0.02, r: 0.091, L: [0.1, 0.9, -0.1], spin: 0.02, col: '#e8d8b0', inner: true },
     { T: 23.2, tex: 'mercury', ox: 0.35, oy: 0.02, r: 0.037, L: [-0.1, 0.9, -0.15], spin: 0.03, airless: true, col: '#b0a898', inner: true }
@@ -6404,7 +6404,8 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   // v112 (user: not on a straight line; see one in the distance, then turn and go to it): a slow spiral in towards the Sun. How far we have
   // turned (degrees) when we pass each planet: the next one is off to the side, and comes into view as we curve towards it. The Sun is
   // ahead of us at the very start, then out of sight until it comes back large near the end.
-  const FLY_KNOTS = [[0, 0], [5.6, 70], [9.6, 140], [14.3, 200], [17.2, 245], [21, 300], [22.4, 320], [23.2, 335], [24.8, 335]];
+  // v117 (user: first to the left, then to the right): it bends one way until Saturn, then the other way (degrees can go back down)
+  const FLY_KNOTS = [[0, 0], [5.6, 70], [9.6, 140], [14.3, 190], [17.2, 150], [21, 95], [22.4, 75], [23.2, 60], [24.8, 60]];
   // the whole way, worked out once, 60 steps a second: it really moves where it looks, so every turn is a real curve.
   // a = where it looks, b = only the big turn at the end (half a turn)
   const FLY_PATH = (() => {
@@ -6413,9 +6414,9 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     const smooth = (f) => { const raw = []; for (let n = 0; n <= N; n++) raw.push(f(n / 60)); for (let pass = 0; pass < 2; pass++) { const o = raw.slice(); for (let n = 0; n <= N; n++) { let q = 0; for (let k = -W; k <= W; k++) q += o[Math.max(0, Math.min(N, n + k))]; raw[n] = q / (W * 2 + 1); } } return raw; };
     const spiral = smooth((t) => { for (let k = 1; k < FLY_KNOTS.length; k++) if (t >= FLY_KNOTS[k - 1][0] && t < FLY_KNOTS[k][0]) return (FLY_KNOTS[k][1] - FLY_KNOTS[k - 1][1]) / (FLY_KNOTS[k][0] - FLY_KNOTS[k - 1][0]); return 0; });
     const big = smooth((t) => t >= FLY_TURN0 && t < FLY_TURN1 ? flySoft((t - FLY_TURN0) / (FLY_TURN1 - FLY_TURN0)) - flySoft((t - 1 / 60 - FLY_TURN0) / (FLY_TURN1 - FLY_TURN0)) : 0);
-    let sS = 0, sB = 0; spiral.forEach((v) => { sS += v; }); big.forEach((v) => { sB += v; });
+    let sB = 0; big.forEach((v) => { sB += v; });
     const out = []; let s = 0, x = 0, sp = 0, b = 0;
-    for (let n = 0; n <= N; n++) { const a = FLY_M * (sp + b); out.push({ s: s, x: x, a: a, b: b }); sp += spiral[n] / sS * 335 * Math.PI / 180; b += big[n] / sB * Math.PI; const v = FLY_V / 60; s += v * Math.cos(a); x += v * Math.sin(a); }
+    for (let n = 0; n <= N; n++) { const a = FLY_M * (sp + b); out.push({ s: s, x: x, a: a, b: b }); sp += spiral[n] / 60 * Math.PI / 180; b += big[n] / sB * Math.PI; const v = FLY_V / 60; s += v * Math.cos(a); x += v * Math.sin(a); }
     return out;
   })();
   // a planet's place: beside the way at the moment T we pass it
@@ -6442,6 +6443,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     let ok = true;
     Object.keys(FLY_MAPS).forEach((k) => { if (!PG.need(k, FLY_MAPS[k])) ok = false; });
     if (!GLB.need('mercury', 'planet-mercury.jpg')) ok = false;
+    if (PG.big() && !PG.need('earth8', 'earth-day-8k.jpg')) ok = false;  // v117: the sharp Earth for the end
     return ok && fly.stars.complete && fly.city.complete;
   }
   function startFly(at) {
@@ -6458,8 +6460,9 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     fly.near = Array.from({ length: 70 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
     // the belt: rocks with a place in space between Jupiter and Mars, a few big ones and many small; far ones first
     // v99 (user: another shower shortly after the start): the far field beyond Neptune comes first, the belt after Jupiter stays
+    // v117 (user): the belt after Jupiter is gone; its rocks are now Saturn's ring, which we fly through (flyRing)
     const spots = [];
-    [[1.2, 4.2, 540], [18.4, 20.2, 360]].forEach((f) => { for (let i = 0; i < f[2]; i++) spots.push(f); });
+    [[1.2, 4.2, 540]].forEach((f) => { for (let i = 0; i < f[2]; i++) spots.push(f); });
     fly.rocks = spots.map((f) => {
       const tf = f[0] + Math.random() * (f[1] - f[0]), C = FLY_PATH[Math.round(tf * 60)], r = 0.001 + Math.pow(Math.random(), 4) * 0.015, a = Math.random() * 6.283, d = 4 * r + 0.01 + Math.pow(Math.random(), 1.2) * 0.55, off = Math.cos(a) * d;
       return { tf: tf, x: C.x + Math.cos(C.a) * off, y: Math.sin(a) * d, s: C.s - Math.sin(C.a) * off, r: r, k: Math.floor(Math.random() * FLY_ROCK_SHAPES), f0: Math.random() * FLY_ROCK_FRAMES, spin: (0.05 + Math.random() * 0.2) * (Math.random() < 0.5 ? -1 : 1) };
@@ -6608,8 +6611,11 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
     if (p.airless) GLB.draw(c, v.x, v.y, v.R, { mode: 'moon', tex: p.tex, light: light, rot: t * p.spin * 6.283, shine: 0.1, expo: 1.3, glow: 0.4, margin: 1.2 });
     else {
       const o = { mode: 'planet', tex: p.tex, rot: t * p.spin * 6.283, roll: p.roll || 0, pitch: p.pitch || 0, light: light, expo: 1.2, margin: p.rings ? 1.3 : 1.15 };
-      if (p.rings) o.rings = p.rings;
-      PG.draw(c, v.x, v.y, v.R, o);
+      // v117: as we enter Saturn's ring its smooth picture gives way to its rocks (flyRing), like the globe gives way to the map
+      const k = p.rings ? flyEase((t - (p.T - 0.9)) / 0.6) : 1;
+      if (p.rings && k < 1) { c.globalAlpha = 1 - k; o.rings = p.rings; PG.draw(c, v.x, v.y, v.R, o); delete o.rings; o.margin = 1.15; }
+      if (!p.rings || k > 0) { c.globalAlpha = p.rings ? k : 1; PG.draw(c, v.x, v.y, v.R, o); }
+      c.globalAlpha = 1;
     }
   }
   /* The belt between Jupiter and Mars. v94 (user: it looked drawn in Paint): real 3D rocks made once before the flight on a small
@@ -6727,13 +6733,13 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
       if (!fly.faceEnd) { const want = Math.log(Rswap * 0.62 / R0) / Math.log(Rend / R0); let a = FLY_ZOOM0, b = FLY_ZOOM1; for (let i = 0; i < 24; i++) { const m = (a + b) / 2; if (flyRate(m) < want) a = m; else b = m; } fly.faceEnd = a; }
       const face = flyEase((t - (FLY_ZOOM0 - 3)) / (fly.faceEnd - (FLY_ZOOM0 - 3)));
       c.save(); c.globalAlpha = 1 - swap;
-      PG.draw(c, ex, ey, Rc, { mode: 'earth', tex: 'earth', tex2: 'earthN', tex3: 'earthC', rot: LON * rad + (1 - face) * 1.1, pitch: -(LAT * rad * (0.25 + 0.75 * face) - th * face),
+      PG.draw(c, ex, ey, Rc, { mode: 'earth', tex: PG.big() && PG.need('earth8', 'earth-day-8k.jpg') ? 'earth8' : 'earth',  /* v117 (user: sharper) */ tex2: 'earthN', tex3: 'earthC', rot: LON * rad + (1 - face) * 1.1, pitch: -(LAT * rad * (0.25 + 0.75 * face) - th * face),
         rot2: t * 0.01, light: flyNorm([-0.35 * FLY_M, 0.3, 0.88]), expo: 1.15, margin: 1.06, glow: 0.3 });
       // v112 (user: a near fly-by, 2A): the Moon has its true place, 60 Earth radii before the Earth, a little to the side. We pass close, so
       // it grows to about half the screen, craters lit, for about 2 s. zM = how far it is, in Earth radii. The zoom waits until it has passed.
       const zM = 2.7 * (32 - t);
       if (zM > 0.25) {
-        const q = W * 0.9 / zM, mx = ex - FLY_M * q * 0.38, my = ey - q * 0.14, mr = q * 0.27;
+        const q = W * 0.9 / zM, mx = ex - FLY_M * q * 0.26, my = ey - q * 0.1, mr = q * 0.27;  // v117 (user): nearer
         if (mx + mr > -W * 0.3 && my + mr > -H * 0.3) GLB.draw(c, mx, my, mr, { mode: 'moon', light: flyNorm([-0.35 * FLY_M, 0.3, 0.88]), rot: t * 0.1, shine: 0.1, expo: 1.3, glow: 0.4, margin: 1.2 });
       }
       c.restore();
@@ -6910,8 +6916,9 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   // in a thin sheet, tilted like the ring, from 1 s before to 0.6 s after; most are small, some pass very close
   function flyRing() {
     const sat = FLY_PASS[2], out = [];
-    for (let i = 0; i < 720; i++) {
-      const tf = sat.T - 1 + Math.random() * 1.6, C = FLY_PATH[Math.round(tf * 60)], r = 0.0015 + Math.pow(Math.random(), 3) * 0.016;
+    for (let i = 0; i < 1100; i++) {
+      // v117 (user: the ring comes closer and closer and turns into rocks we fly through, then we leave it): only while Saturn is near
+      const tf = sat.T - 0.9 + Math.random() * 1.5, C = FLY_PATH[Math.round(tf * 60)], r = 0.0015 + Math.pow(Math.random(), 3) * 0.016;
       const off = (Math.random() * 2 - 1) * (0.15 + Math.pow(Math.random(), 1.5) * 1.1), y = off * FLY_RING_TILT + (Math.random() - 0.5) * 0.06;
       if (Math.abs(off) < 3 * r && Math.abs(y) < 3 * r) continue;
       out.push({ tf: tf, x: C.x + Math.cos(C.a) * off, y: y, s: C.s - Math.sin(C.a) * off, r: r, k: Math.floor(Math.random() * FLY_ROCK_SHAPES), ice: 1, f0: Math.random() * FLY_ROCK_FRAMES, spin: (0.05 + Math.random() * 0.2) * (Math.random() < 0.5 ? -1 : 1) });
@@ -7805,7 +7812,7 @@ label[for="photo-stars"] { background-image: url("sky-night.jpg"); }
   try { if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => p || !navigator.storage.persist ? p : navigator.storage.persist()).then((p) => { storageKept = !!p; }).catch(() => {}); } catch (e) {}
   function mb(b) { return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB'; }
   function sheetInfo(title, text, actions) { openSheet(title, text, '', false, actions); $('sheetText').style.whiteSpace = 'pre-line'; }
-  const NEWS = 'v116 · The flight lands at a slant and levels out, flies through the rocks of the ring of Saturn, and a ring of light and a buzz show that the 7 taps worked. The flight now curves to the right, passes nearer to Saturn and rolls once through the rock belt. Small icons on the Sun, Moon and Earth labels. The Sun and Moon now match on the Dial, Clock and Today, with short labels and an Edit list corner on the Moon. The flight now spirals in: each planet comes into view as you curve towards it, and you pass close to the Moon. Sun and Moon match better on every screen. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen.';
+  const NEWS = 'v117 · The flight bends left, then right; the ring of Saturn turns into rocks you fly through; a nearer Moon and a sharper Earth. The flight lands at a slant and levels out, flies through the rocks of the ring of Saturn, and a ring of light and a buzz show that the 7 taps worked. The flight now curves to the right, passes nearer to Saturn and rolls once through the rock belt. Small icons on the Sun, Moon and Earth labels. The Sun and Moon now match on the Dial, Clock and Today, with short labels and an Edit list corner on the Moon. The flight now spirals in: each planet comes into view as you curve towards it, and you pass close to the Moon. Sun and Moon match better on every screen. Each list can loop or stop at its ends. New Corona and Flames moons, soft eclipse rays, stronger Neon, softer Disco light. An Edit button on every screen.';
   const FUNC_RUN = {
     // Look
     'Theme': () => openSettingsAt('Look follows the time of day'),
